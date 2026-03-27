@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/lib/variants";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navigation = [
   {
@@ -108,6 +109,8 @@ export function Header() {
               <Search className="h-4.5 w-4.5" />
               <span className="sr-only">Search</span>
             </Button>
+
+            <ThemeToggle />
 
             {/* Mobile menu */}
             <Sheet>
