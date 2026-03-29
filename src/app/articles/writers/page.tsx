@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { User, ArrowRight } from "lucide-react";
-import { writers } from "@/lib/data";
+import { getAllWriters } from "@/lib/queries";
 
 export const metadata = {
   title: "Writers",
   description: "Browse articles by our contributing scholars and writers.",
 };
 
-export default function WritersPage() {
+export default async function WritersPage() {
+  const writers = await getAllWriters();
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
       <div className="mb-10">

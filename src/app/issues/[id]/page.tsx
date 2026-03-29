@@ -5,10 +5,17 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/lib/variants";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { issues, articles, queries, getMonthName } from "@/lib/data";
+import {
+  getAllIssueSlugs,
+  getIssueBySlug,
+  getArticlesForIssue,
+  getQueriesForIssue,
+  getMonthName,
+} from "@/lib/queries";
 
 export async function generateStaticParams() {
-  return issues.map((issue) => ({ id: issue.id }));
+  const slugs = await getAllIssueSlugs();
+  return slugs.map((id) => ({ id }));
 }
 
 export default async function IssuePage({
@@ -17,15 +24,14 @@ export default async function IssuePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const issue = issues.find((i) => i.id === id);
+  const issue = await getIssueBySlug(id);
 
   if (!issue) notFound();
 
-  // Get articles and queries for this issue
-  const issueArticles = articles.filter(
-    (a) => a.issue.id === issue.id && a.type === "article"
-  );
-  const issueQueries = queries.filter((q) => q.issue.id === issue.id);
+  const [issueArticles, issueQueries] = await Promise.all([
+    getArticlesForIssue(id),
+    getQueriesForIssue(id),
+  ]);
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-10 lg:py-14">

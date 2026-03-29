@@ -1,15 +1,14 @@
 import Link from "next/link";
 import { Tag } from "lucide-react";
-import { topics, queries } from "@/lib/data";
+import { getQueryTopics } from "@/lib/queries";
 
 export const metadata = {
   title: "Queries by Topic",
   description: "Browse reader queries organized by subject area.",
 };
 
-export default function QueriesByTopicPage() {
-  const queryTopicIds = new Set(queries.map((q) => q.topic.id));
-  const queryTopics = topics.filter((t) => queryTopicIds.has(t.id));
+export default async function QueriesByTopicPage() {
+  const queryTopics = await getQueryTopics();
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
@@ -22,11 +21,7 @@ export default function QueriesByTopicPage() {
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {queryTopics.map((topic) => {
-          const topicQueries = queries.filter(
-            (q) => q.topic.id === topic.id
-          );
-          return (
+        {queryTopics.map((topic) => (
             <Link
               key={topic.id}
               href={`/articles/topics/${topic.slug}`}
@@ -42,11 +37,10 @@ export default function QueriesByTopicPage() {
                 {topic.description}
               </p>
               <span className="text-xs text-muted-foreground mt-3">
-                {topicQueries.length} queries
+                {topic.articleCount} queries
               </span>
             </Link>
-          );
-        })}
+        ))}
       </div>
     </div>
   );

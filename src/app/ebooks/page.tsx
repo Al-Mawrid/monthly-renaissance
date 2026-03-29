@@ -2,14 +2,15 @@ import Link from "next/link";
 import { BookOpen, Download, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ebooks } from "@/lib/data";
+import { getAllEbooks } from "@/lib/queries";
 
 export const metadata = {
   title: "E-Books",
   description: "Free downloadable e-books on Islamic scholarship and thought.",
 };
 
-export default function EBooksPage() {
+export default async function EBooksPage() {
+  const ebooks = await getAllEbooks();
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
       <div className="mb-10">

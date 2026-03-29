@@ -5,12 +5,16 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/lib/variants";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { articles, queries, getMonthName } from "@/lib/data";
-
-const allContent = [...articles, ...queries];
+import {
+  getAllArticleSlugs,
+  getArticleBySlug,
+  getRelatedArticles,
+  getMonthName,
+} from "@/lib/queries";
 
 export async function generateStaticParams() {
-  return allContent.map((a) => ({ slug: a.slug }));
+  const slugs = await getAllArticleSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export default async function ArticlePage({
@@ -19,14 +23,11 @@ export default async function ArticlePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const article = allContent.find((a) => a.slug === slug);
+  const article = await getArticleBySlug(slug);
 
   if (!article) notFound();
 
-  // Get related articles (same topic, different article)
-  const related = allContent
-    .filter((a) => a.topic.id === article.topic.id && a.id !== article.id)
-    .slice(0, 3);
+  const related = await getRelatedArticles(article.topic.slug, article.slug, 3);
 
   return (
     <article className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10 lg:py-14">

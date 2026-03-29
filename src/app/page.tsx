@@ -11,15 +11,27 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/lib/variants";
 import { cn } from "@/lib/utils";
-import { articles, issues, writers, topics, queries, getMonthName } from "@/lib/data";
+import {
+  getLatestIssue,
+  getFeaturedArticle,
+  getRecentArticles,
+  getLatestQueries,
+  getFeaturedWriters,
+  getFeaturedTopics,
+} from "@/lib/queries";
 
-export default function Home() {
-  const latestIssue = issues[0];
-  const featuredArticle = articles[0];
-  const recentArticles = articles.slice(1, 5);
-  const latestQueries = queries.slice(0, 3);
-  const featuredWriters = writers.slice(0, 4);
-  const featuredTopics = topics.slice(0, 6);
+export default async function Home() {
+  const [latestIssue, featuredArticle, recentArticles, latestQueries, featuredWriters, featuredTopics] =
+    await Promise.all([
+      getLatestIssue(),
+      getFeaturedArticle(),
+      getRecentArticles(4),
+      getLatestQueries(3),
+      getFeaturedWriters(4),
+      getFeaturedTopics(6),
+    ]);
+
+  if (!latestIssue || !featuredArticle) return null;
 
   return (
     <div className="flex flex-col">

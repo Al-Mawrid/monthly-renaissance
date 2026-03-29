@@ -5,12 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/lib/variants";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { topics, articles, queries } from "@/lib/data";
-
-const allContent = [...articles, ...queries];
+import {
+  getAllTopicSlugs,
+  getTopicBySlug,
+  getArticlesByTopic,
+} from "@/lib/queries";
 
 export async function generateStaticParams() {
-  return topics.map((t) => ({ slug: t.slug }));
+  const slugs = await getAllTopicSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export default async function TopicPage({
@@ -19,10 +22,10 @@ export default async function TopicPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const topic = topics.find((t) => t.slug === slug);
+  const topic = await getTopicBySlug(slug);
   if (!topic) notFound();
 
-  const topicArticles = allContent.filter((a) => a.topic.id === topic.id);
+  const topicArticles = await getArticlesByTopic(slug);
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-10 lg:py-14">

@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { Tag } from "lucide-react";
-import { topics } from "@/lib/data";
+import { getAllTopics } from "@/lib/queries";
 
 export const metadata = {
   title: "Topics",
   description: "Browse articles organized by topic and subject area.",
 };
 
-export default function TopicsPage() {
+export default async function TopicsPage() {
+  const topics = await getAllTopics();
   const articleTopics = topics.filter((t) => t.type === "article");
   const queryTopics = topics.filter((t) => t.type === "query");
 

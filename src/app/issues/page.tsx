@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { Calendar, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { issues, getMonthName, groupIssuesByYear } from "@/lib/data";
+import { getAllIssues, getMonthName, groupIssuesByYear } from "@/lib/queries";
 
 export const metadata = {
   title: "Archives",
   description: "Browse all issues of Monthly Renaissance from 1991 to present.",
 };
 
-export default function IssuesPage() {
+export default async function IssuesPage() {
+  const issues = await getAllIssues();
   const grouped = groupIssuesByYear(issues);
   const years = Object.keys(grouped)
     .map(Number)

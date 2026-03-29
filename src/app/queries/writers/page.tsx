@@ -1,15 +1,13 @@
 import Link from "next/link";
-import { writers, queries } from "@/lib/data";
+import { getQueryWriters } from "@/lib/queries";
 
 export const metadata = {
   title: "Queries by Writer",
   description: "Browse reader queries answered by our scholars.",
 };
 
-export default function QueriesByWriterPage() {
-  // Get writers who have answered queries
-  const queryWriterIds = new Set(queries.map((q) => q.writer.id));
-  const queryWriters = writers.filter((w) => queryWriterIds.has(w.id));
+export default async function QueriesByWriterPage() {
+  const queryWriters = await getQueryWriters();
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
@@ -22,11 +20,7 @@ export default function QueriesByWriterPage() {
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {queryWriters.map((writer) => {
-          const writerQueries = queries.filter(
-            (q) => q.writer.id === writer.id
-          );
-          return (
+        {queryWriters.map((writer) => (
             <Link
               key={writer.id}
               href={`/articles/writers/${writer.slug}`}
@@ -36,7 +30,7 @@ export default function QueriesByWriterPage() {
                 <span className="text-base font-semibold text-primary">
                   {writer.name
                     .split(" ")
-                    .map((n) => n[0])
+                    .map((n: string) => n[0])
                     .join("")
                     .slice(0, 2)}
                 </span>
@@ -46,12 +40,11 @@ export default function QueriesByWriterPage() {
                   {writer.name}
                 </h2>
                 <span className="text-sm text-muted-foreground">
-                  {writerQueries.length} queries answered
+                  {writer.articleCount} queries answered
                 </span>
               </div>
             </Link>
-          );
-        })}
+        ))}
       </div>
     </div>
   );

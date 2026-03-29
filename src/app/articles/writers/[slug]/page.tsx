@@ -5,12 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/lib/variants";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { writers, articles, queries } from "@/lib/data";
-
-const allContent = [...articles, ...queries];
+import {
+  getAllWriterSlugs,
+  getWriterBySlug,
+  getArticlesByWriter,
+} from "@/lib/queries";
 
 export async function generateStaticParams() {
-  return writers.map((w) => ({ slug: w.slug }));
+  const slugs = await getAllWriterSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export default async function WriterPage({
@@ -19,12 +22,10 @@ export default async function WriterPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const writer = writers.find((w) => w.slug === slug);
+  const writer = await getWriterBySlug(slug);
   if (!writer) notFound();
 
-  const writerArticles = allContent.filter(
-    (a) => a.writer.id === writer.id
-  );
+  const writerArticles = await getArticlesByWriter(slug);
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
