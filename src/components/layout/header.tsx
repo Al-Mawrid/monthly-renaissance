@@ -8,6 +8,7 @@ import { buttonVariants } from "@/lib/variants";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UserMenu } from "@/components/auth/user-menu";
 
 const navigation = [
   {
@@ -111,6 +112,7 @@ export function Header() {
             </Button>
 
             <ThemeToggle />
+            <UserMenu />
 
             {/* Mobile menu */}
             <Sheet>
