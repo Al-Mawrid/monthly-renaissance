@@ -1,0 +1,582 @@
+/* ═══════════════════════════════════════════════════════════
+   Home-2  ·  "Midnight Mosque"
+   Dark mosque-interior aesthetic with:
+   - SVG zellige (Moroccan tile) pattern backgrounds
+   - Mosque dome + minaret silhouettes
+   - Islamic pointed arch frames around content
+   - Rub el Hizb (۞) ornamental motifs
+   - Geometric hexagonal border bands
+   - Stained-glass-inspired glow effects
+   ═══════════════════════════════════════════════════════════ */
+
+.home2 {
+  --h2-navy: #080e1a;
+  --h2-navy-light: #0d1525;
+  --h2-navy-mid: #111d33;
+  --h2-card: #0f1829;
+  --h2-card-hover: #152238;
+  --h2-text: #e8e4dc;
+  --h2-muted: #7e90ad;
+  --h2-emerald: #34d399;
+  --h2-emerald-dark: #059669;
+  --h2-emerald-glow: rgba(52, 211, 153, 0.12);
+  --h2-gold: #d4a843;
+  --h2-gold-dim: #b8941e;
+  --h2-gold-glow: rgba(212, 168, 67, 0.1);
+  --h2-border: #1a2740;
+  --h2-border-light: #233350;
+}
+
+.home2 {
+  background-color: var(--h2-navy);
+  color: var(--h2-text);
+}
+
+/* ═══ ZELLIGE TILE BACKGROUND (SVG data URI) ═══ */
+.h2-zellige-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cpath d='M50 10 L58 30 L78 22 L66 40 L86 46 L66 52 L78 72 L58 64 L50 84 L42 64 L22 72 L34 52 L14 46 L34 40 L22 22 L42 30 Z' stroke='%2334d399' stroke-width='0.8' fill='none'/%3E%3Cpath d='M50 25 L55 38 L68 33 L60 44 L73 48 L60 52 L68 63 L55 58 L50 71 L45 58 L32 63 L40 52 L27 48 L40 44 L32 33 L45 38 Z' stroke='%2334d399' stroke-width='0.4' fill='none'/%3E%3Cpath d='M44 40 L56 40 L62 48 L56 56 L44 56 L38 48 Z' stroke='%2334d399' stroke-width='0.5' fill='%2334d399' fill-opacity='0.06'/%3E%3Ccircle cx='0' cy='0' r='12' stroke='%23d4a843' stroke-width='0.4' fill='none'/%3E%3Ccircle cx='100' cy='0' r='12' stroke='%23d4a843' stroke-width='0.4' fill='none'/%3E%3Ccircle cx='0' cy='100' r='12' stroke='%23d4a843' stroke-width='0.4' fill='none'/%3E%3Ccircle cx='100' cy='100' r='12' stroke='%23d4a843' stroke-width='0.4' fill='none'/%3E%3Cpath d='M50 0 L50 10' stroke='%2334d399' stroke-width='0.3'/%3E%3Cpath d='M50 84 L50 100' stroke='%2334d399' stroke-width='0.3'/%3E%3Cpath d='M0 50 L14 46' stroke='%2334d399' stroke-width='0.3'/%3E%3Cpath d='M86 46 L100 50' stroke='%2334d399' stroke-width='0.3'/%3E%3C/svg%3E");
+  background-size: 100px 100px;
+}
+.h2-zellige-bg--subtle { opacity: 0.025; }
+.h2-zellige-bg--warm {
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cpath d='M50 10 L58 30 L78 22 L66 40 L86 46 L66 52 L78 72 L58 64 L50 84 L42 64 L22 72 L34 52 L14 46 L34 40 L22 22 L42 30 Z' stroke='%23d4a843' stroke-width='0.8' fill='none'/%3E%3Cpath d='M44 40 L56 40 L62 48 L56 56 L44 56 L38 48 Z' stroke='%23d4a843' stroke-width='0.5' fill='%23d4a843' fill-opacity='0.06'/%3E%3Ccircle cx='0' cy='0' r='12' stroke='%23d4a843' stroke-width='0.4' fill='none'/%3E%3Ccircle cx='100' cy='0' r='12' stroke='%23d4a843' stroke-width='0.4' fill='none'/%3E%3Ccircle cx='0' cy='100' r='12' stroke='%23d4a843' stroke-width='0.4' fill='none'/%3E%3Ccircle cx='100' cy='100' r='12' stroke='%23d4a843' stroke-width='0.4' fill='none'/%3E%3C/svg%3E");
+  background-size: 100px 100px;
+}
+.h2-zellige-bg--archive {
+  opacity: 0.035;
+}
+
+/* ═══ HERO ═══ */
+.h2-hero {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 20%, var(--h2-navy-mid) 0%, var(--h2-navy) 100%);
+  min-height: 560px;
+}
+
+/* Geometric band at top of hero */
+.h2-hero-topband {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  color: var(--h2-emerald);
+  opacity: 0.06;
+  z-index: 2;
+}
+
+/* Mosque silhouette behind hero */
+.h2-mosque-silhouette {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 1200px;
+  height: 250px;
+  color: var(--h2-emerald);
+  opacity: 0.12;
+  z-index: 1;
+  pointer-events: none;
+}
+@media (min-width: 1024px) {
+  .h2-mosque-silhouette { height: 300px; opacity: 0.15; }
+}
+
+/* Large arch at bottom of hero */
+.h2-hero-bottom-arch {
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 700px;
+  height: 120px;
+  color: var(--h2-gold);
+  opacity: 0.15;
+  z-index: 3;
+  pointer-events: none;
+}
+@media (min-width: 1024px) {
+  .h2-hero-bottom-arch { height: 160px; width: 70%; }
+}
+
+/* ═══ RUB EL HIZB ═══ */
+.h2-rub-el-hizb {
+  width: 80px;
+  height: 80px;
+  color: var(--h2-gold);
+  opacity: 0.4;
+  margin-bottom: -12px;
+}
+@media (min-width: 1024px) {
+  .h2-rub-el-hizb { width: 110px; height: 110px; }
+}
+
+/* ═══ BISMILLAH ═══ */
+.h2-bismillah-wrap {
+  position: relative;
+  z-index: 2;
+  padding: 14px 28px;
+  color: var(--h2-gold);
+  border: 1px solid var(--h2-border-light);
+  background: rgba(8, 14, 26, 0.8);
+  backdrop-filter: blur(12px);
+  box-shadow:
+    0 0 0 4px var(--h2-navy),
+    0 0 0 5px var(--h2-border-light),
+    0 0 40px rgba(212, 168, 67, 0.06),
+    inset 0 0 30px rgba(52, 211, 153, 0.02);
+}
+
+/* ═══ ARCH FRAME (wraps "Also in this issue") ═══ */
+.h2-arch-frame {
+  position: relative;
+}
+.h2-arch-frame-top {
+  width: 100%;
+  height: 50px;
+  color: var(--h2-gold);
+  opacity: 0.3;
+  margin-bottom: -1px;
+}
+.h2-arch-frame-body {
+  border: 1px solid var(--h2-border-light);
+  border-top: none;
+  padding: 12px 16px 20px;
+  background: rgba(15, 24, 41, 0.5);
+  backdrop-filter: blur(8px);
+  /* Stained glass inner glow */
+  box-shadow:
+    inset 0 0 40px rgba(52, 211, 153, 0.03),
+    inset 0 0 80px rgba(212, 168, 67, 0.02);
+}
+@media (min-width: 1024px) {
+  .h2-arch-frame-body { padding: 16px 24px 28px; }
+}
+
+/* ═══ SECTION BANDS ═══ */
+.h2-section-topband,
+.h2-section-bottomband {
+  position: absolute;
+  left: 0; right: 0;
+  height: 50px;
+  color: var(--h2-gold);
+  opacity: 0.04;
+  z-index: 1;
+}
+.h2-section-topband { top: 0; }
+.h2-section-bottomband { bottom: 0; transform: scaleY(-1); }
+
+/* ═══ ISSUE BADGE ═══ */
+.h2-issue-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 0;
+  background: var(--h2-emerald-dark);
+  color: #fff;
+  letter-spacing: 0.04em;
+  box-shadow: 0 0 16px var(--h2-emerald-glow);
+  position: relative;
+}
+/* Pointed ends */
+.h2-issue-badge::before,
+.h2-issue-badge::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0; height: 0;
+}
+.h2-issue-badge::before {
+  left: -5px;
+  border-right: 5px solid var(--h2-emerald-dark);
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+}
+.h2-issue-badge::after {
+  right: -5px;
+  border-left: 5px solid var(--h2-emerald-dark);
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+}
+
+/* ═══ SECTION LABEL ═══ */
+.h2-section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--h2-muted);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--h2-border);
+  position: relative;
+}
+/* Gold notch on the border */
+.h2-section-label::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: var(--h2-gold);
+}
+
+/* ═══ TOPIC PILL ═══ */
+.h2-topic-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 12px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: rgba(52, 211, 153, 0.08);
+  color: var(--h2-emerald);
+  border: 1px solid rgba(52, 211, 153, 0.12);
+  /* Pointed hexagonal ends */
+  clip-path: polygon(6px 0%, calc(100% - 6px) 0%, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0% 50%);
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+/* ═══ BUTTONS ═══ */
+.h2-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 22px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 0;
+  background: linear-gradient(135deg, var(--h2-emerald-dark), #047857);
+  color: #fff;
+  transition: all 0.25s;
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+.h2-btn-primary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent, rgba(255,255,255,0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.h2-btn-primary:hover::before { opacity: 1; }
+.h2-btn-primary:hover {
+  box-shadow:
+    0 4px 24px var(--h2-emerald-glow),
+    0 0 40px rgba(52, 211, 153, 0.08);
+}
+
+.h2-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 22px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 0;
+  background: transparent;
+  color: var(--h2-text);
+  border: 1.5px solid var(--h2-border-light);
+  transition: all 0.25s;
+}
+.h2-btn-outline:hover {
+  border-color: var(--h2-gold);
+  color: var(--h2-gold);
+  box-shadow: 0 0 20px var(--h2-gold-glow);
+}
+
+.h2-btn-emerald {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 22px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 0;
+  background: var(--h2-emerald);
+  color: var(--h2-navy);
+  transition: all 0.25s;
+  border: none;
+}
+.h2-btn-emerald:hover {
+  box-shadow:
+    0 6px 32px rgba(52, 211, 153, 0.3),
+    0 0 60px rgba(52, 211, 153, 0.1);
+}
+
+/* ═══ ARTICLE CARD ═══ */
+.h2-article-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 18px;
+  background: rgba(15, 24, 41, 0.6);
+  border: 1px solid var(--h2-border);
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+/* Emerald-to-gold gradient left bar */
+.h2-article-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--h2-emerald), var(--h2-gold));
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+/* Stained glass glow on hover */
+.h2-article-card:hover {
+  background: var(--h2-card-hover);
+  border-color: var(--h2-border-light);
+  box-shadow: inset 0 0 30px rgba(52, 211, 153, 0.03);
+}
+.h2-article-card:hover::before { opacity: 1; }
+
+/* ═══ SECTIONS ═══ */
+.h2-section-dark {
+  background: var(--h2-navy);
+  border-top: 1px solid var(--h2-border);
+  position: relative;
+}
+.h2-section-darker {
+  background: var(--h2-navy-light);
+  border-top: 1px solid var(--h2-border);
+  position: relative;
+}
+
+/* ═══ TOPIC CARD ═══ */
+.h2-topic-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--h2-card);
+  border: 1px solid var(--h2-border);
+  transition: all 0.25s;
+  position: relative;
+}
+/* Pointed arch top via clip-path */
+.h2-topic-card::before {
+  content: "";
+  display: block;
+  height: 8px;
+  background: linear-gradient(90deg, var(--h2-emerald-dark), var(--h2-gold), var(--h2-emerald-dark));
+  clip-path: polygon(0% 100%, 5% 0%, 15% 60%, 25% 0%, 35% 60%, 45% 0%, 50% 40%, 55% 0%, 65% 60%, 75% 0%, 85% 60%, 95% 0%, 100% 100%);
+}
+.h2-topic-card:hover {
+  border-color: var(--h2-border-light);
+  box-shadow:
+    0 6px 32px rgba(0, 0, 0, 0.4),
+    0 0 40px var(--h2-emerald-glow);
+  transform: translateY(-2px);
+}
+.h2-topic-card-inner {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+/* ═══ QUERY CARD ═══ */
+.h2-query-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: var(--h2-card);
+  border: 1px solid var(--h2-border);
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+/* Corner geometric ornament */
+.h2-query-card::before {
+  content: "";
+  position: absolute;
+  top: -1px; right: -1px;
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, transparent 50%, var(--h2-gold) 50%);
+  opacity: 0.15;
+  transition: opacity 0.3s;
+}
+.h2-query-card::after {
+  content: "";
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--h2-emerald), var(--h2-gold), var(--h2-emerald));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.h2-query-card:hover {
+  background: var(--h2-card-hover);
+  box-shadow:
+    0 6px 32px rgba(0, 0, 0, 0.4),
+    inset 0 0 40px rgba(52, 211, 153, 0.02);
+}
+.h2-query-card:hover::before { opacity: 0.35; }
+.h2-query-card:hover::after { opacity: 1; }
+
+/* ═══ WRITER CARD ═══ */
+.h2-writer-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 28px 16px 24px;
+  background: var(--h2-card);
+  border: 1px solid var(--h2-border);
+  transition: all 0.25s;
+  position: relative;
+}
+.h2-writer-card:hover {
+  border-color: var(--h2-border-light);
+  box-shadow:
+    0 6px 32px rgba(0, 0, 0, 0.4),
+    0 0 50px var(--h2-emerald-glow);
+  transform: translateY(-2px);
+}
+.h2-writer-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  background:
+    radial-gradient(circle, var(--h2-navy-mid), var(--h2-navy));
+  /* Double ring — architectural */
+  border: 2px solid var(--h2-gold-dim);
+  box-shadow:
+    0 0 0 3px var(--h2-navy),
+    0 0 0 5px var(--h2-border-light),
+    0 0 20px var(--h2-gold-glow);
+}
+
+/* ═══ ARCHIVE CTA ═══ */
+.h2-archive {
+  background:
+    radial-gradient(ellipse 80% 80% at 50% 80%, var(--h2-navy-mid) 0%, var(--h2-navy) 100%);
+  border-top: 1px solid var(--h2-border);
+}
+.h2-archive-mosque {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 1200px;
+  height: 200px;
+  color: var(--h2-gold);
+  opacity: 0.07;
+  z-index: 1;
+  pointer-events: none;
+}
+.h2-archive-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, var(--h2-emerald-glow), transparent 60%);
+  pointer-events: none;
+  z-index: 1;
+}
+.h2-archive-rub {
+  width: 90px;
+  height: 90px;
+  color: var(--h2-emerald);
+  opacity: 0.3;
+  margin-bottom: -8px;
+}
+
+/* ═══ LIGHT MODE OVERRIDES ═══ */
+:is(:not(.dark)) .home2 {
+  --h2-navy: #eef1f7;
+  --h2-navy-light: #e4e8f0;
+  --h2-navy-mid: #d6dce8;
+  --h2-card: #ffffff;
+  --h2-card-hover: #f3f5f9;
+  --h2-text: #151a28;
+  --h2-muted: #556178;
+  --h2-emerald: #059669;
+  --h2-emerald-dark: #047857;
+  --h2-emerald-glow: rgba(5, 150, 105, 0.08);
+  --h2-gold: #96690a;
+  --h2-gold-dim: #b8860b;
+  --h2-gold-glow: rgba(150, 105, 10, 0.06);
+  --h2-border: #cdd3e0;
+  --h2-border-light: #b8c0d0;
+}
+
+:is(:not(.dark)) .h2-zellige-bg { opacity: 0.02; }
+:is(:not(.dark)) .h2-zellige-bg--subtle { opacity: 0.015; }
+:is(:not(.dark)) .h2-zellige-bg--warm { opacity: 0.018; }
+:is(:not(.dark)) .h2-zellige-bg--archive { opacity: 0.02; }
+
+:is(:not(.dark)) .h2-mosque-silhouette { opacity: 0.06; }
+:is(:not(.dark)) .h2-hero-bottom-arch { opacity: 0.08; }
+
+:is(:not(.dark)) .h2-bismillah-wrap {
+  background: rgba(238, 241, 247, 0.85);
+  box-shadow:
+    0 0 0 4px var(--h2-navy),
+    0 0 0 5px var(--h2-border-light),
+    0 4px 24px rgba(0,0,0,0.06);
+}
+
+:is(:not(.dark)) .h2-arch-frame-body {
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow:
+    inset 0 0 40px rgba(5, 150, 105, 0.02),
+    0 4px 16px rgba(0,0,0,0.04);
+}
+
+:is(:not(.dark)) .h2-article-card {
+  background: rgba(255, 255, 255, 0.5);
+}
+:is(:not(.dark)) .h2-article-card:hover {
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+}
+
+:is(:not(.dark)) .h2-issue-badge {
+  box-shadow: 0 0 12px rgba(5, 150, 105, 0.12);
+}
+
+:is(:not(.dark)) .h2-topic-card:hover,
+:is(:not(.dark)) .h2-query-card:hover,
+:is(:not(.dark)) .h2-writer-card:hover {
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.06),
+    0 0 30px var(--h2-emerald-glow);
+}
+
+:is(:not(.dark)) .h2-writer-avatar {
+  background: radial-gradient(circle, var(--h2-navy), #dde2ed);
+  box-shadow:
+    0 0 0 3px var(--h2-navy),
+    0 0 0 5px var(--h2-border-light),
+    0 0 12px var(--h2-gold-glow);
+}
+
+:is(:not(.dark)) .h2-archive-glow {
+  background: radial-gradient(circle, rgba(5, 150, 105, 0.04), transparent 60%);
+}
+:is(:not(.dark)) .h2-archive-mosque { opacity: 0.04; }
