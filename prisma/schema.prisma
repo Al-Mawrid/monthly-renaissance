@@ -1,0 +1,301 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Content Models ───────────────────────────────────────────
+
+model Writer {
+  id           Int     @id @default(autoincrement())
+  oldId        Int     @unique @map("old_id")
+  name         String
+  slug         String  @unique
+  email        String?
+  displayOnSite Boolean @default(true) @map("display_on_site")
+  isQueryWriter Boolean @default(false) @map("is_query_writer")
+  userId       String?  @unique @map("user_id")
+
+  user               User?        @relation(fields: [userId], references: [id])
+  articles           Article[]    @relation("ArticleWriter")
+  translatedArticles Article[]    @relation("ArticleTranslator")
+  queries            QueryEntry[] @relation("QueryWriter")
+  books              Book[]       @relation("BookWriter")
+  translatedBooks    Book[]       @relation("BookTranslator")
+
+  @@map("writers")
+}
+
+model Topic {
+  id           Int     @id @default(autoincrement())
+  oldId        Int     @unique @map("old_id")
+  title        String
+  slug         String  @unique
+  display      Boolean @default(true)
+  ranking      Int     @default(0)
+  displayInList Boolean @default(true) @map("display_in_list")
+
+  articles Article[]
+  queries  QueryEntry[]
+
+  @@map("topics")
+}
+
+model Issue {
+  id           Int       @id @default(autoincrement())
+  oldId        Int       @unique @map("old_id")
+  title        String
+  slug         String    @unique
+  volumeNumber String?   @map("volume_number")
+  issueNumber  String?   @map("issue_number")
+  issueDate    DateTime? @map("issue_date")
+  display      Boolean   @default(true)
+  isSpecial    Boolean   @default(false) @map("is_special")
+
+  articleLinks ArticleIssueLink[]
+  queryLinks   QueryIssueLink[]
+
+  @@map("issues")
+}
+
+model Article {
+  id               Int       @id @default(autoincrement())
+  oldId            Int       @unique @map("old_id")
+  title            String
+  slug             String
+  bodyHtml         String    @map("body_html") @db.Text
+  topicId          Int       @map("topic_id")
+  writerId         Int       @map("writer_id")
+  translatorId     Int?      @map("translator_id")
+  dateAdded        DateTime? @map("date_added")
+  display          Boolean   @default(true)
+  isImportant      Boolean   @default(false) @map("is_important")
+  isEditorial      Boolean   @default(false) @map("is_editorial")
+  editorialIssueId Int?      @map("editorial_issue_id")
+  isIssueIntro     Boolean   @default(false) @map("is_issue_intro")
+  introIssueId     Int?      @map("intro_issue_id")
+
+  topic      Topic  @relation(fields: [topicId], references: [id])
+  writer     Writer @relation("ArticleWriter", fields: [writerId], references: [id])
+  translator Writer? @relation("ArticleTranslator", fields: [translatorId], references: [id])
+  issueLinks ArticleIssueLink[]
+
+  @@map("articles")
+}
+
+model QueryEntry {
+  id              Int       @id @default(autoincrement())
+  oldId           Int       @unique @map("old_id")
+  title           String
+  slug            String
+  questionHtml    String    @map("question_html") @db.Text
+  answerHtml      String?   @map("answer_html") @db.Text
+  questioner      String?
+  questionerEmail String?   @map("questioner_email")
+  topicId         Int       @map("topic_id")
+  writerId        Int       @map("writer_id")
+  dateAdded       DateTime? @map("date_added")
+  display         Boolean   @default(true)
+  isImportant     Boolean   @default(false) @map("is_important")
+
+  topic      Topic  @relation(fields: [topicId], references: [id])
+  writer     Writer @relation("QueryWriter", fields: [writerId], references: [id])
+  issueLinks QueryIssueLink[]
+
+  @@map("query_entries")
+}
+
+model ArticleIssueLink {
+  articleId Int @map("article_id")
+  issueId   Int @map("issue_id")
+
+  article Article @relation(fields: [articleId], references: [id])
+  issue   Issue   @relation(fields: [issueId], references: [id])
+
+  @@id([articleId, issueId])
+  @@map("article_issue_links")
+}
+
+model QueryIssueLink {
+  queryId Int @map("query_id")
+  issueId Int @map("issue_id")
+
+  query QueryEntry @relation(fields: [queryId], references: [id])
+  issue Issue      @relation(fields: [issueId], references: [id])
+
+  @@id([queryId, issueId])
+  @@map("query_issue_links")
+}
+
+model Book {
+  id           Int       @id @default(autoincrement())
+  oldId        Int       @unique @map("old_id")
+  title        String
+  slug         String
+  isEbook      Boolean   @default(false) @map("is_ebook")
+  isBook       Boolean   @default(false) @map("is_book")
+  writerId     Int?      @map("writer_id")
+  translatorId Int?      @map("translator_id")
+  display      Boolean   @default(true)
+  fileName     String    @map("file_name")
+  postDate     DateTime? @map("post_date")
+
+  writer     Writer? @relation("BookWriter", fields: [writerId], references: [id])
+  translator Writer? @relation("BookTranslator", fields: [translatorId], references: [id])
+
+  @@map("books")
+}
+
+model Video {
+  id         Int       @id @default(autoincrement())
+  oldId      Int       @unique @map("old_id")
+  categoryId Int       @map("category_id")
+  title      String
+  url        String
+  dateAdded  DateTime? @map("date_added")
+  display    Boolean   @default(true)
+
+  category VideoCategory @relation(fields: [categoryId], references: [id])
+
+  @@map("videos")
+}
+
+model VideoCategory {
+  id      Int     @id @default(autoincrement())
+  oldId   Int     @unique @map("old_id")
+  title   String
+  ranking Int     @default(0)
+  display Boolean @default(true)
+
+  videos Video[]
+
+  @@map("video_categories")
+}
+
+model Link {
+  id         Int       @id @default(autoincrement())
+  oldId      Int       @unique @map("old_id")
+  categoryId Int       @map("category_id")
+  title      String
+  url        String
+  dateAdded  DateTime? @map("date_added")
+  display    Boolean   @default(true)
+
+  category LinkCategory @relation(fields: [categoryId], references: [id])
+
+  @@map("links")
+}
+
+model LinkCategory {
+  id      Int     @id @default(autoincrement())
+  oldId   Int     @unique @map("old_id")
+  title   String
+  ranking Int     @default(0)
+  display Boolean @default(true)
+
+  links Link[]
+
+  @@map("link_categories")
+}
+
+// ─── Auth Models (NextAuth.js v5 / Auth.js + Prisma Adapter) ──
+
+enum Role {
+  ADMIN
+  TEAM
+  MEMBER
+}
+
+enum ChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ChangeAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  role          Role      @default(MEMBER)
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  accounts              Account[]
+  sessions              Session[]
+  writer                Writer?
+  changeRequests        ChangeRequest[] @relation("ChangeRequestRequester")
+  reviewedChangeRequests ChangeRequest[] @relation("ChangeRequestReviewer")
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model ChangeRequest {
+  id            Int                 @id @default(autoincrement())
+  action        ChangeAction
+  entityType    String              @map("entity_type")
+  entityId      Int?                @map("entity_id")
+  data          Json?
+  status        ChangeRequestStatus @default(PENDING)
+  note          String?
+  requestedById String              @map("requested_by_id")
+  reviewedById  String?             @map("reviewed_by_id")
+  reviewNote    String?             @map("review_note")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  reviewedAt    DateTime?           @map("reviewed_at")
+
+  requestedBy User  @relation("ChangeRequestRequester", fields: [requestedById], references: [id])
+  reviewedBy  User? @relation("ChangeRequestReviewer", fields: [reviewedById], references: [id])
+
+  @@map("change_requests")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
