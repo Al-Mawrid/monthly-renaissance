@@ -348,7 +348,7 @@ export default function Home1() {
               <Link key={writer.id} href={`/articles/writers/${writer.slug}`} className="h1-writer-card group">
                 <div className="h1-writer-avatar">
                   <span className="text-xl font-semibold text-[var(--h1-gold-dark)]">
-                    {writer.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                    {writer.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
                   </span>
                 </div>
                 <h3 className="font-semibold text-sm text-[var(--h1-ink)] group-hover:text-[var(--h1-burgundy)] transition-colors">{writer.name}</h3>
