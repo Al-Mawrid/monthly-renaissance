@@ -1,5 +1,6 @@
 // Interfaces re-exported from types.ts — static data below is fallback only
-export type { Writer, Topic, Issue, Article, EBook } from "./types";
+import type { Writer, Topic, Issue, Article, EBook } from "./types";
+export type { Writer, Topic, Issue, Article, EBook };
 
 // --- Sample Writers ---
 export const writers: Writer[] = [
