@@ -8,6 +8,8 @@ import { buttonVariants } from "@/lib/variants";
 import { cn } from "@/lib/utils";
 import { QueryEditForm } from "./form";
 
+export const dynamic = "force-dynamic";
+
 export default async function EditQueryPage({
   params,
 }: {

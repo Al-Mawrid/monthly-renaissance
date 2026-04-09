@@ -5,6 +5,8 @@ import {
 } from "@/components/ui/table";
 import { ReviewButtons } from "./review-buttons";
 
+export const dynamic = "force-dynamic";
+
 export default async function ChangeRequestsPage() {
   const session = await auth();
   const isAdmin = session?.user.role === "ADMIN";

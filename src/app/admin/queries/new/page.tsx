@@ -7,6 +7,8 @@ import { buttonVariants } from "@/lib/variants";
 import { cn } from "@/lib/utils";
 import { QueryCreateForm } from "./form";
 
+export const dynamic = "force-dynamic";
+
 export default async function NewQueryPage() {
   const session = await auth();
   const isAdmin = canManageContent(session!.user.role);

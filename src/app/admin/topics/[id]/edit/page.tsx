@@ -8,6 +8,8 @@ import { buttonVariants } from "@/lib/variants";
 import { cn } from "@/lib/utils";
 import { TopicEditForm } from "./form";
 
+export const dynamic = "force-dynamic";
+
 export default async function EditTopicPage({
   params,
 }: {

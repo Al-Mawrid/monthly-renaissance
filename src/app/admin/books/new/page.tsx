@@ -7,6 +7,8 @@ import { buttonVariants } from "@/lib/variants";
 import { cn } from "@/lib/utils";
 import { BookCreateForm } from "./form";
 
+export const dynamic = "force-dynamic";
+
 export default async function NewBookPage() {
   const session = await auth();
   const isAdmin = canManageContent(session!.user.role);

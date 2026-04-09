@@ -7,6 +7,8 @@ import { buttonVariants } from "@/lib/variants";
 import { cn } from "@/lib/utils";
 import { ArticleCreateForm } from "./form";
 
+export const dynamic = "force-dynamic";
+
 export default async function NewArticlePage() {
   const session = await auth();
   const isAdmin = canManageContent(session!.user.role);

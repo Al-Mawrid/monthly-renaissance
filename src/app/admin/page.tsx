@@ -3,6 +3,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboard() {
   const session = await auth();
   const isAdmin = session?.user.role === "ADMIN";

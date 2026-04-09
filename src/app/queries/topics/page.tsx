@@ -7,6 +7,8 @@ export const metadata = {
   description: "Browse reader queries organized by subject area.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function QueriesByTopicPage() {
   const queryTopics = await getQueryTopics();
 

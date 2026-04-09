@@ -7,6 +7,8 @@ export const metadata = {
   description: "Browse articles organized by topic and subject area.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function TopicsPage() {
   const topics = await getAllTopics();
   const articleTopics = topics.filter((t) => t.type === "article");

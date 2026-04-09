@@ -6,6 +6,8 @@ export const metadata = {
   description: "Browse reader queries answered by our scholars.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function QueriesByWriterPage() {
   const queryWriters = await getQueryWriters();
 

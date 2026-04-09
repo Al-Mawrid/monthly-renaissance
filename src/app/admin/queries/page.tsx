@@ -13,6 +13,8 @@ import {
 import { SortableHead } from "../sortable-head";
 import { queryOrderBy, parseSort } from "../sort-utils";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminQueriesPage({
   searchParams,
 }: {

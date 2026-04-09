@@ -8,6 +8,8 @@ export const metadata = {
   description: "Browse all issues of Monthly Renaissance from 1991 to present.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function IssuesPage() {
   const issues = await getAllIssues();
   const grouped = groupIssuesByYear(issues);
