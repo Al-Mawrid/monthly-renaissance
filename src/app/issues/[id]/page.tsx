@@ -6,17 +6,13 @@ import { buttonVariants } from "@/lib/variants";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import {
-  getAllIssueSlugs,
   getIssueBySlug,
   getArticlesForIssue,
   getQueriesForIssue,
   getMonthName,
 } from "@/lib/queries";
 
-export async function generateStaticParams() {
-  const slugs = await getAllIssueSlugs();
-  return slugs.map((id) => ({ id }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function IssuePage({
   params,

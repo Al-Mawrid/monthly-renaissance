@@ -6,15 +6,11 @@ import { buttonVariants } from "@/lib/variants";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import {
-  getAllTopicSlugs,
   getTopicBySlug,
   getArticlesByTopic,
 } from "@/lib/queries";
 
-export async function generateStaticParams() {
-  const slugs = await getAllTopicSlugs();
-  return slugs.map((slug) => ({ slug }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function TopicPage({
   params,
