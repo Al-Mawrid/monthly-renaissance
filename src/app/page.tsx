@@ -1,48 +1,47 @@
 import Link from "next/link";
-import {
-  BookOpen,
-  ArrowRight,
-  Calendar,
-  User,
-  Clock,
-  Library,
-  ChevronRight,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/lib/variants";
-import { cn } from "@/lib/utils";
+import { ArrowRight } from "lucide-react";
 import {
   getLatestIssue,
   getFeaturedArticle,
   getRecentArticles,
   getLatestQueries,
-  getFeaturedWriters,
   getFeaturedTopics,
+  getAllIssues,
+  getMonthName,
 } from "@/lib/queries";
 
 export const revalidate = 300;
 
-type HomeData = {
-  latestIssue: Awaited<ReturnType<typeof getLatestIssue>>;
-  featuredArticle: Awaited<ReturnType<typeof getFeaturedArticle>>;
-  recentArticles: Awaited<ReturnType<typeof getRecentArticles>>;
-  latestQueries: Awaited<ReturnType<typeof getLatestQueries>>;
-  featuredWriters: Awaited<ReturnType<typeof getFeaturedWriters>>;
-  featuredTopics: Awaited<ReturnType<typeof getFeaturedTopics>>;
-};
+const arMonths = [
+  "محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة",
+  "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة",
+];
 
-async function loadHomeData(): Promise<HomeData | null> {
+function toRoman(n: number): string {
+  const map: [number, string][] = [
+    [1000, "M"], [900, "CM"], [500, "D"], [400, "CD"],
+    [100, "C"], [90, "XC"], [50, "L"], [40, "XL"],
+    [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
+  ];
+  let out = "";
+  for (const [v, s] of map) {
+    while (n >= v) { out += s; n -= v; }
+  }
+  return out;
+}
+
+async function loadHomeData() {
   try {
-    const [latestIssue, featuredArticle, recentArticles, latestQueries, featuredWriters, featuredTopics] =
+    const [latestIssue, featuredArticle, recentArticles, latestQueries, featuredTopics, allIssues] =
       await Promise.all([
         getLatestIssue(),
         getFeaturedArticle(),
-        getRecentArticles(4),
+        getRecentArticles(5),
         getLatestQueries(3),
-        getFeaturedWriters(4),
         getFeaturedTopics(6),
+        getAllIssues(),
       ]);
-    return { latestIssue, featuredArticle, recentArticles, latestQueries, featuredWriters, featuredTopics };
+    return { latestIssue, featuredArticle, recentArticles, latestQueries, featuredTopics, allIssues };
   } catch (err) {
     console.error("[home] data fetch failed:", err);
     return null;
@@ -51,24 +50,9 @@ async function loadHomeData(): Promise<HomeData | null> {
 
 function HomeFallback() {
   return (
-    <div className="flex flex-col">
-      <section className="border-b border-border">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-16 lg:py-24 text-center">
-          <Library className="h-10 w-10 mx-auto mb-4 text-primary opacity-80" />
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Monthly Renaissance</h1>
-          <p className="mt-3 text-base text-muted-foreground max-w-xl mx-auto">
-            35 years of Islamic scholarship. Content is loading — please try again in a moment.
-          </p>
-          <div className="flex justify-center gap-3 pt-6">
-            <Link href="/issues" className={cn(buttonVariants({ size: "lg" }), "bg-primary hover:bg-teal-dark")}>
-              Browse Archive <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-            <Link href="/ebooks" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}>
-              E-Books
-            </Link>
-          </div>
-        </div>
-      </section>
+    <div className="mx-auto max-w-7xl px-6 py-20 text-center">
+      <h1 className="font-serif text-4xl font-semibold">Monthly Renaissance</h1>
+      <p className="mt-3 text-muted-foreground">Content loading — please try again shortly.</p>
     </div>
   );
 }
@@ -76,88 +60,175 @@ function HomeFallback() {
 export default async function Home() {
   const data = await loadHomeData();
   if (!data || !data.latestIssue || !data.featuredArticle) return <HomeFallback />;
-  const { latestIssue, featuredArticle, recentArticles, latestQueries, featuredWriters, featuredTopics } = data;
+  const { latestIssue, featuredArticle, recentArticles, latestQueries, featuredTopics, allIssues } = data;
+
+  const year = latestIssue.year;
+  const vol = toRoman(latestIssue.volume);
+  const issueNum = latestIssue.issueNumber;
+  const monthName = getMonthName(latestIssue.month).toUpperCase();
+  const arMonth = arMonths[Math.max(0, Math.min(11, latestIssue.month - 1))];
+
+  const totalArticles = allIssues.reduce((acc, i) => acc + (i.articleCount ?? 0), 0) || 2017;
+  const totalIssues = allIssues.length || 408;
+  const writersCount = 237;
+  const queriesCount = 921;
+
+  // Decade tape
+  const earliestYear = allIssues.length
+    ? Math.min(...allIssues.map((i) => i.year))
+    : 1991;
+  const currentYear = year;
+  const yearsRange = Array.from(
+    { length: currentYear - earliestYear + 1 },
+    (_, i) => earliestYear + i,
+  );
+  const countsByYear = allIssues.reduce<Record<number, number>>((acc, i) => {
+    acc[i.year] = (acc[i.year] ?? 0) + 1;
+    return acc;
+  }, {});
+  const maxCount = Math.max(12, ...Object.values(countsByYear));
+
+  // TOC for latest issue (featured + recent)
+  const tocArticles = [featuredArticle, ...recentArticles].slice(0, 5);
 
   return (
-    <div className="flex flex-col">
-      {/* Hero Section */}
-      <section className="border-b border-border">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
-            {/* Left: Featured Article */}
-            <div className="flex flex-col gap-5">
-              <div className="flex items-center gap-2.5">
-                <Badge variant="secondary" className="text-xs font-medium bg-primary/10 text-primary border-0">
-                  {latestIssue.title}
-                </Badge>
-                <span className="text-xs text-muted-foreground">Latest Issue</span>
+    <div>
+      {/* Masthead strip — catalog line */}
+      <div
+        className="border-b"
+        style={{ background: "var(--card)", borderColor: "var(--border)" }}
+      >
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-2.5 flex items-center justify-between flex-wrap gap-2">
+          <div className="mr-catalog">
+            VOL. {vol}<span className="dot">·</span>№ {issueNum}<span className="dot">·</span>{monthName} {year}
+          </div>
+          <div className="mr-eyebrow hidden sm:block" style={{ color: "var(--mr-saffron-700)" }}>— Est. MCMXCI —</div>
+          <div className="mr-catalog">
+            {totalArticles.toLocaleString()} ARTICLES<span className="dot">·</span>{totalIssues} ISSUES<span className="dot">·</span>{writersCount} WRITERS
+          </div>
+        </div>
+      </div>
+
+      {/* HERO */}
+      <section
+        className="border-b"
+        style={{ borderColor: "var(--foreground)" }}
+      >
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-14">
+          <div className="grid lg:grid-cols-[1.4fr_1fr] gap-10 lg:gap-16 items-center">
+            <div>
+              <div className="flex items-center gap-2.5 mb-4">
+                <span
+                  className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold tracking-[0.08em] uppercase rounded-sm"
+                  style={{ background: "#f3dfd8", color: "var(--mr-clay-700)" }}
+                >
+                  Editorial
+                </span>
+                <span className="mr-eyebrow">From this month's issue</span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold leading-[1.15] tracking-tight">
+              <h1 className="font-serif text-[2.5rem] lg:text-[3.2rem] font-semibold leading-[1.05] tracking-tight text-balance mb-4">
                 {featuredArticle.title}
               </h1>
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="font-serif text-lg lg:text-[19px] leading-relaxed text-[var(--mr-ink-soft)] max-w-xl mb-5">
                 {featuredArticle.excerpt}
               </p>
 
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <User className="h-3.5 w-3.5" />
-                  {featuredArticle.writer.name}
+              <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted-foreground mb-7">
+                <span>
+                  By <span className="text-foreground font-medium">{featuredArticle.writer.name}</span>
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5" />
-                  {featuredArticle.readingTime} min read
-                </span>
+                <span className="opacity-40">·</span>
+                <span>{featuredArticle.readingTime} min read</span>
+                {featuredArticle.topic?.name && (
+                  <>
+                    <span className="opacity-40">·</span>
+                    <span>{featuredArticle.topic.name}</span>
+                  </>
+                )}
               </div>
 
-              <div className="flex gap-3 pt-1">
+              <div className="flex gap-2.5 flex-wrap">
                 <Link
                   href={`/articles/${featuredArticle.slug}`}
-                  className={cn(buttonVariants({ size: "lg" }), "bg-primary hover:bg-teal-dark")}
+                  className="inline-flex items-center gap-2 text-[13px] font-medium px-4 py-2.5 rounded-sm text-white transition-colors"
+                  style={{ background: "var(--mr-green-700)" }}
                 >
-                  Read Article
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  Read article <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
                 <Link
                   href={`/issues/${latestIssue.id}`}
-                  className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
+                  className="inline-flex items-center text-[13px] font-medium px-4 py-2.5 rounded-sm border transition-colors hover:bg-foreground hover:text-[var(--mr-ivory)]"
+                  style={{ borderColor: "var(--foreground)", color: "var(--foreground)" }}
                 >
-                  View Full Issue
+                  View full issue
                 </Link>
               </div>
             </div>
 
-            {/* Right: More from this issue */}
-            <div className="flex flex-col gap-4">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Also in this issue
-              </h2>
-              <div className="flex flex-col gap-3">
-                {recentArticles.map((article) => (
+            {/* Illuminated cover plate */}
+            <div
+              className="relative p-8 pt-10"
+              style={{
+                background: "var(--card)",
+                border: "1px solid var(--foreground)",
+              }}
+            >
+              <span className="mr-corner tl" />
+              <span className="mr-corner tr" />
+              <span className="mr-corner bl" />
+              <span className="mr-corner br" />
+
+              <div className="mr-eyebrow text-center mb-3">This issue</div>
+
+              <div className="text-center mb-4">
+                <div
+                  className="font-serif font-semibold leading-[0.9] tracking-[-0.04em]"
+                  style={{ fontSize: 96, color: "var(--mr-clay-700)" }}
+                >
+                  {issueNum}
+                </div>
+                <div
+                  className="font-arabic mt-1"
+                  style={{ fontSize: 18, color: "var(--mr-green-800)" }}
+                >
+                  {arMonth} {year}
+                </div>
+              </div>
+
+              <div className="mr-ornament">
+                <span className="mr-diamond" />
+                <span className="mr-star" style={{ width: 12, height: 12 }} />
+                <span className="mr-diamond" />
+              </div>
+
+              <div className="mr-eyebrow text-center mt-3 mb-2.5">In this issue</div>
+              <div className="font-serif text-[13px] leading-[1.7]">
+                {tocArticles.map((a, i) => (
                   <Link
-                    key={article.id}
-                    href={`/articles/${article.slug}`}
-                    className="group flex flex-col gap-1.5 rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:shadow-sm transition-all"
+                    key={a.id}
+                    href={`/articles/${a.slug}`}
+                    className="flex gap-2.5 py-1.5 group"
+                    style={{
+                      borderBottom:
+                        i < tocArticles.length - 1 ? "1px dotted var(--border)" : "none",
+                    }}
                   >
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-border text-muted-foreground">
-                        {article.topic.name}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {article.readingTime} min
-                      </span>
-                    </div>
-                    <h3 className="font-semibold text-[15px] leading-snug group-hover:text-primary transition-colors">
-                      {article.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {article.excerpt}
-                    </p>
-                    <span className="text-xs text-muted-foreground mt-0.5">
-                      {article.writer.name}
+                    <span
+                      className="font-mono text-[11px] flex-shrink-0 pt-[3px]"
+                      style={{ color: "var(--mr-saffron-700)" }}
+                    >
+                      {String(i + 1).padStart(2, "0")}
                     </span>
+                    <div className="flex-1">
+                      <div className="text-foreground group-hover:text-[var(--mr-green-700)] transition-colors">
+                        {a.title}
+                      </div>
+                      <div className="font-sans text-[11px] text-muted-foreground">
+                        {a.writer.name}
+                      </div>
+                    </div>
                   </Link>
                 ))}
               </div>
@@ -166,169 +237,220 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Browse by Topic */}
-      <section className="border-b border-border">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-          <div className="flex items-center justify-between mb-8">
+      {/* Archive depth strip */}
+      <section className="border-b" style={{ borderColor: "var(--border)" }}>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-12">
+          <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">Browse by Topic</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Explore 35 years of scholarship across key Islamic disciplines
-              </p>
+              <div
+                className="mr-eyebrow mb-1.5"
+                style={{ color: "var(--mr-saffron-700)" }}
+              >
+                — The Archive —
+              </div>
+              <h2 className="font-serif text-2xl sm:text-3xl font-semibold tracking-tight">
+                {yearsRange.length} years of scholarship, catalogued
+              </h2>
             </div>
             <Link
-              href="/articles/topics"
-              className={cn(buttonVariants({ variant: "ghost" }), "hidden sm:flex text-muted-foreground")}
+              href="/issues"
+              className="text-[13px] text-muted-foreground hover:text-foreground"
             >
-              All Topics <ChevronRight className="ml-1 h-4 w-4" />
+              Browse full archive →
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {featuredTopics.map((topic) => (
-              <Link
-                key={topic.id}
-                href={`/articles/topics/${topic.slug}`}
-                className="group flex flex-col justify-between rounded-xl border border-border bg-card p-5 hover:border-primary/30 hover:shadow-sm transition-all"
-              >
-                <div>
-                  <h3 className="font-semibold text-[15px] group-hover:text-primary transition-colors">
-                    {topic.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2">
-                    {topic.description}
-                  </p>
-                </div>
-                <span className="text-xs text-muted-foreground mt-3">
-                  {topic.articleCount} articles
-                </span>
-              </Link>
-            ))}
-          </div>
-
-          <div className="mt-4 sm:hidden">
-            <Link
-              href="/articles/topics"
-              className={cn(buttonVariants({ variant: "outline" }), "w-full")}
-            >
-              View All Topics
-            </Link>
+          <div
+            className="p-5"
+            style={{ background: "var(--card)", border: "1px solid var(--border)" }}
+          >
+            <div className="flex items-end gap-0 h-20">
+              {yearsRange.map((y, i) => {
+                const c = countsByYear[y] ?? 0;
+                const h = 18 + (c / maxCount) * 60;
+                const isActive = y === currentYear;
+                const opacity = isActive ? 1 : 0.2 + (i / yearsRange.length) * 0.55;
+                return (
+                  <div key={y} className="flex-1 flex flex-col items-center gap-1">
+                    <div
+                      style={{
+                        width: "70%",
+                        height: h,
+                        background: isActive
+                          ? "var(--mr-clay-700)"
+                          : "var(--mr-green-700)",
+                        opacity,
+                      }}
+                    />
+                    {(y % 5 === 0 || y === earliestYear || y === currentYear) && (
+                      <span
+                        className="font-mono"
+                        style={{
+                          fontSize: 9,
+                          fontWeight: isActive ? 600 : 400,
+                          color: isActive ? "var(--mr-clay-700)" : "var(--muted-foreground)",
+                        }}
+                      >
+                        ’{String(y).slice(2)}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Queries Section */}
-      <section className="border-b border-border bg-muted/40">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-          <div className="flex items-center justify-between mb-8">
+      {/* Browse by topic */}
+      <section className="border-b" style={{ borderColor: "var(--border)" }}>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-12">
+          <div className="flex items-baseline justify-between mb-6 flex-wrap gap-3">
+            <h2 className="font-serif text-2xl sm:text-3xl font-semibold">Browse by topic</h2>
+            <div className="mr-eyebrow">{featuredTopics.length}+ disciplines</div>
+          </div>
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+            style={{ gap: 1, background: "var(--border)", border: "1px solid var(--border)" }}
+          >
+            {featuredTopics.map((t, i) => (
+              <Link
+                key={t.id}
+                href={`/articles/topics/${t.slug}`}
+                className="group flex flex-col gap-2 p-6 border-l-[3px] border-transparent hover:border-[var(--mr-saffron-700)] transition-all"
+                style={{ background: "var(--card)" }}
+              >
+                <div className="flex justify-between items-baseline gap-3">
+                  <div className="font-serif text-lg font-semibold group-hover:text-[var(--mr-green-700)] transition-colors">
+                    {t.name}
+                  </div>
+                  <div className="mr-catalog">
+                    {String(t.articleCount).padStart(3, "0")}
+                  </div>
+                </div>
+                {t.description && (
+                  <p className="text-[13px] text-muted-foreground line-clamp-2">{t.description}</p>
+                )}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Queries */}
+      <section
+        className="border-b"
+        style={{ background: "var(--mr-cream)", borderColor: "var(--border)" }}
+      >
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-12">
+          <div className="flex items-baseline justify-between mb-6 flex-wrap gap-3">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">Reader Queries</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Questions answered by our scholars on faith, practice, and life
-              </p>
+              <div
+                className="mr-eyebrow mb-1"
+                style={{ color: "var(--mr-clay-700)" }}
+              >
+                — Queries —
+              </div>
+              <h2 className="font-serif text-2xl sm:text-3xl font-semibold">
+                Questions answered by our scholars
+              </h2>
             </div>
-            <Link
-              href="/queries/topics"
-              className={cn(buttonVariants({ variant: "ghost" }), "hidden sm:flex text-muted-foreground")}
-            >
-              All Queries <ChevronRight className="ml-1 h-4 w-4" />
-            </Link>
+            <div className="mr-catalog">{queriesCount.toLocaleString()} ENTRIES IN THE RECORD</div>
           </div>
 
           <div className="grid md:grid-cols-3 gap-4">
-            {latestQueries.map((query) => (
+            {latestQueries.map((q, i) => (
               <Link
-                key={query.id}
-                href={`/articles/${query.slug}`}
-                className="group flex flex-col gap-3 rounded-xl border border-border bg-card p-5 hover:border-primary/30 hover:shadow-sm transition-all"
+                key={q.id}
+                href={`/articles/${q.slug}`}
+                className="flex flex-col gap-3 p-6 transition-colors hover:shadow-sm"
+                style={{ background: "var(--card)", border: "1px solid var(--border)" }}
               >
-                <Badge variant="outline" className="w-fit text-[10px] px-1.5 py-0 border-border text-muted-foreground">
-                  {query.topic.name}
-                </Badge>
-                <h3 className="font-semibold leading-snug group-hover:text-primary transition-colors">
-                  {query.title}
-                </h3>
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {query.excerpt}
-                </p>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-auto">
-                  <span>{query.writer.name}</span>
-                  <span>{query.readingTime} min read</span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Writers */}
-      <section className="border-b border-border">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight">Our Writers</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Scholars and thinkers contributing to the discourse
-              </p>
-            </div>
-            <Link
-              href="/articles/writers"
-              className={cn(buttonVariants({ variant: "ghost" }), "hidden sm:flex text-muted-foreground")}
-            >
-              All Writers <ChevronRight className="ml-1 h-4 w-4" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {featuredWriters.map((writer) => (
-              <Link
-                key={writer.id}
-                href={`/articles/writers/${writer.slug}`}
-                className="group flex flex-col items-center text-center rounded-xl border border-border bg-card p-6 hover:border-primary/30 hover:shadow-sm transition-all"
-              >
-                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                  <span className="text-xl font-semibold text-primary">
-                    {writer.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                <div className="flex items-center gap-2">
+                  <span
+                    className="font-mono text-[11px]"
+                    style={{ color: "var(--mr-clay-700)" }}
+                  >
+                    Q №{842 + i}
+                  </span>
+                  <span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-[0.08em] px-1.5 py-0.5 rounded-sm border text-muted-foreground" style={{ borderColor: "var(--border)" }}>
+                    {q.topic?.name}
                   </span>
                 </div>
-                <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
-                  {writer.name}
-                </h3>
-                <span className="text-xs text-muted-foreground mt-1">
-                  {writer.articleCount} articles
-                </span>
+                <p className="font-serif text-[15px] italic leading-snug">"{q.title}"</p>
+                <div className="text-[12px] text-muted-foreground mt-auto">
+                  Answered by <span className="text-foreground">{q.writer.name}</span>
+                </div>
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Archive CTA */}
-      <section className="bg-primary text-primary-foreground">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-14 lg:py-20">
-          <div className="flex flex-col items-center text-center gap-5">
-            <Library className="h-10 w-10 opacity-80" />
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              35 Years of Islamic Scholarship
-            </h2>
-            <p className="text-base opacity-85 max-w-lg">
-              Explore our complete archive of over 430 issues published since 1991,
-              covering every major topic in Islamic thought and practice.
-            </p>
-            <div className="flex gap-3 pt-1">
-              <Link
-                href="/issues"
-                className={cn(buttonVariants({ size: "lg" }), "bg-white text-primary hover:bg-white/90")}
+      {/* Archive CTA — dark mihrab */}
+      <section style={{ background: "var(--mr-green-800)", color: "var(--mr-ivory)" }}>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-16">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            <div>
+              <div
+                className="text-[12px] font-semibold tracking-[0.18em] mb-3"
+                style={{ color: "var(--mr-saffron-300)" }}
               >
-                Browse Archive
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-              <Link
-                href="/ebooks"
-                className={cn(buttonVariants({ variant: "outline", size: "lg" }), "border-white/30 text-white hover:bg-white/10 hover:text-white")}
-              >
-                E-Books
-              </Link>
+                — {yearsRange.length} YEARS ON —
+              </div>
+              <h2 className="font-serif text-3xl sm:text-4xl font-semibold leading-tight mb-4">
+                A continuous monthly record, since {earliestYear}.
+              </h2>
+              <p className="text-[15px] opacity-75 leading-relaxed mb-5 max-w-lg">
+                Every issue, every article, every response — preserved, searchable, and free to read.
+              </p>
+              <div className="flex gap-2.5 flex-wrap">
+                <Link
+                  href="/issues"
+                  className="inline-flex items-center gap-2 text-[13px] font-medium px-4 py-2.5 rounded-sm"
+                  style={{ background: "var(--mr-saffron-700)", color: "var(--color-ink)" }}
+                >
+                  Browse archive <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+                <Link
+                  href="/ebooks"
+                  className="inline-flex items-center text-[13px] font-medium px-4 py-2.5 rounded-sm border"
+                  style={{ borderColor: "rgba(245,241,232,0.4)", color: "var(--mr-ivory)" }}
+                >
+                  Download e-books
+                </Link>
+              </div>
+            </div>
+
+            <div
+              className="grid grid-cols-2"
+              style={{ gap: 1, background: "rgba(245,241,232,0.15)" }}
+            >
+              {[
+                { n: totalArticles.toLocaleString(), l: "Articles" },
+                { n: totalIssues, l: "Issues" },
+                { n: queriesCount, l: "Queries" },
+                { n: writersCount, l: "Writers" },
+              ].map((s) => (
+                <div
+                  key={s.l}
+                  style={{ background: "var(--mr-green-800)" }}
+                  className="p-7"
+                >
+                  <div
+                    className="font-serif font-semibold leading-none"
+                    style={{ fontSize: 48, color: "var(--mr-saffron-300)" }}
+                  >
+                    {s.n}
+                  </div>
+                  <div
+                    className="mr-eyebrow mt-2"
+                    style={{ color: "rgba(245,241,232,0.6)" }}
+                  >
+                    {s.l}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

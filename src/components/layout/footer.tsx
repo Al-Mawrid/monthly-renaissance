@@ -1,81 +1,79 @@
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import { Masthead } from "./header";
 
-const footerLinks = {
-  Browse: [
-    { name: "Current Issue", href: "/issues" },
-    { name: "Archives", href: "/issues" },
-    { name: "Articles by Writer", href: "/articles/writers" },
-    { name: "Articles by Topic", href: "/articles/topics" },
-    { name: "E-Books", href: "/ebooks" },
-  ],
-  Queries: [
-    { name: "By Writer", href: "/queries/writers" },
-    { name: "By Topic", href: "/queries/topics" },
-  ],
-  About: [
-    { name: "Mission", href: "/about" },
-    { name: "Team", href: "/about/team" },
-    { name: "Support Us", href: "/support" },
-    { name: "Contact", href: "/contact" },
-  ],
-};
+const footerColumns = [
+  {
+    h: "Read",
+    links: [
+      { name: "Articles", href: "/articles/topics" },
+      { name: "Issues", href: "/issues" },
+      { name: "Queries", href: "/queries/topics" },
+    ],
+  },
+  {
+    h: "Browse",
+    links: [
+      { name: "Writers", href: "/articles/writers" },
+      { name: "Topics", href: "/articles/topics" },
+      { name: "E-Books", href: "/ebooks" },
+    ],
+  },
+  {
+    h: "About",
+    links: [
+      { name: "About", href: "/about" },
+      { name: "Team", href: "/about/team" },
+      { name: "Support", href: "/support" },
+      { name: "Contact", href: "/contact" },
+    ],
+  },
+];
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-card">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="py-12 lg:py-16">
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            {/* Brand */}
-            <div className="col-span-2 md:col-span-1">
-              <Link href="/" className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <BookOpen className="h-4 w-4" />
-                </div>
-                <span className="text-base font-semibold">Renaissance</span>
-              </Link>
-              <p className="mt-3 text-sm text-muted-foreground leading-relaxed max-w-[240px]">
-                A journal of Islamic research and information, serving scholars and seekers of
-                knowledge since 1991.
-              </p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                ISSN 1605-0045
-              </p>
-            </div>
-
-            {/* Link columns */}
-            {Object.entries(footerLinks).map(([category, links]) => (
-              <div key={category}>
-                <h3 className="text-sm font-semibold text-foreground">{category}</h3>
-                <ul className="mt-3 space-y-2">
-                  {links.map((link) => (
-                    <li key={link.name}>
-                      <Link
-                        href={link.href}
-                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {link.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+    <footer
+      className="mt-5 border-t"
+      style={{ borderColor: "var(--foreground)", background: "var(--card)" }}
+    >
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 pt-9 pb-7">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-10 mb-7">
+          <div className="col-span-2">
+            <Masthead compact />
+            <p className="font-serif text-[13px] text-muted-foreground leading-relaxed mt-3.5 max-w-[340px]">
+              A journal of Islamic research in continuous monthly circulation since 1991.
+              Published by Al-Mawrid.
+            </p>
           </div>
+          {footerColumns.map((col) => (
+            <div key={col.h}>
+              <div className="mr-eyebrow mb-2.5">{col.h}</div>
+              {col.links.map((l) => (
+                <Link
+                  key={l.name}
+                  href={l.href}
+                  className="block text-[13px] text-muted-foreground py-1 hover:text-foreground transition-colors"
+                >
+                  {l.name}
+                </Link>
+              ))}
+            </div>
+          ))}
         </div>
-
-        <Separator />
-
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-6">
-          <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Monthly Renaissance. All rights reserved.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Published by{" "}
-            <span className="text-foreground/70">Al-Mawrid Institute of Islamic Sciences</span>
-          </p>
+        <div
+          className="flex justify-between items-center pt-4 border-t"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <div className="flex items-center gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/logo-long.svg"
+              alt="Monthly Renaissance"
+              className="opacity-75"
+              style={{ height: 20, width: "auto" }}
+            />
+            <div className="mr-catalog">EST. MCMXCI · LAHORE</div>
+          </div>
+          <div className="mr-catalog">© {new Date().getFullYear()} AL-MAWRID</div>
         </div>
       </div>
     </footer>

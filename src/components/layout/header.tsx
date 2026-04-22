@@ -2,157 +2,116 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, Search, BookOpen } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/lib/variants";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/auth/user-menu";
 
 const navigation = [
-  {
-    name: "Issues",
-    href: "/issues",
-  },
-  {
-    name: "Articles",
-    items: [
-      { name: "By Writer", href: "/articles/writers" },
-      { name: "By Topic", href: "/articles/topics" },
-    ],
-  },
-  {
-    name: "Queries",
-    items: [
-      { name: "By Writer", href: "/queries/writers" },
-      { name: "By Topic", href: "/queries/topics" },
-    ],
-  },
-  {
-    name: "E-Books",
-    href: "/ebooks",
-  },
-  {
-    name: "About",
-    items: [
-      { name: "Mission", href: "/about" },
-      { name: "Team", href: "/about/team" },
-      { name: "Support Us", href: "/support" },
-    ],
-  },
+  { name: "Articles", href: "/articles/topics" },
+  { name: "Issues", href: "/issues" },
+  { name: "Queries", href: "/queries/topics" },
+  { name: "Writers", href: "/articles/writers" },
+  { name: "Topics", href: "/articles/topics" },
+  { name: "E-Books", href: "/ebooks" },
 ];
 
+export function Masthead({ compact = false }: { compact?: boolean }) {
+  return (
+    <Link href="/" className="flex items-center gap-3.5 group">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/brand/logo-box.svg"
+        alt="Monthly Renaissance"
+        width={compact ? 40 : 52}
+        height={compact ? 40 : 52}
+        className="flex-shrink-0 object-contain"
+      />
+      <div className="leading-[1.05]">
+        <div
+          className="font-serif font-semibold tracking-tight"
+          style={{ fontSize: compact ? 17 : 22 }}
+        >
+          Monthly <span className="italic" style={{ color: "var(--mr-green-800)" }}>Renaissance</span>
+        </div>
+        <div
+          className="flex items-center gap-1.5 mt-0.5 font-semibold uppercase text-muted-foreground"
+          style={{ fontSize: compact ? 9 : 10, letterSpacing: "0.18em" }}
+        >
+          <span>An affiliate of Al-Mawrid</span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 export function Header() {
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <BookOpen className="h-5 w-5" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-lg font-semibold leading-tight tracking-tight">
-                Renaissance
-              </span>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground leading-none">
-                A Monthly Journal
-              </span>
-            </div>
-          </Link>
+    <header className="sticky top-0 z-50 w-full border-b" style={{ borderColor: "var(--border)", background: "var(--card)" }}>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
+        <div className="flex h-[72px] items-center justify-between gap-6">
+          <Masthead compact />
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {navigation.map((item) =>
-              item.href ? (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="px-3 py-2 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors rounded-md hover:bg-muted"
-                >
-                  {item.name}
-                </Link>
-              ) : (
-                <div
-                  key={item.name}
-                  className="relative"
-                  onMouseEnter={() => setOpenDropdown(item.name)}
-                  onMouseLeave={() => setOpenDropdown(null)}
-                >
-                  <button className="px-3 py-2 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors rounded-md hover:bg-muted">
-                    {item.name}
-                  </button>
-                  {openDropdown === item.name && item.items && (
-                    <div className="absolute top-full left-0 mt-0.5 w-44 rounded-lg border border-border bg-card p-1.5 shadow-lg">
-                      {item.items.map((subItem) => (
-                        <Link
-                          key={subItem.name}
-                          href={subItem.href}
-                          className="block rounded-md px-3 py-2 text-sm text-foreground/80 hover:bg-muted hover:text-foreground transition-colors"
-                        >
-                          {subItem.name}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            )}
+          <nav className="hidden lg:flex items-center gap-7">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors border-b-[1.5px] border-transparent hover:border-[var(--mr-saffron-700)] pb-1"
+              >
+                {item.name}
+              </Link>
+            ))}
           </nav>
 
-          {/* Right side: Search + Mobile Menu */}
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="text-foreground/70 hover:text-foreground">
-              <Search className="h-4.5 w-4.5" />
-              <span className="sr-only">Search</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSearchOpen((s) => !s)}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Search"
+            >
+              <Search className="h-4 w-4" />
             </Button>
 
-            <ThemeToggle />
             <UserMenu />
 
-            {/* Mobile menu */}
             <Sheet>
-              <SheetTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "lg:hidden text-foreground/70 hover:text-foreground")}>
+              <SheetTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "lg:hidden")}>
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Menu</span>
               </SheetTrigger>
               <SheetContent side="right" className="w-72 pt-12">
                 <nav className="flex flex-col gap-1">
-                  {navigation.map((item) =>
-                    item.href ? (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        className="px-3 py-2.5 text-base font-medium text-foreground/80 hover:text-foreground hover:bg-muted rounded-md transition-colors"
-                      >
-                        {item.name}
-                      </Link>
-                    ) : (
-                      <div key={item.name} className="flex flex-col">
-                        <span className="px-3 py-2.5 text-base font-medium text-foreground/60">
-                          {item.name}
-                        </span>
-                        {item.items?.map((subItem) => (
-                          <Link
-                            key={subItem.name}
-                            href={subItem.href}
-                            className="pl-6 pr-3 py-2 text-sm text-foreground/70 hover:text-foreground hover:bg-muted rounded-md transition-colors"
-                          >
-                            {subItem.name}
-                          </Link>
-                        ))}
-                      </div>
-                    )
-                  )}
+                  {navigation.map((item) => (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className="px-3 py-2.5 text-base font-medium text-foreground/80 hover:text-foreground hover:bg-muted rounded-sm transition-colors"
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
                 </nav>
               </SheetContent>
             </Sheet>
           </div>
         </div>
+
+        {searchOpen && (
+          <div className="py-3 border-t" style={{ borderColor: "var(--border)" }}>
+            <input
+              autoFocus
+              placeholder="Search articles, issues, queries, writers…"
+              className="w-full px-4 py-2.5 text-sm bg-background border border-[var(--border)] rounded-sm outline-none focus:border-[var(--mr-green-700)]"
+            />
+          </div>
+        )}
       </div>
     </header>
   );

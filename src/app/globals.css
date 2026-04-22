@@ -2,16 +2,14 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
-  --font-heading: var(--font-sans);
-  --font-serif: var(--font-serif);
-  --font-arabic: var(--font-arabic);
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-heading: var(--font-serif);
+  --font-serif: var(--font-serif), "Source Serif 4", Georgia, serif;
+  --font-arabic: var(--font-arabic), "Scheherazade New", serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -20,11 +18,6 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -41,11 +34,11 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --color-gold: #b8860b;
-  --color-gold-light: #d4a843;
-  --color-teal: #0a6e5c;
-  --color-teal-dark: #085548;
-  --color-teal-light: #0d8a73;
+
+  --color-gold: var(--mr-saffron-700);
+  --color-teal: var(--mr-green-700);
+  --color-teal-dark: var(--mr-green-800);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -56,72 +49,60 @@
 }
 
 :root {
-  --background: #fafaf7;
-  --foreground: #1a1a2e;
-  --card: #ffffff;
-  --card-foreground: #1a1a2e;
-  --popover: #ffffff;
-  --popover-foreground: #1a1a2e;
-  --primary: #0a6e5c;
-  --primary-foreground: #ffffff;
-  --secondary: #f0ede6;
-  --secondary-foreground: #1a1a2e;
-  --muted: #f5f3ee;
-  --muted-foreground: #64748b;
-  --accent: #b8860b;
-  --accent-foreground: #ffffff;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: #e5e2da;
-  --input: #e5e2da;
-  --ring: #0a6e5c;
-  --chart-1: #0a6e5c;
-  --chart-2: #b8860b;
-  --chart-3: #64748b;
-  --chart-4: #1a1a2e;
-  --chart-5: #f0ede6;
-  --radius: 0.5rem;
-  --sidebar: #fafaf7;
-  --sidebar-foreground: #1a1a2e;
-  --sidebar-primary: #0a6e5c;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f0ede6;
-  --sidebar-accent-foreground: #1a1a2e;
-  --sidebar-border: #e5e2da;
-  --sidebar-ring: #0a6e5c;
-}
+  /* Monthly Renaissance palette — real CSS custom properties
+     (defined outside @theme so they cascade at runtime and don't
+     collide with Tailwind's default color palette). */
+  --mr-parchment: #f5f1e8;
+  --mr-ivory: #faf7f0;
+  --mr-cream: #efe9db;
+  --mr-vellum: #e8e0cc;
+  --mr-ink: #1a1f2e;
+  --mr-ink-soft: #2d3344;
+  --mr-ink-muted: #5a6070;
+  --mr-ink-faint: #8a8f9c;
+  --mr-green-900: #064437;
+  --mr-green-800: #085548;
+  --mr-green-700: #0a6e5c;
+  --mr-green-600: #0d8a73;
+  --mr-green-100: #dbe9e3;
+  --mr-green-50: #ecf2ed;
+  --mr-saffron-900: #8c6509;
+  --mr-saffron-700: #b8860b;
+  --mr-saffron-500: #d4a843;
+  --mr-saffron-300: #e8cd7e;
+  --mr-saffron-100: #f5e9c1;
+  --mr-saffron-50: #faf3dd;
+  --mr-clay-700: #8b3a2f;
+  --mr-clay-500: #b4513f;
+  --mr-rule: #d9d0b9;
 
-.dark {
-  --background: #0f0f17;
-  --foreground: #e8e6e1;
-  --card: #1a1a28;
-  --card-foreground: #e8e6e1;
-  --popover: #1a1a28;
-  --popover-foreground: #e8e6e1;
-  --primary: #2dd4a8;
-  --primary-foreground: #0f0f17;
-  --secondary: #2a2a3a;
-  --secondary-foreground: #e8e6e1;
-  --muted: #2a2a3a;
-  --muted-foreground: #94a3b8;
-  --accent: #d4a843;
-  --accent-foreground: #0f0f17;
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: #2a2a3a;
-  --input: #2a2a3a;
-  --ring: #2dd4a8;
-  --chart-1: #2dd4a8;
-  --chart-2: #d4a843;
-  --chart-3: #94a3b8;
-  --chart-4: #e8e6e1;
-  --chart-5: #2a2a3a;
-  --sidebar: #1a1a28;
-  --sidebar-foreground: #e8e6e1;
-  --sidebar-primary: #2dd4a8;
-  --sidebar-primary-foreground: #0f0f17;
-  --sidebar-accent: #2a2a3a;
-  --sidebar-accent-foreground: #e8e6e1;
-  --sidebar-border: #2a2a3a;
-  --sidebar-ring: #2dd4a8;
+  --background: #f5f1e8;       /* parchment */
+  --foreground: #1a1f2e;       /* ink */
+  --card: #faf7f0;             /* ivory */
+  --card-foreground: #1a1f2e;
+  --popover: #faf7f0;
+  --popover-foreground: #1a1f2e;
+  --primary: #0a6e5c;          /* mihrab green */
+  --primary-foreground: #faf7f0;
+  --secondary: #efe9db;        /* cream */
+  --secondary-foreground: #1a1f2e;
+  --muted: #efe9db;
+  --muted-foreground: #5a6070;
+  --accent: #b8860b;           /* saffron */
+  --accent-foreground: #faf7f0;
+  --destructive: #8b3a2f;      /* clay */
+  --border: #d9d0b9;           /* rule */
+  --input: #d9d0b9;
+  --ring: #0a6e5c;
+  --radius: 0.125rem;           /* sharp journal edges */
+  --sidebar: #faf7f0;
+  --sidebar-foreground: #1a1f2e;
+  --sidebar-primary: #0a6e5c;
+  --sidebar-primary-foreground: #faf7f0;
+  --sidebar-accent: #efe9db;
+  --sidebar-accent-foreground: #1a1f2e;
+  --sidebar-border: #d9d0b9;
+  --sidebar-ring: #0a6e5c;
 }
 
 @layer base {
@@ -130,39 +111,140 @@
   }
   body {
     @apply bg-background text-foreground;
+    background: var(--background);
+    min-height: 100vh;
   }
   html {
     @apply font-sans;
+    font-feature-settings: "ss01", "cv11";
   }
 }
 
-/* Article content styles */
+/* ═══════════════ Monthly Renaissance typography utilities ═══════════════ */
+.font-serif { font-family: var(--font-serif), "Source Serif 4", Georgia, serif; }
+.font-arabic { font-family: var(--font-arabic), "Scheherazade New", serif; direction: rtl; unicode-bidi: isolate; }
+.font-mono { font-family: var(--font-mono); font-feature-settings: "tnum", "zero"; }
+
+/* Eyebrow — small caps, tracked */
+.mr-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/* Catalog code — Vol. / № */
+.mr-catalog {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+  font-feature-settings: "tnum", "zero";
+}
+.mr-catalog .dot { opacity: 0.4; margin: 0 6px; }
+
+/* Drop cap — clay rubric */
+.mr-dropcap::first-letter {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  float: left;
+  font-size: 4.4em;
+  line-height: 0.9;
+  padding: 0.08em 0.08em 0 0;
+  margin-right: 0.08em;
+  color: var(--mr-clay-700);
+  font-style: normal;
+}
+
+/* Double rule — journal convention */
+.mr-rule-double {
+  border: 0;
+  border-top: 1px solid var(--foreground);
+  border-bottom: 1px solid var(--foreground);
+  height: 4px;
+  background: transparent;
+}
+
+/* 8-point star ornament */
+.mr-star {
+  width: 10px; height: 10px;
+  display: inline-block;
+  background: var(--mr-saffron-700);
+  clip-path: polygon(
+    50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%,
+    50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%
+  );
+  vertical-align: middle;
+}
+.mr-diamond {
+  width: 6px; height: 6px;
+  display: inline-block;
+  background: var(--mr-saffron-700);
+  transform: rotate(45deg);
+  vertical-align: middle;
+}
+
+/* Ornamental divider */
+.mr-ornament {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px;
+  color: var(--mr-saffron-700);
+  padding: 8px 0;
+}
+.mr-ornament::before, .mr-ornament::after {
+  content: ""; flex: 1; height: 1px; background: var(--border); max-width: 60px;
+}
+
+/* Corner ornaments (for cover plates) */
+.mr-corner {
+  position: absolute;
+  width: 22px; height: 22px;
+  border: 1px solid var(--mr-saffron-700);
+  pointer-events: none;
+}
+.mr-corner.tl { top: 10px; left: 10px; border-width: 1px 0 0 1px; }
+.mr-corner.tr { top: 10px; right: 10px; border-width: 1px 1px 0 0; }
+.mr-corner.bl { bottom: 10px; left: 10px; border-width: 0 0 1px 1px; }
+.mr-corner.br { bottom: 10px; right: 10px; border-width: 0 1px 1px 0; }
+
+/* ═══════════════ Article content styles ═══════════════ */
 .article-content {
   font-family: var(--font-serif);
   font-size: 1.125rem;
-  line-height: 1.85;
-  color: var(--foreground);
+  line-height: 1.78;
+  color: var(--mr-ink-soft);
+  text-wrap: pretty;
 }
+.article-content p { margin: 0 0 1.1em; }
+.article-content p + p { text-indent: 1.5em; margin-top: -0.2em; }
 
 .article-content h2 {
-  font-family: var(--font-sans);
+  font-family: var(--font-serif);
   font-size: 1.5rem;
   font-weight: 600;
-  margin-top: 2.5rem;
-  margin-bottom: 1rem;
+  margin: 2.5rem 0 1rem;
   color: var(--foreground);
+  display: flex; align-items: center; gap: 12px;
+}
+.article-content h2::before {
+  content: "";
+  width: 12px; height: 12px;
+  background: var(--mr-saffron-700);
+  clip-path: polygon(
+    50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%,
+    50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%
+  );
+  flex-shrink: 0;
 }
 
 .article-content h3 {
-  font-family: var(--font-sans);
+  font-family: var(--font-serif);
   font-size: 1.25rem;
   font-weight: 600;
   margin-top: 2rem;
   margin-bottom: 0.75rem;
-}
-
-.article-content p {
-  margin-bottom: 1.25rem;
 }
 
 .article-content blockquote {
@@ -173,20 +255,23 @@
   color: var(--muted-foreground);
 }
 
-.article-content blockquote.arabic-quote {
-  border-left: none;
-  border-right: 3px solid var(--accent);
-  padding-left: 0;
-  padding-right: 1.5rem;
+.article-content blockquote.arabic-quote,
+.article-content [dir="rtl"],
+.article-content [lang="ar"],
+.article-content [align="right"] {
   font-family: var(--font-arabic);
   font-style: normal;
   font-size: 1.35rem;
-  line-height: 2.2;
+  line-height: 2.1;
   text-align: right;
   direction: rtl;
-  background: var(--muted);
-  padding: 1.25rem 1.5rem;
-  border-radius: 0.375rem;
+  unicode-bidi: isolate;
+  background: var(--mr-cream);
+  border-right: 2px solid var(--mr-saffron-700);
+  border-left: none;
+  padding: 18px 22px;
+  margin: 22px 0;
+  border-radius: 2px;
   color: var(--foreground);
 }
 
@@ -195,11 +280,17 @@
   font-size: 1.15em;
   direction: rtl;
   unicode-bidi: isolate;
-  color: var(--primary);
+  color: var(--mr-green-800);
+  background: none;
+  padding: 0;
+  margin: 0;
+  border: none;
 }
 
 .article-content .EnglishQuote {
   font-style: italic;
+  color: var(--foreground);
+  background: none; border: none; padding: 0;
 }
 
 .article-content .FootNote {
@@ -209,52 +300,44 @@
   border-top: 1px solid var(--border);
   margin-top: 2rem;
   padding-top: 1rem;
+  font-family: var(--font-serif);
 }
 
+.article-content sup,
 .article-content .FootNoteLink a {
-  color: var(--primary);
-  text-decoration: none;
-  font-size: 0.75em;
+  font-family: var(--font-mono);
+  font-size: 0.7em;
   vertical-align: super;
 }
-
-.article-content .FootNoteLink a:hover {
-  text-decoration: underline;
-}
-
-.article-content sup {
-  font-size: 0.75em;
-}
-
-.article-content sup a {
-  color: var(--primary);
+.article-content sup a,
+.article-content .FootNoteLink a {
+  color: var(--mr-clay-700);
+  font-weight: 600;
   text-decoration: none;
+  padding: 0 2px;
+}
+.article-content sup a:hover,
+.article-content .FootNoteLink a:hover { text-decoration: underline; }
+
+.article-content em { font-style: italic; }
+
+/* Sepia reading mode (toggled by article Tools) */
+body.mr-sepia {
+  background: #f4ecd8;
+  color: #433422;
+}
+body.mr-sepia .article-content,
+body.mr-sepia .article-content * {
+  color: #433422 !important;
+  background: transparent !important;
 }
 
-.article-content sup a:hover {
-  text-decoration: underline;
-}
-
-.article-content em {
-  font-style: italic;
-}
-
-/* RTL / Arabic block elements (dir="rtl", lang="ar", or align="right") */
-.article-content [dir="rtl"],
-.article-content [lang="ar"],
-.article-content [align="right"] {
-  font-family: var(--font-arabic);
-  font-size: 1.2em;
-  line-height: 2.2;
-  text-align: right;
-  direction: rtl;
-  unicode-bidi: isolate;
-}
-
-/* Ensure Arabic paragraph spacing */
-.article-content p[dir="rtl"],
-.article-content p[lang="ar"],
-.article-content p[align="right"] {
-  padding: 0.25rem 0;
-  margin-bottom: 1.25rem;
+/* Print: clean article-only output for "Download PDF" */
+@page { margin: 0; }
+@media print {
+  html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+  header, footer, aside, nav { display: none !important; }
+  main, article { padding: 20mm 18mm !important; margin: 0 !important; max-width: none !important; }
+  .article-content { font-size: 12pt; color: #000; }
+  a { color: #000; text-decoration: none; }
 }
