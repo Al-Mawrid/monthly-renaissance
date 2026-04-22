@@ -238,3 +238,23 @@
 .article-content em {
   font-style: italic;
 }
+
+/* RTL / Arabic block elements (dir="rtl", lang="ar", or align="right") */
+.article-content [dir="rtl"],
+.article-content [lang="ar"],
+.article-content [align="right"] {
+  font-family: var(--font-arabic);
+  font-size: 1.2em;
+  line-height: 2.2;
+  text-align: right;
+  direction: rtl;
+  unicode-bidi: isolate;
+}
+
+/* Ensure Arabic paragraph spacing */
+.article-content p[dir="rtl"],
+.article-content p[lang="ar"],
+.article-content p[align="right"] {
+  padding: 0.25rem 0;
+  margin-bottom: 1.25rem;
+}
