@@ -1,15 +1,30 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
 import { readFileSync } from "fs";
 import { join } from "path";
 import slugify from "slugify";
-import dotenv from "dotenv";
 
-dotenv.config();
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
-const prisma = new PrismaClient({ adapter });
+let prisma = new PrismaClient();
 const dataDir = join(__dirname, "..", "data", "exports");
+
+// Retry wrapper: on connection loss (P1001/P1017), reconnect and retry.
+async function withRetry<T>(op: () => Promise<T>, label = "op"): Promise<T> {
+  let attempt = 0;
+  while (true) {
+    try {
+      return await op();
+    } catch (e: any) {
+      const code = e?.code;
+      const isConn = code === "P1001" || code === "P1017" || code === "P1008";
+      if (!isConn || attempt >= 5) throw e;
+      attempt++;
+      const delay = 1000 * 2 ** attempt;
+      console.warn(`  [retry ${attempt}/5] ${label} lost connection (${code}); reconnecting in ${delay}ms`);
+      try { await prisma.$disconnect(); } catch {}
+      await new Promise((r) => setTimeout(r, delay));
+      prisma = new PrismaClient();
+    }
+  }
+}
 
 function readJson<T>(filename: string): T[] {
   return JSON.parse(readFileSync(join(dataDir, filename), "utf-8"));
@@ -91,10 +106,44 @@ async function main() {
   const videoCatMap = new Map<number, number>();
   const linkCatMap = new Map<number, number>();
 
+  // Pre-fetch existing rows so we can resume after a failed/partial run.
+  console.log("Checking for existing rows (resume mode)...");
+  const existing = await withRetry(
+    () =>
+      Promise.all([
+        prisma.writer.findMany({ select: { id: true, oldId: true } }),
+        prisma.topic.findMany({ select: { id: true, oldId: true } }),
+        prisma.issue.findMany({ select: { id: true, oldId: true } }),
+        prisma.article.findMany({ select: { id: true, oldId: true } }),
+        prisma.queryEntry.findMany({ select: { id: true, oldId: true } }),
+        prisma.videoCategory.findMany({ select: { id: true, oldId: true } }),
+        prisma.linkCategory.findMany({ select: { id: true, oldId: true } }),
+        prisma.book.findMany({ select: { oldId: true } }),
+        prisma.video.findMany({ select: { oldId: true } }),
+        prisma.link.findMany({ select: { oldId: true } }),
+      ]),
+    "pre-fetch existing"
+  );
+  const [eW, eT, eI, eA, eQ, eVC, eLC, eB, eV, eL] = existing;
+  for (const r of eW) writerMap.set(r.oldId, r.id);
+  for (const r of eT) topicMap.set(r.oldId, r.id);
+  for (const r of eI) issueMap.set(r.oldId, r.id);
+  for (const r of eA) articleMap.set(r.oldId, r.id);
+  for (const r of eQ) queryMap.set(r.oldId, r.id);
+  for (const r of eVC) videoCatMap.set(r.oldId, r.id);
+  for (const r of eLC) linkCatMap.set(r.oldId, r.id);
+  const existingBooks = new Set(eB.map((r) => r.oldId));
+  const existingVideos = new Set(eV.map((r) => r.oldId));
+  const existingLinks = new Set(eL.map((r) => r.oldId));
+  console.log(
+    `  existing: ${writerMap.size} writers, ${topicMap.size} topics, ${issueMap.size} issues, ${articleMap.size} articles, ${queryMap.size} queries`
+  );
+
   // 1. Writers
   console.log(`Seeding ${writers.length} writers...`);
   for (const w of writers) {
-    const record = await prisma.writer.create({
+    if (writerMap.has(w.ID)) continue;
+    const record = await withRetry(() => prisma.writer.create({
       data: {
         oldId: w.ID,
         name: w.Name || "Unknown",
@@ -103,14 +152,15 @@ async function main() {
         displayOnSite: w.DisplayOnSite ?? true,
         isQueryWriter: w.IsQueryWriter ?? false,
       },
-    });
+    }), `writer ${w.ID}`);
     writerMap.set(w.ID, record.id);
   }
 
   // 2. Topics
   console.log(`Seeding ${topics.length} topics...`);
   for (const t of topics) {
-    const record = await prisma.topic.create({
+    if (topicMap.has(t.ID)) continue;
+    const record = await withRetry(() => prisma.topic.create({
       data: {
         oldId: t.ID,
         title: t.TopicTitle || "Untitled",
@@ -119,42 +169,45 @@ async function main() {
         ranking: t.Ranking ?? 0,
         displayInList: t.DisplayInList ?? true,
       },
-    });
+    }), `topic ${t.ID}`);
     topicMap.set(t.ID, record.id);
   }
 
   // 3. Video Categories
   console.log(`Seeding ${videoCategories.length} video categories...`);
   for (const vc of videoCategories) {
-    const record = await prisma.videoCategory.create({
+    if (videoCatMap.has(vc.ID)) continue;
+    const record = await withRetry(() => prisma.videoCategory.create({
       data: {
         oldId: vc.ID,
         title: vc.Title || "Untitled",
         ranking: vc.Ranking ?? 0,
         display: vc.Display ?? true,
       },
-    });
+    }), `videoCat ${vc.ID}`);
     videoCatMap.set(vc.ID, record.id);
   }
 
   // 4. Link Categories
   console.log(`Seeding ${linkCategories.length} link categories...`);
   for (const lc of linkCategories) {
-    const record = await prisma.linkCategory.create({
+    if (linkCatMap.has(lc.ID)) continue;
+    const record = await withRetry(() => prisma.linkCategory.create({
       data: {
         oldId: lc.ID,
         title: lc.Title || "Untitled",
         ranking: lc.Ranking ?? 0,
         display: lc.Display ?? true,
       },
-    });
+    }), `linkCat ${lc.ID}`);
     linkCatMap.set(lc.ID, record.id);
   }
 
   // 5. Issues
   console.log(`Seeding ${issues.length} issues...`);
   for (const i of issues) {
-    const record = await prisma.issue.create({
+    if (issueMap.has(i.ID)) continue;
+    const record = await withRetry(() => prisma.issue.create({
       data: {
         oldId: i.ID,
         title: i.IssueTitle || "Untitled Issue",
@@ -165,14 +218,16 @@ async function main() {
         display: i.Display ?? true,
         isSpecial: i.IsSpecial ?? false,
       },
-    });
+    }), `issue ${i.ID}`);
     issueMap.set(i.ID, record.id);
   }
 
   // 6. Articles
   console.log(`Seeding ${content.length} articles...`);
   let articleSkipped = 0;
+  let articleDone = 0;
   for (const a of content) {
+    if (articleMap.has(a.ID)) continue;
     const writerId = writerMap.get(a.WriterID);
     const topicId = topicMap.get(a.TopicID);
     if (!writerId || !topicId) {
@@ -180,7 +235,7 @@ async function main() {
       continue;
     }
     const translatorId = a.TranslatorID ? writerMap.get(a.TranslatorID) : null;
-    const record = await prisma.article.create({
+    const record = await withRetry(() => prisma.article.create({
       data: {
         oldId: a.ID,
         title: a.Title || "Untitled",
@@ -197,22 +252,37 @@ async function main() {
         isIssueIntro: a.IsIssueIntro ?? false,
         introIssueId: a.IntroIssueID || null,
       },
-    });
+    }), `article ${a.ID}`);
     articleMap.set(a.ID, record.id);
+    articleDone++;
+    if (articleDone % 100 === 0) console.log(`  ...${articleDone} articles inserted`);
   }
   if (articleSkipped > 0) console.log(`  (skipped ${articleSkipped} articles with missing writer/topic)`);
+
+  // Pre-fetch existing article-issue & query-issue link pairs to allow resume
+  const existingAIL = await withRetry(
+    () => prisma.articleIssueLink.findMany({ select: { articleId: true, issueId: true } }),
+    "fetch existing AIL"
+  );
+  const existingQIL = await withRetry(
+    () => prisma.queryIssueLink.findMany({ select: { queryId: true, issueId: true } }),
+    "fetch existing QIL"
+  );
+  const ailSet = new Set(existingAIL.map((r) => `${r.articleId}:${r.issueId}`));
+  const qilSet = new Set(existingQIL.map((r) => `${r.queryId}:${r.issueId}`));
 
   // 7. Queries
   console.log(`Seeding ${queries.length} queries...`);
   let querySkipped = 0;
   for (const q of queries) {
+    if (queryMap.has(q.ID)) continue;
     const writerId = writerMap.get(q.WriterID);
     const topicId = topicMap.get(q.TopicID);
     if (!writerId || !topicId) {
       querySkipped++;
       continue;
     }
-    const record = await prisma.queryEntry.create({
+    const record = await withRetry(() => prisma.queryEntry.create({
       data: {
         oldId: q.ID,
         title: q.Title || "Untitled Query",
@@ -227,7 +297,7 @@ async function main() {
         display: q.Display ?? true,
         isImportant: q.IsImportant ?? false,
       },
-    });
+    }), `query ${q.ID}`);
     queryMap.set(q.ID, record.id);
   }
   if (querySkipped > 0) console.log(`  (skipped ${querySkipped} queries with missing writer/topic)`);
@@ -235,7 +305,8 @@ async function main() {
   // 8. Books
   console.log(`Seeding ${books.length} books...`);
   for (const b of books) {
-    await prisma.book.create({
+    if (existingBooks.has(b.ID)) continue;
+    await withRetry(() => prisma.book.create({
       data: {
         oldId: b.ID,
         title: b.Title || "Untitled",
@@ -248,19 +319,20 @@ async function main() {
         fileName: b.FileName || "",
         postDate: b.PostDate ? new Date(b.PostDate) : null,
       },
-    });
+    }), `book ${b.ID}`);
   }
 
   // 9. Videos
   console.log(`Seeding ${videos.length} videos...`);
   let videoSkipped = 0;
   for (const v of videos) {
+    if (existingVideos.has(v.ID)) continue;
     const categoryId = videoCatMap.get(v.CategoryID);
     if (!categoryId) {
       videoSkipped++;
       continue;
     }
-    await prisma.video.create({
+    await withRetry(() => prisma.video.create({
       data: {
         oldId: v.ID,
         title: v.Title || "Untitled",
@@ -269,16 +341,17 @@ async function main() {
         dateAdded: v.DateAdded ? new Date(v.DateAdded) : null,
         display: v.Display ?? true,
       },
-    });
+    }), `video ${v.ID}`);
   }
   if (videoSkipped > 0) console.log(`  (skipped ${videoSkipped} videos with missing category)`);
 
   // 10. Links
   console.log(`Seeding ${links.length} links...`);
   for (const l of links) {
+    if (existingLinks.has(l.ID)) continue;
     const categoryId = linkCatMap.get(l.CategoryID);
     if (!categoryId) continue;
-    await prisma.link.create({
+    await withRetry(() => prisma.link.create({
       data: {
         oldId: l.ID,
         title: l.Title || "Untitled",
@@ -287,7 +360,7 @@ async function main() {
         dateAdded: l.DateAdded ? new Date(l.DateAdded) : null,
         display: l.Display ?? true,
       },
-    });
+    }), `link ${l.ID}`);
   }
 
   // 11. Article-Issue Links
@@ -300,9 +373,10 @@ async function main() {
       linkSkipped++;
       continue;
     }
-    await prisma.articleIssueLink.create({
+    if (ailSet.has(`${articleId}:${issueId}`)) continue;
+    await withRetry(() => prisma.articleIssueLink.create({
       data: { articleId, issueId },
-    });
+    }), `AIL ${articleId}/${issueId}`);
   }
   if (linkSkipped > 0) console.log(`  (skipped ${linkSkipped} with missing article/issue)`);
 
@@ -316,9 +390,10 @@ async function main() {
       qLinkSkipped++;
       continue;
     }
-    await prisma.queryIssueLink.create({
+    if (qilSet.has(`${queryId}:${issueId}`)) continue;
+    await withRetry(() => prisma.queryIssueLink.create({
       data: { queryId, issueId },
-    });
+    }), `QIL ${queryId}/${issueId}`);
   }
   if (qLinkSkipped > 0) console.log(`  (skipped ${qLinkSkipped} with missing query/issue)`);
 
