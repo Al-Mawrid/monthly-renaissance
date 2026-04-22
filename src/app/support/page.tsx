@@ -1,58 +1,81 @@
-import { Heart, CreditCard, Mail } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Heart, CreditCard, Mail, Share2 } from "lucide-react";
 
 export const metadata = {
   title: "Support Us",
   description: "Support Monthly Renaissance and help sustain Islamic scholarship.",
 };
 
+const ways = [
+  {
+    icon: CreditCard,
+    label: "Direct",
+    title: "One-time donation",
+    body: "Make a one-time contribution of any amount toward our ongoing editorial and archive work.",
+    cta: { text: "Donate now →", primary: true },
+  },
+  {
+    icon: Mail,
+    label: "Recurring",
+    title: "Subscribe",
+    body: "Subscribe to receive the journal and support our mission through a standing contribution.",
+    cta: { text: "Subscribe →", primary: false },
+  },
+  {
+    icon: Share2,
+    label: "Participate",
+    title: "Share the work",
+    body: "Share our articles, link to our archive, or reach out about partnerships and reprints.",
+  },
+];
+
 export default function SupportPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
-      <div className="text-center mb-10">
-        <Heart className="h-10 w-10 text-primary mx-auto mb-4" />
-        <h1 className="text-3xl font-bold tracking-tight">Support Us</h1>
-        <p className="text-muted-foreground mt-2 max-w-lg mx-auto">
-          Monthly Renaissance is a non-profit publication. Your support helps us
-          continue producing quality Islamic scholarship for readers worldwide.
-        </p>
-      </div>
-
-      <div className="grid sm:grid-cols-2 gap-4 mb-10">
-        <div className="rounded-xl border border-border bg-card p-6 text-center">
-          <CreditCard className="h-8 w-8 text-primary mx-auto mb-3" />
-          <h2 className="font-semibold text-lg">One-Time Donation</h2>
-          <p className="text-sm text-muted-foreground mt-2">
-            Make a one-time contribution of any amount to support our ongoing
-            work.
-          </p>
-          <Button className="mt-4 bg-primary hover:bg-teal-dark">
-            Donate Now
-          </Button>
-        </div>
-
-        <div className="rounded-xl border border-border bg-card p-6 text-center">
-          <Mail className="h-8 w-8 text-primary mx-auto mb-3" />
-          <h2 className="font-semibold text-lg">Subscribe</h2>
-          <p className="text-sm text-muted-foreground mt-2">
-            Subscribe to receive the journal and support our mission through
-            your subscription.
-          </p>
-          <Button variant="outline" className="mt-4">
-            Subscribe
-          </Button>
+    <div>
+      <div className="border-b" style={{ borderColor: "var(--foreground)" }}>
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-10 py-14">
+          <div className="mr-eyebrow mb-2.5" style={{ color: "var(--mr-saffron-700)" }}>
+            — Sustaining the journal —
+          </div>
+          <div className="flex items-start gap-4">
+            <Heart className="h-8 w-8 mt-2 flex-shrink-0" style={{ color: "var(--mr-clay-700)" }} />
+            <div>
+              <h1 className="font-serif text-4xl sm:text-5xl font-semibold tracking-tight leading-none">
+                Support the record
+              </h1>
+              <p className="font-serif text-[17px] text-muted-foreground mt-4 max-w-xl leading-relaxed">
+                Monthly Renaissance is a non-profit publication. Your support helps us continue producing
+                quality Islamic scholarship for readers worldwide — and keep the full archive free to read.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <Separator className="my-10" />
-
-      <div className="text-center">
-        <h2 className="font-semibold text-lg mb-2">Other Ways to Help</h2>
-        <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          Share our articles with friends and family, link to our content from
-          your website, or reach out to discuss partnership opportunities.
-        </p>
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-10 py-12">
+        <div
+          className="grid grid-cols-1 md:grid-cols-3"
+          style={{ gap: 1, background: "var(--border)", border: "1px solid var(--border)" }}
+        >
+          {ways.map(({ icon: Icon, label, title, body, cta }) => (
+            <div
+              key={title}
+              className="mr-hover-card flex flex-col gap-3 p-7"
+              style={{ background: "var(--card)" }}
+            >
+              <Icon className="h-6 w-6" style={{ color: "var(--mr-green-700)" }} />
+              <div className="mr-eyebrow">{label}</div>
+              <h2 className="font-serif text-xl font-semibold">{title}</h2>
+              <p className="text-[14px] text-muted-foreground leading-relaxed">{body}</p>
+              {cta && (
+                <button
+                  className={`mt-3 self-start mr-btn ${cta.primary ? "mr-btn-primary" : "mr-btn-outline"}`}
+                >
+                  {cta.text}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -128,7 +128,19 @@ export default async function Home() {
               </div>
 
               <h1 className="font-serif text-[2.5rem] lg:text-[3.2rem] font-semibold leading-[1.05] tracking-tight text-balance mb-4">
-                {featuredArticle.title}
+                {(() => {
+                  const words = featuredArticle.title.trim().split(/\s+/);
+                  if (words.length < 2) {
+                    return <em style={{ color: "var(--mr-green-800)" }}>{featuredArticle.title}</em>;
+                  }
+                  const last = words.pop();
+                  return (
+                    <>
+                      {words.join(" ")}{" "}
+                      <em style={{ fontStyle: "italic", color: "var(--mr-green-800)" }}>{last}</em>
+                    </>
+                  );
+                })()}
               </h1>
 
               <p className="font-serif text-lg lg:text-[19px] leading-relaxed text-[var(--mr-ink-soft)] max-w-xl mb-5">
@@ -152,15 +164,13 @@ export default async function Home() {
               <div className="flex gap-2.5 flex-wrap">
                 <Link
                   href={`/articles/${featuredArticle.slug}`}
-                  className="inline-flex items-center gap-2 text-[13px] font-medium px-4 py-2.5 rounded-sm text-white transition-colors"
-                  style={{ background: "var(--mr-green-700)" }}
+                  className="mr-btn mr-btn-primary"
                 >
                   Read article <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
                 <Link
                   href={`/issues/${latestIssue.id}`}
-                  className="inline-flex items-center text-[13px] font-medium px-4 py-2.5 rounded-sm border transition-colors hover:bg-foreground hover:text-[var(--mr-ivory)]"
-                  style={{ borderColor: "var(--foreground)", color: "var(--foreground)" }}
+                  className="mr-btn mr-btn-outline"
                 >
                   View full issue
                 </Link>
@@ -209,7 +219,7 @@ export default async function Home() {
                   <Link
                     key={a.id}
                     href={`/articles/${a.slug}`}
-                    className="flex gap-2.5 py-1.5 group"
+                    className="mr-toc-row flex gap-2.5 py-1.5"
                     style={{
                       borderBottom:
                         i < tocArticles.length - 1 ? "1px dotted var(--border)" : "none",
@@ -222,7 +232,7 @@ export default async function Home() {
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <div className="flex-1">
-                      <div className="text-foreground group-hover:text-[var(--mr-green-700)] transition-colors">
+                      <div className="mr-toc-title text-foreground">
                         {a.title}
                       </div>
                       <div className="font-sans text-[11px] text-muted-foreground">
@@ -254,37 +264,54 @@ export default async function Home() {
             </div>
             <Link
               href="/issues"
-              className="text-[13px] text-muted-foreground hover:text-foreground"
+              className="mr-link text-[13px] text-muted-foreground"
             >
               Browse full archive →
             </Link>
           </div>
 
           <div
-            className="p-5"
+            className="p-5 relative"
             style={{ background: "var(--card)", border: "1px solid var(--border)" }}
           >
-            <div className="flex items-end gap-0 h-20">
+            <div className="flex items-end gap-0 h-20 relative">
               {yearsRange.map((y, i) => {
                 const c = countsByYear[y] ?? 0;
                 const h = 18 + (c / maxCount) * 60;
                 const isActive = y === currentYear;
                 const opacity = isActive ? 1 : 0.2 + (i / yearsRange.length) * 0.55;
+                const showLabel = y % 5 === 0 || y === earliestYear || y === currentYear;
                 return (
-                  <div key={y} className="flex-1 flex flex-col items-center gap-1">
+                  <Link
+                    key={y}
+                    href={`/issues#year-${y}`}
+                    className="mr-archive-year flex-1 flex flex-col items-center gap-1 no-underline relative"
+                  >
+                    <div className="mr-archive-tooltip" role="tooltip">
+                      <div className="mr-archive-tooltip-head">
+                        <span className="mr-archive-tooltip-year">{y}</span>
+                        <span className="mr-archive-tooltip-vol font-mono">VOL. {y - earliestYear + 1}</span>
+                      </div>
+                      <div className="mr-archive-tooltip-grid">
+                        <span>Articles</span>
+                        <span className="font-mono mr-archive-tooltip-accent">{c}</span>
+                      </div>
+                      <div className="mr-archive-tooltip-foot">Open archive →</div>
+                      <span className="mr-archive-tooltip-arrow" />
+                    </div>
                     <div
+                      className="mr-archive-bar"
+                      data-active={isActive ? "true" : "false"}
                       style={{
-                        width: "70%",
                         height: h,
-                        background: isActive
-                          ? "var(--mr-clay-700)"
-                          : "var(--mr-green-700)",
+                        background: isActive ? "var(--mr-clay-700)" : "var(--mr-green-700)",
                         opacity,
                       }}
                     />
-                    {(y % 5 === 0 || y === earliestYear || y === currentYear) && (
+                    {showLabel && (
                       <span
-                        className="font-mono"
+                        className="mr-archive-label font-mono"
+                        data-active={isActive ? "true" : "false"}
                         style={{
                           fontSize: 9,
                           fontWeight: isActive ? 600 : 400,
@@ -294,7 +321,7 @@ export default async function Home() {
                         ’{String(y).slice(2)}
                       </span>
                     )}
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -313,15 +340,15 @@ export default async function Home() {
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
             style={{ gap: 1, background: "var(--border)", border: "1px solid var(--border)" }}
           >
-            {featuredTopics.map((t, i) => (
+            {featuredTopics.map((t) => (
               <Link
                 key={t.id}
                 href={`/articles/topics/${t.slug}`}
-                className="group flex flex-col gap-2 p-6 border-l-[3px] border-transparent hover:border-[var(--mr-saffron-700)] transition-all"
+                className="mr-topic-card flex flex-col gap-2 p-6"
                 style={{ background: "var(--card)" }}
               >
                 <div className="flex justify-between items-baseline gap-3">
-                  <div className="font-serif text-lg font-semibold group-hover:text-[var(--mr-green-700)] transition-colors">
+                  <div className="mr-topic-title font-serif text-lg font-semibold">
                     {t.name}
                   </div>
                   <div className="mr-catalog">
@@ -363,7 +390,7 @@ export default async function Home() {
               <Link
                 key={q.id}
                 href={`/articles/${q.slug}`}
-                className="flex flex-col gap-3 p-6 transition-colors hover:shadow-sm"
+                className="mr-hover-card flex flex-col gap-3 p-6"
                 style={{ background: "var(--card)", border: "1px solid var(--border)" }}
               >
                 <div className="flex items-center gap-2">
@@ -405,18 +432,10 @@ export default async function Home() {
                 Every issue, every article, every response — preserved, searchable, and free to read.
               </p>
               <div className="flex gap-2.5 flex-wrap">
-                <Link
-                  href="/issues"
-                  className="inline-flex items-center gap-2 text-[13px] font-medium px-4 py-2.5 rounded-sm"
-                  style={{ background: "var(--mr-saffron-700)", color: "var(--color-ink)" }}
-                >
+                <Link href="/issues" className="mr-btn mr-btn-saffron">
                   Browse archive <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
-                <Link
-                  href="/ebooks"
-                  className="inline-flex items-center text-[13px] font-medium px-4 py-2.5 rounded-sm border"
-                  style={{ borderColor: "rgba(245,241,232,0.4)", color: "var(--mr-ivory)" }}
-                >
+                <Link href="/ebooks" className="mr-btn mr-btn-outline-inverse">
                   Download e-books
                 </Link>
               </div>
@@ -424,7 +443,7 @@ export default async function Home() {
 
             <div
               className="grid grid-cols-2"
-              style={{ gap: 1, background: "rgba(245,241,232,0.15)" }}
+              style={{ gap: 1, background: "rgba(250,244,228,0.15)" }}
             >
               {[
                 { n: totalArticles.toLocaleString(), l: "Articles" },
@@ -445,7 +464,7 @@ export default async function Home() {
                   </div>
                   <div
                     className="mr-eyebrow mt-2"
-                    style={{ color: "rgba(245,241,232,0.6)" }}
+                    style={{ color: "rgba(250,244,228,0.65)" }}
                   >
                     {s.l}
                   </div>
