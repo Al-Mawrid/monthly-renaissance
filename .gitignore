@@ -53,3 +53,5 @@ next-env.d.ts
 
 # uploaded book files
 /public/books/
+
+/private/
