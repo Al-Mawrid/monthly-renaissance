@@ -505,6 +505,190 @@ export async function getQueriesByTopic(topicSlug: string): Promise<Article[]> {
   }, sample.latestQueries);
 }
 
+// --- Search ---
+
+export type SearchHit = {
+  kind: "article" | "query" | "writer" | "topic" | "issue";
+  title: string;
+  href: string;
+  subtitle: string;
+};
+
+export type SearchResults = {
+  query: string;
+  articles: SearchHit[];
+  queries: SearchHit[];
+  writers: SearchHit[];
+  topics: SearchHit[];
+  issues: SearchHit[];
+  total: number;
+};
+
+export async function searchAll(rawQuery: string, limit = 20): Promise<SearchResults> {
+  const query = rawQuery.trim().slice(0, 100);
+  const empty: SearchResults = {
+    query, articles: [], queries: [], writers: [], topics: [], issues: [], total: 0,
+  };
+  if (query.length < 2) return empty;
+
+  return withFallback(
+    async () => {
+      // One DB round-trip: five independent findMany calls run in parallel.
+      // Each uses `select` to skip the LongText `bodyHtml`/`questionHtml` columns.
+      const [articles, queries, writers, topics, issues] = await Promise.all([
+        prisma.article.findMany({
+          where: { display: true, title: { contains: query } },
+          orderBy: { dateAdded: "desc" },
+          take: limit,
+          select: {
+            title: true, slug: true, dateAdded: true,
+            writer: { select: { name: true } },
+            topic: { select: { title: true } },
+          },
+        }),
+        prisma.queryEntry.findMany({
+          where: { display: true, title: { contains: query } },
+          orderBy: { dateAdded: "desc" },
+          take: limit,
+          select: {
+            title: true, slug: true, dateAdded: true,
+            writer: { select: { name: true } },
+            topic: { select: { title: true } },
+          },
+        }),
+        prisma.writer.findMany({
+          where: { displayOnSite: true, name: { contains: query } },
+          orderBy: { name: "asc" },
+          take: limit,
+          select: { slug: true, name: true, _count: { select: { articles: true } } },
+        }),
+        prisma.topic.findMany({
+          where: { displayInList: true, title: { contains: query } },
+          orderBy: { ranking: "asc" },
+          take: limit,
+          select: {
+            slug: true, title: true,
+            _count: { select: { articles: true, queries: true } },
+          },
+        }),
+        prisma.issue.findMany({
+          where: { display: true, title: { contains: query } },
+          orderBy: { issueDate: "desc" },
+          take: limit,
+          select: {
+            slug: true, title: true, issueDate: true,
+            _count: { select: { articleLinks: true, queryLinks: true } },
+          },
+        }),
+      ]);
+
+      const fmtDate = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "");
+
+      const articleHits: SearchHit[] = articles.map((a) => ({
+        kind: "article",
+        title: a.title,
+        href: `/articles/${a.slug}`,
+        subtitle: [a.writer.name, a.topic.title, fmtDate(a.dateAdded)].filter(Boolean).join(" · "),
+      }));
+      const queryHits: SearchHit[] = queries.map((q) => ({
+        kind: "query",
+        title: q.title,
+        href: `/articles/${q.slug}`,
+        subtitle: [q.writer.name, q.topic.title, fmtDate(q.dateAdded)].filter(Boolean).join(" · "),
+      }));
+      const writerHits: SearchHit[] = writers.map((w) => ({
+        kind: "writer",
+        title: w.name,
+        href: `/articles/writers/${w.slug}`,
+        subtitle: `${w._count?.articles ?? 0} articles`,
+      }));
+      const topicHits: SearchHit[] = topics.map((t) => ({
+        kind: "topic",
+        title: t.title,
+        href: `/articles/topics/${t.slug}`,
+        subtitle: `${(t._count?.articles ?? 0) + (t._count?.queries ?? 0)} pieces`,
+      }));
+      const issueHits: SearchHit[] = issues.map((i) => ({
+        kind: "issue",
+        title: i.title,
+        href: `/issues/${i.slug}`,
+        subtitle: [
+          `${(i._count?.articleLinks ?? 0) + (i._count?.queryLinks ?? 0)} pieces`,
+          fmtDate(i.issueDate),
+        ].filter(Boolean).join(" · "),
+      }));
+
+      return {
+        query,
+        articles: articleHits,
+        queries: queryHits,
+        writers: writerHits,
+        topics: topicHits,
+        issues: issueHits,
+        total:
+          articleHits.length + queryHits.length + writerHits.length +
+          topicHits.length + issueHits.length,
+      };
+    },
+    searchSampleFallback(query, limit),
+  );
+}
+
+function searchSampleFallback(query: string, limit: number): SearchResults {
+  const q = query.toLowerCase();
+  const has = (s: string) => s.toLowerCase().includes(q);
+  const articles = sample.recentArticles
+    .filter((a) => a.type === "article" && has(a.title))
+    .slice(0, limit)
+    .map<SearchHit>((a) => ({
+      kind: "article",
+      title: a.title,
+      href: `/articles/${a.slug}`,
+      subtitle: [a.writer.name, a.topic.name, a.createdAt].filter(Boolean).join(" · "),
+    }));
+  const queries = sample.latestQueries
+    .filter((a) => has(a.title))
+    .slice(0, limit)
+    .map<SearchHit>((a) => ({
+      kind: "query",
+      title: a.title,
+      href: `/articles/${a.slug}`,
+      subtitle: [a.writer.name, a.topic.name, a.createdAt].filter(Boolean).join(" · "),
+    }));
+  const writers = sample.allWriters
+    .filter((w) => has(w.name))
+    .slice(0, limit)
+    .map<SearchHit>((w) => ({
+      kind: "writer",
+      title: w.name,
+      href: `/articles/writers/${w.slug}`,
+      subtitle: `${w.articleCount} articles`,
+    }));
+  const topics = sample.allTopics
+    .filter((t) => has(t.name))
+    .slice(0, limit)
+    .map<SearchHit>((t) => ({
+      kind: "topic",
+      title: t.name,
+      href: `/articles/topics/${t.slug}`,
+      subtitle: `${t.articleCount} pieces`,
+    }));
+  const issues = sample.allIssues
+    .filter((i) => has(i.title))
+    .slice(0, limit)
+    .map<SearchHit>((i) => ({
+      kind: "issue",
+      title: i.title,
+      href: `/issues/${i.id}`,
+      subtitle: `${i.articleCount} pieces`,
+    }));
+  return {
+    query,
+    articles, queries, writers, topics, issues,
+    total: articles.length + queries.length + writers.length + topics.length + issues.length,
+  };
+}
+
 // --- E-Books ---
 
 export async function getAllEbooks(): Promise<EBook[]> {
