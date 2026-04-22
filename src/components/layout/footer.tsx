@@ -51,7 +51,7 @@ export function Footer() {
                 <Link
                   key={l.name}
                   href={l.href}
-                  className="block text-[13px] text-muted-foreground py-1 hover:text-foreground transition-colors"
+                  className="mr-footer-link text-[13px] text-muted-foreground py-1"
                 >
                   {l.name}
                 </Link>
@@ -60,10 +60,10 @@ export function Footer() {
           ))}
         </div>
         <div
-          className="flex justify-between items-center pt-4 border-t"
+          className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 pt-4 border-t"
           style={{ borderColor: "var(--border)" }}
         >
-          <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/brand/logo-long.svg"
@@ -73,7 +73,17 @@ export function Footer() {
             />
             <div className="mr-catalog">EST. MCMXCI · LAHORE</div>
           </div>
-          <div className="mr-catalog">© {new Date().getFullYear()} AL-MAWRID</div>
+          <div className="flex flex-row justify-between items-center sm:items-center gap-4">
+            <a
+              href="https://tableturnerr.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mr-nav-link mr-catalog"
+            >
+              MADE WITH <span style={{ color: "var(--mr-clay-700)" }}>♥</span> BY TABLETURNERR.COM
+            </a>
+            <div className="mr-catalog">© {new Date().getFullYear()} AL-MAWRID</div>
+          </div>
         </div>
       </div>
     </footer>
