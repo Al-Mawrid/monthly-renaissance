@@ -67,6 +67,7 @@ export async function createArticle(data: {
       },
     });
     revalidatePath("/admin/articles");
+    revalidatePath("/");
     return { applied: true };
   }
 
@@ -88,6 +89,7 @@ export async function updateArticle(id: number, data: {
     await prisma.article.update({ where: { id }, data });
     revalidatePath("/admin/articles");
     revalidatePath(`/admin/articles/${id}/edit`);
+    revalidatePath("/");
     return { applied: true };
   }
 
@@ -104,6 +106,7 @@ export async function deleteArticle(id: number): Promise<MutationResult> {
     await prisma.articleIssueLink.deleteMany({ where: { articleId: id } });
     await prisma.article.delete({ where: { id } });
     revalidatePath("/admin/articles");
+    revalidatePath("/");
     return { applied: true };
   }
 
@@ -121,6 +124,7 @@ export async function toggleArticleDisplay(id: number) {
   if (canManageContent(session.user.role)) {
     await prisma.article.update({ where: { id }, data: { display: !article.display } });
     revalidatePath("/admin/articles");
+    revalidatePath("/");
     return;
   }
 
@@ -162,6 +166,7 @@ export async function createQuery(data: {
       },
     });
     revalidatePath("/admin/queries");
+    revalidatePath("/");
     return { applied: true };
   }
 
@@ -184,6 +189,7 @@ export async function updateQuery(id: number, data: {
   if (canManageContent(session.user.role)) {
     await prisma.queryEntry.update({ where: { id }, data });
     revalidatePath("/admin/queries");
+    revalidatePath("/");
     return { applied: true };
   }
 
@@ -199,6 +205,7 @@ export async function deleteQuery(id: number): Promise<MutationResult> {
     await prisma.queryIssueLink.deleteMany({ where: { queryId: id } });
     await prisma.queryEntry.delete({ where: { id } });
     revalidatePath("/admin/queries");
+    revalidatePath("/");
     return { applied: true };
   }
 
@@ -216,6 +223,7 @@ export async function toggleQueryDisplay(id: number) {
   if (canManageContent(session.user.role)) {
     await prisma.queryEntry.update({ where: { id }, data: { display: !query.display } });
     revalidatePath("/admin/queries");
+    revalidatePath("/");
     return;
   }
 
@@ -254,6 +262,7 @@ export async function createIssue(data: {
       },
     });
     revalidatePath("/admin/issues");
+    revalidatePath("/");
     return { applied: true };
   }
 
@@ -277,6 +286,7 @@ export async function updateIssue(id: number, data: {
     if (data.issueDate) updateData.issueDate = new Date(data.issueDate);
     await prisma.issue.update({ where: { id }, data: updateData });
     revalidatePath("/admin/issues");
+    revalidatePath("/");
     return { applied: true };
   }
 
@@ -293,6 +303,7 @@ export async function deleteIssue(id: number): Promise<MutationResult> {
     await prisma.queryIssueLink.deleteMany({ where: { issueId: id } });
     await prisma.issue.delete({ where: { id } });
     revalidatePath("/admin/issues");
+    revalidatePath("/");
     return { applied: true };
   }
 
@@ -310,6 +321,7 @@ export async function toggleIssueDisplay(id: number) {
   if (canManageContent(session.user.role)) {
     await prisma.issue.update({ where: { id }, data: { display: !issue.display } });
     revalidatePath("/admin/issues");
+    revalidatePath("/");
     return;
   }
 
@@ -334,6 +346,7 @@ export async function updateWriter(id: number, data: {
   if (canManageContent(session.user.role)) {
     await prisma.writer.update({ where: { id }, data });
     revalidatePath("/admin/writers");
+    revalidatePath("/");
     return { applied: true };
   }
 
@@ -351,6 +364,7 @@ export async function toggleWriterDisplay(id: number) {
   if (canManageContent(session.user.role)) {
     await prisma.writer.update({ where: { id }, data: { displayOnSite: !writer.displayOnSite } });
     revalidatePath("/admin/writers");
+    revalidatePath("/");
     return;
   }
 
@@ -375,6 +389,7 @@ export async function updateTopic(id: number, data: {
   if (canManageContent(session.user.role)) {
     await prisma.topic.update({ where: { id }, data });
     revalidatePath("/admin/topics");
+    revalidatePath("/");
     return { applied: true };
   }
 
@@ -392,6 +407,7 @@ export async function toggleTopicDisplay(id: number) {
   if (canManageContent(session.user.role)) {
     await prisma.topic.update({ where: { id }, data: { displayInList: !topic.displayInList } });
     revalidatePath("/admin/topics");
+    revalidatePath("/");
     return;
   }
 
@@ -575,6 +591,7 @@ export async function approveChangeRequest(requestId: number) {
         await prisma.article.delete({ where: { id: cr.entityId } });
       }
       revalidatePath("/admin/articles");
+      revalidatePath("/");
       break;
 
     case "query":
@@ -600,6 +617,7 @@ export async function approveChangeRequest(requestId: number) {
         await prisma.queryEntry.delete({ where: { id: cr.entityId } });
       }
       revalidatePath("/admin/queries");
+      revalidatePath("/");
       break;
 
     case "issue":
@@ -626,6 +644,7 @@ export async function approveChangeRequest(requestId: number) {
         await prisma.issue.delete({ where: { id: cr.entityId } });
       }
       revalidatePath("/admin/issues");
+      revalidatePath("/");
       break;
 
     case "writer":
@@ -633,6 +652,7 @@ export async function approveChangeRequest(requestId: number) {
         await prisma.writer.update({ where: { id: cr.entityId }, data });
       }
       revalidatePath("/admin/writers");
+      revalidatePath("/");
       break;
 
     case "topic":
@@ -640,6 +660,7 @@ export async function approveChangeRequest(requestId: number) {
         await prisma.topic.update({ where: { id: cr.entityId }, data });
       }
       revalidatePath("/admin/topics");
+      revalidatePath("/");
       break;
 
     case "book":
