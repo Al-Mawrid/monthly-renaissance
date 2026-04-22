@@ -20,20 +20,63 @@ import {
   getFeaturedTopics,
 } from "@/lib/queries";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
+
+type HomeData = {
+  latestIssue: Awaited<ReturnType<typeof getLatestIssue>>;
+  featuredArticle: Awaited<ReturnType<typeof getFeaturedArticle>>;
+  recentArticles: Awaited<ReturnType<typeof getRecentArticles>>;
+  latestQueries: Awaited<ReturnType<typeof getLatestQueries>>;
+  featuredWriters: Awaited<ReturnType<typeof getFeaturedWriters>>;
+  featuredTopics: Awaited<ReturnType<typeof getFeaturedTopics>>;
+};
+
+async function loadHomeData(): Promise<HomeData | null> {
+  try {
+    const [latestIssue, featuredArticle, recentArticles, latestQueries, featuredWriters, featuredTopics] =
+      await Promise.all([
+        getLatestIssue(),
+        getFeaturedArticle(),
+        getRecentArticles(4),
+        getLatestQueries(3),
+        getFeaturedWriters(4),
+        getFeaturedTopics(6),
+      ]);
+    return { latestIssue, featuredArticle, recentArticles, latestQueries, featuredWriters, featuredTopics };
+  } catch (err) {
+    console.error("[home] data fetch failed:", err);
+    return null;
+  }
+}
+
+function HomeFallback() {
+  return (
+    <div className="flex flex-col">
+      <section className="border-b border-border">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-16 lg:py-24 text-center">
+          <Library className="h-10 w-10 mx-auto mb-4 text-primary opacity-80" />
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Monthly Renaissance</h1>
+          <p className="mt-3 text-base text-muted-foreground max-w-xl mx-auto">
+            35 years of Islamic scholarship. Content is loading — please try again in a moment.
+          </p>
+          <div className="flex justify-center gap-3 pt-6">
+            <Link href="/issues" className={cn(buttonVariants({ size: "lg" }), "bg-primary hover:bg-teal-dark")}>
+              Browse Archive <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+            <Link href="/ebooks" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}>
+              E-Books
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
 
 export default async function Home() {
-  const [latestIssue, featuredArticle, recentArticles, latestQueries, featuredWriters, featuredTopics] =
-    await Promise.all([
-      getLatestIssue(),
-      getFeaturedArticle(),
-      getRecentArticles(4),
-      getLatestQueries(3),
-      getFeaturedWriters(4),
-      getFeaturedTopics(6),
-    ]);
-
-  if (!latestIssue || !featuredArticle) return null;
+  const data = await loadHomeData();
+  if (!data || !data.latestIssue || !data.featuredArticle) return <HomeFallback />;
+  const { latestIssue, featuredArticle, recentArticles, latestQueries, featuredWriters, featuredTopics } = data;
 
   return (
     <div className="flex flex-col">
