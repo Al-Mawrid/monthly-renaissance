@@ -53,12 +53,19 @@ export default async function AdminLayout({
     <div className="fixed inset-0 z-50 flex bg-background">
       {/* Sidebar */}
       <aside className="hidden lg:flex w-64 flex-col shrink-0 border-r border-border bg-card overflow-y-auto">
-        <div className="flex items-center gap-2.5 px-6 py-5 border-b border-border">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <BookOpen className="h-4 w-4" />
-          </div>
-          <div>
-            <span className="text-sm font-semibold">Admin Panel</span>
+        <div className="flex items-center gap-2.5 px-5 py-4 border-b border-border">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/mr-seal.svg"
+            alt="Monthly Renaissance"
+            width={32}
+            height={32}
+            className="object-contain flex-shrink-0"
+            style={{ color: "var(--foreground)" }}
+          />
+          <div className="leading-[1.1]">
+            <div className="font-serif text-[14px] font-semibold">Monthly Renaissance</div>
+            <div className="mr-catalog" style={{ fontSize: 10 }}>EDITORIAL</div>
           </div>
         </div>
 
@@ -105,7 +112,7 @@ export default async function AdminLayout({
         <div className="px-6 py-4 border-t border-border">
           <div className="flex items-center gap-3">
             {session.user.image ? (
-              <img src={session.user.image} alt="" className="h-8 w-8 rounded-full" />
+              <img src={session.user.image} alt="" referrerPolicy="no-referrer" className="h-8 w-8 rounded-full object-cover" />
             ) : (
               <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                 <span className="text-xs font-semibold text-primary">
