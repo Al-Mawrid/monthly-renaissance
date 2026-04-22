@@ -80,7 +80,7 @@ export default async function AdminWritersPage({
                       {w.user ? (
                         <span className="flex items-center gap-1.5">
                           {w.user.image ? (
-                            <img src={w.user.image} alt="" className="h-5 w-5 rounded-full" />
+                            <img src={w.user.image} alt="" referrerPolicy="no-referrer" className="h-5 w-5 rounded-full object-cover" />
                           ) : null}
                           {w.user.name ?? w.user.email}
                         </span>

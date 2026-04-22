@@ -52,7 +52,8 @@ export function UserMenu() {
           <img
             src={session.user.image}
             alt=""
-            className="h-8 w-8 rounded-full"
+            referrerPolicy="no-referrer"
+            className="h-8 w-8 rounded-full object-cover"
           />
         ) : (
           initials

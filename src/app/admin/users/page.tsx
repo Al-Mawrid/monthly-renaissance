@@ -56,7 +56,7 @@ export default async function AdminUsersPage({
                 <TableCell>
                   <div className="flex items-center gap-3">
                     {user.image ? (
-                      <img src={user.image} alt="" className="h-8 w-8 rounded-full" />
+                      <img src={user.image} alt="" referrerPolicy="no-referrer" className="h-8 w-8 rounded-full object-cover" />
                     ) : (
                       <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                         <span className="text-xs font-semibold text-primary">
