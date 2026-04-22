@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Repository Contains
 
-This is the **Monthly Renaissance** website rebuild project — migrating monthly-renaissance.com from ASP.NET/MSSQL to **Next.js 16 + Tailwind CSS + PostgreSQL + Prisma**, deployed on Vercel.
+This is the **Monthly Renaissance** website rebuild project — migrating monthly-renaissance.com from ASP.NET/MSSQL to **Next.js 16 + Tailwind CSS + MySQL + Prisma**, deployed on Hostinger.
 
 ### Structure
 - `src/` — Next.js 16 App Router application (TypeScript, Tailwind CSS, shadcn/ui)
@@ -32,7 +32,7 @@ npx prisma studio    # Open Prisma Studio (visual DB browser)
 - **Styling**: Tailwind CSS v4 + shadcn/ui v4
 - **Icons**: Lucide React
 - **Fonts**: Inter (UI), Lora (articles/serif), Amiri (Arabic text)
-- **Database**: PostgreSQL + Prisma 7
+- **Database**: MySQL + Prisma 5
 - **Auth**: NextAuth.js v5 (Auth.js) + Google OAuth
 - **Roles**: ADMIN, TEAM, MEMBER (via Prisma enum)
 
@@ -53,5 +53,5 @@ npx prisma studio    # Open Prisma Studio (visual DB browser)
 
 ## Important Notes
 - Next.js 16 uses `proxy.ts` instead of `middleware.ts`
-- Prisma 7 requires `prisma.config.ts` for connection URL (not in schema.prisma)
+- `prisma.config.ts` declares the schema path; the MySQL connection URL lives in `.env` as `DATABASE_URL` and is read by `schema.prisma`
 - The `QueryEntry` model is named to avoid Prisma reserved word conflict (maps to `query_entries` table)

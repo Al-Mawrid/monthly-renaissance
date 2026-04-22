@@ -3,7 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 // ─── Content Models ───────────────────────────────────────────
@@ -63,9 +64,9 @@ model Issue {
 model Article {
   id               Int       @id @default(autoincrement())
   oldId            Int       @unique @map("old_id")
-  title            String
-  slug             String
-  bodyHtml         String    @map("body_html") @db.Text
+  title            String    @db.VarChar(255)
+  slug             String    @db.VarChar(255)
+  bodyHtml         String    @map("body_html") @db.LongText
   topicId          Int       @map("topic_id")
   writerId         Int       @map("writer_id")
   translatorId     Int?      @map("translator_id")
@@ -90,8 +91,8 @@ model QueryEntry {
   oldId           Int       @unique @map("old_id")
   title           String
   slug            String
-  questionHtml    String    @map("question_html") @db.Text
-  answerHtml      String?   @map("answer_html") @db.Text
+  questionHtml    String    @map("question_html") @db.LongText
+  answerHtml      String?   @map("answer_html") @db.LongText
   questioner      String?
   questionerEmail String?   @map("questioner_email")
   topicId         Int       @map("topic_id")
