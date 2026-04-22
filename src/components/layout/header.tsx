@@ -8,6 +8,7 @@ import { buttonVariants } from "@/lib/variants";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { UserMenu } from "@/components/auth/user-menu";
+import { SearchBox } from "@/components/layout/search-box";
 
 const navigation = [
   { name: "Articles", href: "/articles/topics" },
@@ -20,7 +21,7 @@ const navigation = [
 
 export function Masthead({ compact = false }: { compact?: boolean }) {
   return (
-    <Link href="/" className="flex items-center gap-3.5 group">
+    <Link href="/" className="mr-masthead-link flex items-center gap-3.5 group">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/brand/logo-box.svg"
@@ -61,7 +62,7 @@ export function Header() {
               <Link
                 key={item.name}
                 href={item.href}
-                className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors border-b-[1.5px] border-transparent hover:border-[var(--mr-saffron-700)] pb-1"
+                className="mr-nav-link text-[13px] font-medium text-muted-foreground"
               >
                 {item.name}
               </Link>
@@ -74,7 +75,8 @@ export function Header() {
               size="icon"
               onClick={() => setSearchOpen((s) => !s)}
               className="text-muted-foreground hover:text-foreground"
-              aria-label="Search"
+              aria-label={searchOpen ? "Close search" : "Open search"}
+              aria-expanded={searchOpen}
             >
               <Search className="h-4 w-4" />
             </Button>
@@ -105,11 +107,7 @@ export function Header() {
 
         {searchOpen && (
           <div className="py-3 border-t" style={{ borderColor: "var(--border)" }}>
-            <input
-              autoFocus
-              placeholder="Search articles, issues, queries, writers…"
-              className="w-full px-4 py-2.5 text-sm bg-background border border-[var(--border)] rounded-sm outline-none focus:border-[var(--mr-green-700)]"
-            />
+            <SearchBox onClose={() => setSearchOpen(false)} />
           </div>
         )}
       </div>
