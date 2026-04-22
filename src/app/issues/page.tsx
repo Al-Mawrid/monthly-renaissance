@@ -117,7 +117,7 @@ export default async function IssuesPage() {
                         <Link
                           key={issue.id}
                           href={`/issues/${issue.id}`}
-                          className="relative flex flex-col p-5 min-h-[140px] border-l-[3px] transition-colors"
+                          className="mr-issue-tile relative flex flex-col p-5 min-h-[140px] border-l-[3px]"
                           style={{
                             background: isLatest ? "var(--mr-saffron-50)" : "var(--card)",
                             borderLeftColor: isLatest ? "var(--mr-saffron-700)" : "transparent",
@@ -131,7 +131,7 @@ export default async function IssuesPage() {
                               Current
                             </span>
                           )}
-                          <div className="mr-catalog">№ {issue.issueNumber}</div>
+                          <div className="mr-catalog mr-issue-number">№ {issue.issueNumber}</div>
                           <div className="font-serif text-[22px] font-semibold mt-1">
                             {getMonthName(issue.month)} {year}
                           </div>

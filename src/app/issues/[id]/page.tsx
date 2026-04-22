@@ -145,8 +145,7 @@ export default async function IssuePage({
               <div className="flex gap-2.5 flex-wrap">
                 <Link
                   href={`/articles/${featured.slug}`}
-                  className="inline-flex items-center text-[13px] font-medium px-4 py-2.5 rounded-sm text-white"
-                  style={{ background: "var(--mr-green-700)" }}
+                  className="mr-btn mr-btn-primary"
                 >
                   Start reading →
                 </Link>
@@ -177,7 +176,7 @@ export default async function IssuePage({
               <Link
                 key={a.id}
                 href={`/articles/${a.slug}`}
-                className="grid py-4 border-b cursor-pointer group"
+                className="mr-toc-row--cream grid py-4 border-b cursor-pointer"
                 style={{
                   gridTemplateColumns: "40px 1fr 60px",
                   gap: 14,
@@ -192,7 +191,7 @@ export default async function IssuePage({
                   {String(i + 1).padStart(2, "0")}
                 </div>
                 <div>
-                  <div className="font-serif text-[18px] font-semibold group-hover:text-[var(--mr-green-700)] transition-colors">
+                  <div className="mr-toc-title font-serif text-[18px] font-semibold">
                     {a.title}
                   </div>
                   <div className="text-[12px] text-muted-foreground mt-1">
@@ -218,7 +217,7 @@ export default async function IssuePage({
               <Link
                 key={q.id}
                 href={`/articles/${q.slug}`}
-                className="block py-3.5 border-b cursor-pointer"
+                className="mr-toc-row--cream block py-3.5 border-b cursor-pointer"
                 style={{ borderColor: "var(--border)" }}
               >
                 <div className="flex items-center gap-2 mb-1.5">
