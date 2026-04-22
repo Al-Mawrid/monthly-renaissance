@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { Inter, Lora, Amiri } from "next/font/google";
+import { Inter, Lora, Amiri, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { ThemeProvider } from "@/components/theme-provider";
 import { SessionProvider } from "@/components/auth/session-provider";
 
 const inter = Inter({
@@ -20,6 +19,11 @@ const amiri = Amiri({
   variable: "--font-arabic",
   weight: ["400", "700"],
   subsets: ["arabic", "latin"],
+});
+
+const jetbrains = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -48,16 +52,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${lora.variable} ${amiri.variable} h-full antialiased`}
-      suppressHydrationWarning
+      className={`${inter.variable} ${lora.variable} ${amiri.variable} ${jetbrains.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <SessionProvider>
-          <ThemeProvider>
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </ThemeProvider>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
         </SessionProvider>
       </body>
     </html>
