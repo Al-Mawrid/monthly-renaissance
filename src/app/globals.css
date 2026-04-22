@@ -49,60 +49,61 @@
 }
 
 :root {
-  /* Monthly Renaissance palette — real CSS custom properties
-     (defined outside @theme so they cascade at runtime and don't
-     collide with Tailwind's default color palette). */
-  --mr-parchment: #f5f1e8;
-  --mr-ivory: #faf7f0;
-  --mr-cream: #efe9db;
-  --mr-vellum: #e8e0cc;
-  --mr-ink: #1a1f2e;
-  --mr-ink-soft: #2d3344;
-  --mr-ink-muted: #5a6070;
-  --mr-ink-faint: #8a8f9c;
-  --mr-green-900: #064437;
-  --mr-green-800: #085548;
-  --mr-green-700: #0a6e5c;
-  --mr-green-600: #0d8a73;
-  --mr-green-100: #dbe9e3;
-  --mr-green-50: #ecf2ed;
-  --mr-saffron-900: #8c6509;
-  --mr-saffron-700: #b8860b;
-  --mr-saffron-500: #d4a843;
-  --mr-saffron-300: #e8cd7e;
-  --mr-saffron-100: #f5e9c1;
-  --mr-saffron-50: #faf3dd;
-  --mr-clay-700: #8b3a2f;
-  --mr-clay-500: #b4513f;
-  --mr-rule: #d9d0b9;
+  /* Monthly Renaissance palette — warmer (straw/wheat parchment, brown ink,
+     olive-green mihrab, amber saffron, terracotta clay). */
+  --mr-parchment: #f3ecdc;
+  --mr-ivory: #faf4e4;
+  --mr-cream: #ebe2c8;
+  --mr-vellum: #e2d5b4;
+  --mr-ink: #241c13;
+  --mr-ink-soft: #3a2e20;
+  --mr-ink-muted: #66594a;
+  --mr-ink-faint: #968776;
+  --mr-green-900: #0a3e2d;
+  --mr-green-800: #0f5040;
+  --mr-green-700: #146856;
+  --mr-green-600: #198370;
+  --mr-green-100: #d6e2d8;
+  --mr-green-50: #e7ede2;
+  --mr-saffron-900: #7a5409;
+  --mr-saffron-700: #b37309;
+  --mr-saffron-500: #d49935;
+  --mr-saffron-300: #ebc270;
+  --mr-saffron-100: #f3e2b3;
+  --mr-saffron-50: #f8edc8;
+  --mr-clay-700: #8f3621;
+  --mr-clay-500: #b85038;
+  --mr-rule: #d4c5a5;
+  --mr-rule-soft: #e0d3b0;
+  --mr-rule-strong: #ad9d7b;
 
-  --background: #f5f1e8;       /* parchment */
-  --foreground: #1a1f2e;       /* ink */
-  --card: #faf7f0;             /* ivory */
-  --card-foreground: #1a1f2e;
-  --popover: #faf7f0;
-  --popover-foreground: #1a1f2e;
-  --primary: #0a6e5c;          /* mihrab green */
-  --primary-foreground: #faf7f0;
-  --secondary: #efe9db;        /* cream */
-  --secondary-foreground: #1a1f2e;
-  --muted: #efe9db;
-  --muted-foreground: #5a6070;
-  --accent: #b8860b;           /* saffron */
-  --accent-foreground: #faf7f0;
-  --destructive: #8b3a2f;      /* clay */
-  --border: #d9d0b9;           /* rule */
-  --input: #d9d0b9;
-  --ring: #0a6e5c;
+  --background: #f3ecdc;       /* parchment (warm) */
+  --foreground: #241c13;       /* ink (warm brown-black) */
+  --card: #faf4e4;             /* ivory */
+  --card-foreground: #241c13;
+  --popover: #faf4e4;
+  --popover-foreground: #241c13;
+  --primary: #146856;          /* mihrab green (olive) */
+  --primary-foreground: #faf4e4;
+  --secondary: #ebe2c8;        /* cream */
+  --secondary-foreground: #241c13;
+  --muted: #ebe2c8;
+  --muted-foreground: #66594a;
+  --accent: #b37309;           /* saffron (amber) */
+  --accent-foreground: #faf4e4;
+  --destructive: #8f3621;      /* clay (terracotta) */
+  --border: #d4c5a5;           /* rule */
+  --input: #d4c5a5;
+  --ring: #146856;
   --radius: 0.125rem;           /* sharp journal edges */
-  --sidebar: #faf7f0;
-  --sidebar-foreground: #1a1f2e;
-  --sidebar-primary: #0a6e5c;
-  --sidebar-primary-foreground: #faf7f0;
-  --sidebar-accent: #efe9db;
-  --sidebar-accent-foreground: #1a1f2e;
-  --sidebar-border: #d9d0b9;
-  --sidebar-ring: #0a6e5c;
+  --sidebar: #faf4e4;
+  --sidebar-foreground: #241c13;
+  --sidebar-primary: #146856;
+  --sidebar-primary-foreground: #faf4e4;
+  --sidebar-accent: #ebe2c8;
+  --sidebar-accent-foreground: #241c13;
+  --sidebar-border: #d4c5a5;
+  --sidebar-ring: #146856;
 }
 
 @layer base {
@@ -111,12 +112,20 @@
   }
   body {
     @apply bg-background text-foreground;
-    background: var(--background);
+    background:
+      radial-gradient(ellipse at top left, rgba(179, 115, 9, 0.035), transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(20, 104, 86, 0.025), transparent 50%),
+      var(--background);
+    background-attachment: fixed;
     min-height: 100vh;
   }
   html {
     @apply font-sans;
     font-feature-settings: "ss01", "cv11";
+    overflow-x: clip;
+  }
+  body {
+    overflow-x: clip;
   }
 }
 
@@ -330,6 +339,438 @@ body.mr-sepia .article-content,
 body.mr-sepia .article-content * {
   color: #433422 !important;
   background: transparent !important;
+}
+
+/* ═══════════════ Hover & interaction states ═══════════════ */
+
+/* Nav links — underline slides in from left */
+.mr-nav-link {
+  position: relative;
+  transition: color 0.18s ease;
+  cursor: pointer;
+}
+.mr-nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  bottom: -4px;
+  height: 1.5px;
+  background: var(--mr-saffron-700);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.mr-nav-link:hover { color: var(--foreground); }
+.mr-nav-link:hover::after { transform: scaleX(1); }
+.mr-nav-link.is-active { color: var(--foreground); }
+.mr-nav-link.is-active::after { transform: scaleX(1); }
+
+/* Footer / text links */
+.mr-link {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.mr-link:hover { color: var(--foreground); }
+.mr-footer-link {
+  display: block;
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+.mr-footer-link:hover {
+  color: var(--foreground);
+  transform: translateX(2px);
+}
+
+/* Article / list cards — subtle lift + saffron rule */
+.mr-hover-card {
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+.mr-hover-card:hover {
+  background: var(--mr-ivory);
+  border-color: var(--mr-rule-strong);
+  box-shadow: 0 2px 8px rgba(36, 28, 19, 0.08), 0 1px 0 rgba(36, 28, 19, 0.05);
+  transform: translateY(-1px);
+}
+
+/* TOC rows — cover-plate & issue TOC sliding indent on hover */
+.mr-toc-row {
+  transition: background-color 0.15s ease, padding-left 0.2s ease;
+}
+.mr-toc-row:hover {
+  background: var(--mr-saffron-50);
+  padding-left: 8px;
+}
+.mr-toc-row:hover .mr-toc-title {
+  color: var(--mr-green-800);
+}
+.mr-toc-title { transition: color 0.15s ease; }
+
+.mr-toc-row--cream {
+  transition: background-color 0.15s ease, padding-left 0.2s ease;
+}
+.mr-toc-row--cream:hover {
+  background: var(--mr-cream);
+  padding-left: 10px;
+}
+
+/* Topic cards — saffron left border slides in + cream wash */
+.mr-topic-card {
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background-color 0.18s ease, border-left-color 0.18s ease;
+}
+.mr-topic-card:hover {
+  background: var(--mr-cream) !important;
+  border-left-color: var(--mr-saffron-700);
+}
+.mr-topic-card:hover .mr-topic-title {
+  color: var(--mr-green-800);
+}
+.mr-topic-title { transition: color 0.18s ease; }
+
+/* Article title links — green underline reveal */
+.mr-title-link {
+  cursor: pointer;
+  background-image: linear-gradient(var(--mr-green-800), var(--mr-green-800));
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0% 1px;
+  transition: background-size 0.25s cubic-bezier(0.2, 0.7, 0.2, 1), color 0.18s ease;
+}
+.mr-title-link:hover {
+  color: var(--mr-green-800);
+  background-size: 100% 1px;
+}
+
+/* Issue tiles — parchment deepens, clay number glows */
+.mr-issue-tile {
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+.mr-issue-tile:hover {
+  background: var(--mr-cream);
+  border-color: var(--foreground);
+  transform: translateY(-2px);
+}
+.mr-issue-tile:hover .mr-issue-number {
+  color: var(--mr-clay-700);
+}
+.mr-issue-number { transition: color 0.18s ease; }
+
+/* Topic / writer chips */
+.mr-chip {
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.mr-chip:hover {
+  background: var(--foreground);
+  color: var(--mr-ivory);
+  border-color: var(--foreground);
+}
+
+/* Admin sidebar items */
+.mr-sidebar-item {
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-left-color 0.2s ease;
+  border-left: 3px solid transparent;
+}
+.mr-sidebar-item:hover {
+  background: var(--mr-cream) !important;
+  color: var(--foreground);
+}
+.mr-sidebar-item.is-active {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+/* Admin table rows */
+.mr-row {
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+.mr-row:hover { background: var(--mr-cream); }
+
+/* Footnote link hover */
+.article-content sup a:hover,
+.article-content .FootNoteLink a:hover {
+  background: var(--mr-saffron-100);
+  text-decoration: none;
+  border-radius: 2px;
+}
+
+/* Primary button — press state + hover shadow */
+.mr-btn-primary-press:active { transform: translateY(1px); }
+
+/* Focus rings — accessibility */
+.mr-nav-link:focus-visible,
+.mr-link:focus-visible,
+.mr-footer-link:focus-visible,
+.mr-hover-card:focus-visible,
+.mr-issue-tile:focus-visible,
+.mr-chip:focus-visible,
+.mr-sidebar-item:focus-visible,
+.mr-masthead-link:focus-visible {
+  outline: 2px solid var(--mr-saffron-500);
+  outline-offset: 2px;
+}
+
+/* Archive depth bars — width expands, green → saffron on hover */
+.mr-archive-year {
+  cursor: pointer;
+  text-decoration: none;
+}
+.mr-archive-bar {
+  width: 70%;
+  transition: width 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
+}
+.mr-archive-year:hover .mr-archive-bar[data-active="false"] {
+  width: 90%;
+  background: var(--mr-saffron-700) !important;
+  opacity: 1 !important;
+}
+.mr-archive-year:hover .mr-archive-bar[data-active="true"] {
+  width: 90%;
+  opacity: 1 !important;
+}
+.mr-archive-label {
+  transition: color 0.15s ease, font-weight 0.15s ease;
+}
+.mr-archive-year:hover .mr-archive-label[data-active="false"] {
+  color: var(--foreground) !important;
+  font-weight: 600 !important;
+}
+
+/* Archive bar tooltip — info box on hover */
+.mr-archive-tooltip {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  min-width: 180px;
+  padding: 12px 16px;
+  background: var(--mr-green-900, #0a3e2d);
+  color: var(--mr-ivory);
+  border-top: 2px solid var(--mr-saffron-500);
+  box-shadow: 0 8px 22px rgba(10, 62, 45, 0.32), 0 2px 6px rgba(0, 0, 0, 0.12);
+  font-family: var(--font-sans);
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s linear 0.15s;
+  z-index: 30;
+  white-space: nowrap;
+}
+.mr-archive-year:hover .mr-archive-tooltip,
+.mr-archive-year:focus-visible .mr-archive-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  visibility: visible;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s linear 0s;
+}
+.mr-archive-tooltip-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(232, 205, 126, 0.2);
+}
+.mr-archive-tooltip-year {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--mr-saffron-300);
+  letter-spacing: -0.01em;
+}
+.mr-archive-tooltip-vol {
+  font-size: 10px;
+  color: rgba(243, 226, 179, 0.62);
+  letter-spacing: 0.06em;
+}
+.mr-archive-tooltip-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  row-gap: 4px;
+  font-size: 11.5px;
+  color: rgba(250, 244, 228, 0.9);
+}
+.mr-archive-tooltip-accent {
+  color: var(--mr-saffron-300);
+  font-weight: 600;
+}
+.mr-archive-tooltip-foot {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(235, 194, 112, 0.22);
+  font-size: 10px;
+  color: var(--mr-saffron-300);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.mr-archive-tooltip-arrow {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: var(--mr-green-900, #0a3e2d);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/* Masthead link */
+.mr-masthead-link {
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.mr-masthead-link:hover { opacity: 0.82; }
+
+/* ═══════════════ Buttons — shimmer, lift, craft hover ═══════════════ */
+.mr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans), "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+  transition:
+    background-color 0.2s cubic-bezier(0.2, 0.7, 0.2, 1),
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.25s ease,
+    transform 0.12s ease,
+    letter-spacing 0.2s ease;
+  text-decoration: none;
+}
+.mr-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(235, 194, 112, 0.18) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+  pointer-events: none;
+}
+.mr-btn:hover::before { transform: translateX(100%); }
+
+.mr-btn-primary {
+  background: var(--mr-green-700);
+  color: var(--mr-ivory);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.15), 0 1px 0 rgba(0, 0, 0, 0.04);
+}
+.mr-btn-primary:hover {
+  background: var(--mr-green-800);
+  box-shadow:
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 4px 12px rgba(15, 80, 64, 0.28),
+    0 2px 4px rgba(15, 80, 64, 0.15);
+  transform: translateY(-1px);
+  color: var(--mr-ivory);
+}
+.mr-btn-primary:active {
+  transform: translateY(0);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+.mr-btn-outline {
+  background: transparent;
+  color: var(--mr-ink);
+  border-color: var(--mr-ink);
+}
+.mr-btn-outline::before {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(235, 194, 112, 0.55) 50%,
+    transparent 100%
+  );
+}
+.mr-btn-outline:hover {
+  background: var(--mr-ink);
+  color: var(--mr-ivory);
+  box-shadow: 0 4px 10px rgba(36, 28, 19, 0.18), 0 1px 2px rgba(36, 28, 19, 0.12);
+  transform: translateY(-1px);
+}
+.mr-btn-outline:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.mr-btn-ghost {
+  background: transparent;
+  color: var(--mr-ink-soft);
+}
+.mr-btn-ghost:hover {
+  background: var(--mr-saffron-50);
+  color: var(--mr-ink);
+  letter-spacing: 0.01em;
+}
+
+/* Saffron-filled CTA (used on the dark mihrab CTA block) */
+.mr-btn-saffron {
+  background: var(--mr-saffron-700);
+  color: var(--mr-ink);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.15), 0 1px 0 rgba(0, 0, 0, 0.04);
+}
+.mr-btn-saffron:hover {
+  background: var(--mr-saffron-500);
+  box-shadow:
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+    0 4px 12px rgba(179, 115, 9, 0.32),
+    0 2px 4px rgba(179, 115, 9, 0.2);
+  transform: translateY(-1px);
+  color: var(--mr-ink);
+}
+.mr-btn-saffron:active {
+  transform: translateY(0);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+/* Inverse outline — for use on dark backgrounds (e.g. the green CTA block) */
+.mr-btn-outline-inverse {
+  background: transparent;
+  color: var(--mr-ivory);
+  border-color: rgba(245, 241, 232, 0.4);
+}
+.mr-btn-outline-inverse::before {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(235, 194, 112, 0.38) 50%,
+    transparent 100%
+  );
+}
+.mr-btn-outline-inverse:hover {
+  background: rgba(245, 241, 232, 0.08);
+  border-color: var(--mr-ivory);
+  color: var(--mr-ivory);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+.mr-btn-outline-inverse:active {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 /* Print: clean article-only output for "Download PDF" */
