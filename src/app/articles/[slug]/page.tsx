@@ -7,6 +7,7 @@ import {
   getMonthName,
 } from "@/lib/queries";
 import { ArticleTools } from "@/components/article/article-tools";
+import { ReadingToolsFab } from "@/components/article/reading-tools-fab";
 
 export const dynamic = "force-dynamic";
 
@@ -225,6 +226,10 @@ export default async function ArticlePage({
           </aside>
         </div>
       </div>
+
+      <ReadingToolsFab
+        citation={`${article.writer.name} (${article.issue.year}). ${article.title}. Monthly Renaissance, ${article.issue.volume}(${article.issue.issueNumber}).`}
+      />
     </div>
   );
 }
