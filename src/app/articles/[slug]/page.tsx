@@ -8,6 +8,7 @@ import {
 } from "@/lib/queries";
 import { ArticleTools } from "@/components/article/article-tools";
 import { ReadingToolsFab } from "@/components/article/reading-tools-fab";
+import { FootnoteFocus } from "@/components/article/footnote-focus";
 
 export const dynamic = "force-dynamic";
 
@@ -137,6 +138,7 @@ export default async function ArticlePage({
               className="article-content mr-dropcap"
               dangerouslySetInnerHTML={{ __html: article.bodyHtml }}
             />
+            <FootnoteFocus />
 
             <hr className="my-10" style={{ borderColor: "var(--border)" }} />
 
@@ -204,7 +206,7 @@ export default async function ArticlePage({
             className="hidden lg:block py-12 pl-6 border-l"
             style={{ borderColor: "var(--border)" }}
           >
-            <div className="sticky top-[100px]">
+            <div className="sticky top-[140px]">
               <div className="mr-eyebrow mb-3.5">Tools</div>
               <ArticleTools
                 citation={`${article.writer.name} (${article.issue.year}). ${article.title}. Monthly Renaissance, ${article.issue.volume}(${article.issue.issueNumber}).`}
