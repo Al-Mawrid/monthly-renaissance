@@ -71,7 +71,7 @@ export function Footer() {
               className="opacity-75"
               style={{ height: 20, width: "auto" }}
             />
-            <div className="mr-catalog">EST. MCMXCI · LAHORE</div>
+            <div className="mr-catalog">EST. 1991 · LAHORE</div>
           </div>
           <div className="flex flex-row justify-between items-center sm:items-center gap-4">
             <a

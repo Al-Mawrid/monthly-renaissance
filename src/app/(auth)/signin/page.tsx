@@ -20,7 +20,7 @@ export default function SignInPage() {
             className="mr-eyebrow hidden sm:block"
             style={{ color: "var(--mr-saffron-700)" }}
           >
-            — Est. MCMXCI —
+            — Est. 1991 —
           </div>
           <div className="mr-catalog">AUTHENTICATION</div>
         </div>

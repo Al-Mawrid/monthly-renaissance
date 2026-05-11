@@ -17,7 +17,7 @@ export default function AboutPage() {
     <div>
       <div className="border-b" style={{ borderColor: "var(--foreground)" }}>
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-10 py-14">
-          <div className="mr-catalog mb-3">ISSN 1605-0045 · EST. MCMXCI</div>
+          <div className="mr-catalog mb-3">ISSN 1605-0045 · EST. 1991</div>
           <div className="mr-eyebrow mb-2.5" style={{ color: "var(--mr-saffron-700)" }}>
             — About the journal —
           </div>
