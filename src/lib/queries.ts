@@ -270,6 +270,17 @@ export async function getAllIssues(): Promise<Issue[]> {
   }, sample.allIssues);
 }
 
+export async function getSpecialIssues(): Promise<Issue[]> {
+  return withFallback(async () => {
+    const issues = await prisma.issue.findMany({
+      where: { display: true, isSpecial: true },
+      orderBy: { issueDate: "desc" },
+      include: { _count: { select: { articleLinks: true, queryLinks: true } } },
+    });
+    return issues.map(mapIssue);
+  }, sample.allIssues.filter((i) => i.isSpecial));
+}
+
 export async function getIssueBySlug(slug: string): Promise<Issue | null> {
   return withFallback(async () => {
     const issue = await prisma.issue.findUnique({
