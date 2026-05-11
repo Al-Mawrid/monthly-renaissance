@@ -38,13 +38,23 @@ npx prisma studio    # Open Prisma Studio (visual DB browser)
 
 ## Architecture
 - `src/lib/db.ts` — Prisma client singleton
-- `src/lib/queries.ts` — Database query functions (all pages use these)
-- `src/lib/types.ts` — TypeScript interfaces (Writer, Topic, Issue, Article, EBook)
-- `src/lib/auth.ts` — NextAuth.js configuration (Google provider + Prisma adapter)
-- `src/lib/permissions.ts` — Role-based permission checks
-- `src/proxy.ts` — Next.js 16 proxy (replaces middleware.ts) for admin route protection
+- `src/lib/queries.ts` — Database query functions (all pages use these). Wraps every query in `withFallback`, which silently substitutes `sample-data.ts` when the DB throws `ECONNREFUSED` or `PrismaClientInitializationError` in dev. Production errors still propagate.
+- `src/lib/types.ts` — TypeScript interfaces (Writer, Topic, Issue, Article, EBook) — note these differ from Prisma models; `queries.ts` is the mapping layer.
+- `src/lib/auth.ts` — NextAuth.js configuration (Google provider + Prisma adapter). `session.user.role` is populated from the User row in the session callback.
+- `src/lib/permissions.ts` — Role-based permission checks (`canEditContent`, `canManageContent`, `canManageUsers`, `canManageSettings`).
+- `src/proxy.ts` — Next.js 16 proxy (replaces middleware.ts) for admin route protection. ADMIN+TEAM can reach `/admin`; only ADMIN can reach `/admin/users` and `/admin/settings`.
 - `src/app/admin/` — Admin panel with sidebar layout, Server Actions for mutations
 - `src/app/admin/actions.ts` — All admin Server Actions (toggle display, update content, manage users)
+
+## Change Request Workflow (Admin Mutations)
+Every mutation in `src/app/admin/actions.ts` follows the same branch:
+- `canManageContent(role)` (ADMIN) → write straight to Prisma, `revalidatePath`, return `{ applied: true }`.
+- otherwise TEAM → `createChangeRequest(...)` writes a `ChangeRequest` row (action + entityType + entityId + JSON payload) for an admin to review at `/admin/change-requests`, return `{ requested: true }`.
+
+When adding a new admin action, mirror this pattern — never let TEAM users write content directly.
+
+## Legacy Migration Anchors
+Every content model (`Writer`, `Topic`, `Issue`, `Article`, `QueryEntry`, `Book`, `Video`, `Link`, and their categories) has a `oldId Int @unique @map("old_id")` column carrying the original MSSQL identifier. This is what drives the `content.aspx?id={id}` → new-URL 301 redirects and what the seed script in `prisma/seed.ts` joins on when ingesting `data/exports/*.json`. Preserve `oldId` on any new content-table work.
 
 ## Content Characteristics
 - Articles contain inline HTML with Arabic/RTL text blocks, footnotes (`FootNote`, `FootNoteLink` CSS classes), and `ArabicInLineText`/`EnglishQuote` styled spans
