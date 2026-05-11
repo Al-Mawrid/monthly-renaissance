@@ -227,6 +227,7 @@
   line-height: 1.78;
   color: var(--mr-ink-soft);
   text-wrap: pretty;
+  display: flow-root; /* contains any floated elements in legacy HTML */
 }
 .article-content p {
   margin: 0 0 1.1em;
@@ -341,31 +342,115 @@
 
 .article-content .FootNote {
   font-size: 0.875rem;
-  line-height: 1.6;
+  line-height: 1.65;
   color: var(--muted-foreground);
-  border-top: 1px solid var(--border);
-  margin-top: 2rem;
-  padding-top: 1rem;
   font-family: var(--font-serif);
   text-align: left;
+  position: relative;
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0.75rem 0.9rem 0.75rem 2.4rem;
+  background: var(--mr-saffron-50);
+  border: 1px solid var(--mr-saffron-300);
+  border-left: 3px solid var(--mr-clay-700);
+  border-radius: 4px;
+  transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Numbered chip derived from the list-item's id (fn1, fn2, …) */
+.article-content ol > li.FootNote {
+  counter-increment: mr-footnote;
+}
+.article-content ol:has(> li.FootNote) {
+  counter-reset: mr-footnote;
+  list-style: none;
+  padding: 0;
+  margin-top: 2.25rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1.25rem;
+}
+.article-content li.FootNote::before {
+  content: counter(mr-footnote);
+  position: absolute;
+  left: 0.55rem;
+  top: 0.7rem;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--mr-clay-700);
+  background: #fff5ec;
+  border: 1px solid var(--mr-saffron-300);
+  border-radius: 3px;
+  line-height: 1;
 }
 
 /* Anchor scroll: keep target clear of the sticky 72px header */
-.article-content [id^="fn"],
 .article-content .FootNote,
-.article-content li.FootNote {
+.article-content .FootNoteLink,
+.article-content [id^="fn"] {
   scroll-margin-top: 96px;
 }
 
+/* Clicking a footnote definition jumps back to the inline ref */
+.article-content .FootNote { cursor: pointer; }
+.article-content .FootNote:hover {
+  background: var(--mr-saffron-100);
+  border-color: var(--mr-clay-500);
+}
+
+/* Twin flash when a footnote target is jumped to.
+   Two distinct ring-pulses; works on .FootNote blocks and inline .FootNoteLink chips. */
+@keyframes mr-footnote-flash {
+  0%, 28%, 58%, 100% {
+    box-shadow: 0 0 0 0 rgba(143, 54, 33, 0);
+  }
+  14%, 44% {
+    box-shadow: 0 0 0 8px rgba(143, 54, 33, 0.42);
+  }
+}
+@keyframes mr-footnote-flash-block {
+  0%, 28%, 58%, 100% {
+    background: var(--mr-saffron-50);
+    border-color: var(--mr-saffron-300);
+  }
+  14%, 44% {
+    background: #ffd9a8;
+    border-color: var(--mr-clay-700);
+  }
+}
+.article-content .mr-footnote-flash {
+  animation: mr-footnote-flash 1.4s ease-in-out;
+}
+.article-content .FootNote.mr-footnote-flash {
+  animation:
+    mr-footnote-flash 1.4s ease-in-out,
+    mr-footnote-flash-block 1.4s ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .article-content .mr-footnote-flash,
+  .article-content .FootNote.mr-footnote-flash {
+    animation: none;
+    background: #ffd9a8;
+  }
+}
+
 .article-content sup,
-.article-content .FootNoteLink a {
+.article-content .FootNoteLink a,
+.article-content a.FootNoteLink {
   font-family: var(--font-mono);
   font-size: 0.72em;
   vertical-align: super;
   line-height: 0;
 }
 .article-content sup a,
-.article-content .FootNoteLink a {
+.article-content .FootNoteLink a,
+.article-content a.FootNoteLink {
   color: var(--mr-clay-700);
   font-weight: 700;
   text-decoration: none;
@@ -377,7 +462,8 @@
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .article-content sup a:hover,
-.article-content .FootNoteLink a:hover {
+.article-content .FootNoteLink a:hover,
+.article-content a.FootNoteLink:hover {
   background: var(--mr-clay-100);
   color: var(--mr-clay-700);
   border-color: var(--mr-clay-500);
@@ -407,7 +493,8 @@ body.mr-reading .article-content .ArabicInLineText {
   color: #0a3e2d !important;
 }
 body.mr-reading .article-content sup a,
-body.mr-reading .article-content .FootNoteLink a {
+body.mr-reading .article-content .FootNoteLink a,
+body.mr-reading .article-content a.FootNoteLink {
   color: var(--mr-clay-700) !important;
   background: #fff5ec !important;
   border-color: var(--mr-saffron-300) !important;
