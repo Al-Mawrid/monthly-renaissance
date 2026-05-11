@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, Search } from "lucide-react";
+import { Menu, Search, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/lib/variants";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -10,14 +10,36 @@ import { cn } from "@/lib/utils";
 import { UserMenu } from "@/components/auth/user-menu";
 import { SearchBox } from "@/components/layout/search-box";
 
-const navigation = [
-  { name: "Articles", href: "/articles/topics" },
-  { name: "Issues", href: "/issues" },
+type NavLeaf = { name: string; href: string };
+type NavGroup = { name: string; href: string; children: NavLeaf[] };
+type NavItem = NavLeaf | NavGroup;
+
+const navigation: NavItem[] = [
+  {
+    name: "Articles",
+    href: "/articles/topics",
+    children: [
+      { name: "All Articles", href: "/articles/topics" },
+      { name: "Writers", href: "/articles/writers" },
+      { name: "Topics", href: "/articles/topics" },
+    ],
+  },
+  {
+    name: "Issues",
+    href: "/issues",
+    children: [
+      { name: "All Issues", href: "/issues" },
+      { name: "Special Issues", href: "/issues/special" },
+    ],
+  },
   { name: "Queries", href: "/queries/topics" },
-  { name: "Writers", href: "/articles/writers" },
-  { name: "Topics", href: "/articles/topics" },
   { name: "E-Books", href: "/ebooks" },
+  { name: "Support", href: "/support" },
 ];
+
+function isGroup(item: NavItem): item is NavGroup {
+  return "children" in item;
+}
 
 export function Masthead({ compact = false }: { compact?: boolean }) {
   return (
@@ -33,18 +55,76 @@ export function Masthead({ compact = false }: { compact?: boolean }) {
       <div className="leading-[1.05]">
         <div
           className="font-serif font-semibold tracking-tight"
-          style={{ fontSize: compact ? 17 : 22 }}
+          style={{ fontSize: compact ? 17 : 22, color: "var(--foreground)" }}
         >
-          Monthly <span className="italic" style={{ color: "var(--mr-green-800)" }}>Renaissance</span>
+          <span className="italic" style={{ color: "var(--mr-green-800)" }}>Renaissance</span>
         </div>
         <div
-          className="flex items-center gap-1.5 mt-0.5 font-semibold uppercase text-muted-foreground"
-          style={{ fontSize: compact ? 9 : 10, letterSpacing: "0.18em" }}
+          className="flex items-center gap-2 mt-1 font-semibold uppercase"
+          style={{
+            fontSize: compact ? 9 : 10,
+            letterSpacing: "0.16em",
+            color: "var(--mr-ink-soft)",
+          }}
         >
-          <span>An affiliate of Al-Mawrid</span>
+          <span>Islamic Journal</span>
+          <span style={{ color: "var(--mr-saffron-700)", opacity: 0.55 }}>·</span>
+          <span>Pakistan</span>
         </div>
       </div>
     </Link>
+  );
+}
+
+function DesktopNavItem({ item }: { item: NavItem }) {
+  if (!isGroup(item)) {
+    return (
+      <Link
+        href={item.href}
+        className="mr-nav-link text-[13px] font-semibold"
+        style={{ color: "var(--mr-ink-soft)" }}
+      >
+        {item.name}
+      </Link>
+    );
+  }
+  return (
+    <div className="mr-nav-group relative">
+      <Link
+        href={item.href}
+        className="mr-nav-link mr-nav-trigger flex items-center gap-1 text-[13px] font-semibold"
+        style={{ color: "var(--mr-ink-soft)" }}
+      >
+        {item.name}
+        <ChevronDown className="h-3 w-3" aria-hidden />
+      </Link>
+      <div
+        className="mr-nav-dropdown absolute left-1/2 top-full -translate-x-1/2 pt-3"
+        role="menu"
+      >
+        <div
+          className="min-w-[180px] py-1.5"
+          style={{
+            background: "var(--card)",
+            border: "1px solid var(--border)",
+            boxShadow: "0 8px 22px rgba(36, 28, 19, 0.10), 0 2px 6px rgba(36, 28, 19, 0.06)",
+            borderRadius: "var(--radius)",
+          }}
+        >
+          {item.children.map((c) => (
+            <Link
+              key={c.href + c.name}
+              href={c.href}
+              role="menuitem"
+              className="mr-nav-dropdown-item block px-3.5 py-2 text-[13px]"
+              style={{ color: "var(--mr-ink-soft)" }}
+            >
+              {c.name}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -59,13 +139,7 @@ export function Header() {
 
           <nav className="hidden lg:flex items-center gap-7">
             {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="mr-nav-link text-[13px] font-medium text-muted-foreground"
-              >
-                {item.name}
-              </Link>
+              <DesktopNavItem key={item.name} item={item} />
             ))}
           </nav>
 
@@ -74,7 +148,7 @@ export function Header() {
               variant="ghost"
               size="icon"
               onClick={() => setSearchOpen((s) => !s)}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-foreground/80 hover:text-foreground"
               aria-label={searchOpen ? "Close search" : "Open search"}
               aria-expanded={searchOpen}
             >
@@ -89,16 +163,41 @@ export function Header() {
                 <span className="sr-only">Menu</span>
               </SheetTrigger>
               <SheetContent side="right" className="w-72 pt-12">
-                <nav className="flex flex-col gap-1">
-                  {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className="px-3 py-2.5 text-base font-medium text-foreground/80 hover:text-foreground hover:bg-muted rounded-sm transition-colors"
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
+                <nav className="flex flex-col gap-0.5">
+                  {navigation.map((item) => {
+                    if (!isGroup(item)) {
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          className="px-3 py-2.5 text-base font-medium text-foreground/85 hover:text-foreground hover:bg-muted rounded-sm transition-colors"
+                        >
+                          {item.name}
+                        </Link>
+                      );
+                    }
+                    return (
+                      <div key={item.name} className="flex flex-col">
+                        <Link
+                          href={item.href}
+                          className="px-3 py-2.5 text-base font-semibold text-foreground/85 hover:text-foreground"
+                        >
+                          {item.name}
+                        </Link>
+                        <div className="flex flex-col pl-3">
+                          {item.children.map((c) => (
+                            <Link
+                              key={c.name}
+                              href={c.href}
+                              className="px-3 py-1.5 text-[14px] text-muted-foreground hover:text-foreground rounded-sm transition-colors"
+                            >
+                              {c.name}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </nav>
               </SheetContent>
             </Sheet>
