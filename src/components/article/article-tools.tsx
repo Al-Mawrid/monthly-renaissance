@@ -10,7 +10,7 @@ const TYPE_SIZES = [
   { label: "S", scale: 0.92 },
   { label: "M", scale: 1 },
   { label: "L", scale: 1.12 },
-  { label: "XL", scale: 1.25 },
+  { label: "XL", scale: 1.45 },
 ];
 
 export function ArticleTools({ citation }: Props) {
