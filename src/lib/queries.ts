@@ -1,3 +1,4 @@
+import { parse } from "node-html-parser";
 import { prisma } from "./db";
 import type { Writer, Topic, Issue, Article, EBook } from "./types";
 import { sample } from "./sample-data";
@@ -62,6 +63,15 @@ function excerpt(html: string, maxLen = 200): string {
 function readingTime(html: string): number {
   const words = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().split(" ").filter(Boolean).length;
   return Math.max(1, Math.ceil(words / 200));
+}
+
+// Legacy bodyHtml from the old ASP.NET CMS contains stray closing tags
+// (Word-import artifacts). When passed to dangerouslySetInnerHTML, these
+// close the parent container early during initial SSR, pushing content
+// to body root. Parsing + re-serializing balances the tags.
+function sanitizeHtml(html: string): string {
+  if (!html) return html;
+  return parse(html).toString();
 }
 
 // ─── Mappers (Prisma → Interface) ────────────────────────────
@@ -134,7 +144,7 @@ function mapArticle(a: PrismaArticle): Article {
     title: a.title,
     slug: a.slug,
     excerpt: excerpt(a.bodyHtml),
-    bodyHtml: a.bodyHtml,
+    bodyHtml: sanitizeHtml(a.bodyHtml),
     writer: mapWriter(a.writer),
     topic: mapTopic(a.topic),
     issue: issue ? mapIssue(issue) : { id: "", year: 0, month: 0, volume: 0, issueNumber: 0, title: "", isSpecial: false, articleCount: 0 },
@@ -160,7 +170,7 @@ function mapQuery(q: PrismaQuery): Article {
     title: q.title,
     slug: q.slug,
     excerpt: excerpt(q.questionHtml),
-    bodyHtml: body,
+    bodyHtml: sanitizeHtml(body),
     writer: mapWriter(q.writer),
     topic: mapTopic(q.topic, "query"),
     issue: issue ? mapIssue(issue) : { id: "", year: 0, month: 0, volume: 0, issueNumber: 0, title: "", isSpecial: false, articleCount: 0 },
