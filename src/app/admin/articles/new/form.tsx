@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { createArticle } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { HtmlEditor } from "@/app/admin/_components/html-editor";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -71,7 +71,7 @@ export function ArticleCreateForm({
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-5xl space-y-6">
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
         <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Article title" />
@@ -154,19 +154,18 @@ export function ArticleCreateForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="body">Body HTML</Label>
-        <Textarea
+        <Label htmlFor="body">Body</Label>
+        <HtmlEditor
           id="body"
           value={bodyHtml}
-          onChange={(e) => setBodyHtml(e.target.value)}
+          onChange={setBodyHtml}
           rows={20}
-          className="font-mono text-xs"
-          placeholder="Enter article HTML content..."
+          placeholder="Article body…"
         />
       </div>
 
       {isTeam && (
-        <p className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg">
+        <p className="mr-callout">
           As a team member, this will be submitted as a change request for admin approval.
         </p>
       )}

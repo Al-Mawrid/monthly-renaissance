@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { createQuery } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { HtmlEditor } from "@/app/admin/_components/html-editor";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -60,7 +60,7 @@ export function QueryCreateForm({
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-5xl space-y-6">
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
         <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Query title" />
@@ -97,17 +97,17 @@ export function QueryCreateForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="question">Question HTML</Label>
-        <Textarea id="question" value={questionHtml} onChange={(e) => setQuestionHtml(e.target.value)} rows={8} className="font-mono text-xs" placeholder="Enter question HTML..." />
+        <Label htmlFor="question">Question</Label>
+        <HtmlEditor id="question" value={questionHtml} onChange={setQuestionHtml} rows={8} placeholder="Question text…" />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="answer">Answer HTML</Label>
-        <Textarea id="answer" value={answerHtml} onChange={(e) => setAnswerHtml(e.target.value)} rows={15} className="font-mono text-xs" placeholder="Enter answer HTML..." />
+        <Label htmlFor="answer">Answer</Label>
+        <HtmlEditor id="answer" value={answerHtml} onChange={setAnswerHtml} rows={15} placeholder="Answer text…" />
       </div>
 
       {isTeam && (
-        <p className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg">
+        <p className="mr-callout">
           As a team member, this will be submitted as a change request for admin approval.
         </p>
       )}
