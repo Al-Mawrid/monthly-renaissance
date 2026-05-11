@@ -56,12 +56,11 @@ export default async function AdminLayout({
         <div className="flex items-center gap-2.5 px-5 py-4 border-b border-border">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/brand/mr-seal.svg"
+            src="/brand/logo-box.svg"
             alt="Monthly Renaissance"
             width={32}
             height={32}
             className="object-contain flex-shrink-0"
-            style={{ color: "var(--foreground)" }}
           />
           <div className="leading-[1.1]">
             <div className="font-serif text-[14px] font-semibold">Monthly Renaissance</div>
