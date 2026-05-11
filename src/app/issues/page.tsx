@@ -8,11 +8,6 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-const arMonths = [
-  "محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة",
-  "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة",
-];
-
 export default async function IssuesPage() {
   const issues = await getAllIssues();
   const grouped = groupIssuesByYear(issues);
@@ -135,12 +130,14 @@ export default async function IssuesPage() {
                           <div className="font-serif text-[22px] font-semibold mt-1">
                             {getMonthName(issue.month)} {year}
                           </div>
-                          <div
-                            className="font-arabic mt-0.5"
-                            style={{ fontSize: 14, color: "var(--mr-saffron-700)" }}
-                          >
-                            {arMonths[(issue.month) % 12]}
-                          </div>
+                          {issue.isSpecial && issue.title && (
+                            <div
+                              className="text-[12px] italic mt-0.5"
+                              style={{ color: "var(--mr-saffron-700)" }}
+                            >
+                              {issue.title}
+                            </div>
+                          )}
                           <div
                             className="mt-auto pt-3 flex justify-between items-center"
                             style={{ borderTop: "1px dotted var(--border)" }}

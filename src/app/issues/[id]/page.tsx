@@ -14,17 +14,6 @@ const arMonths = [
   "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة",
 ];
 
-function toRoman(n: number): string {
-  const map: [number, string][] = [
-    [1000, "M"], [900, "CM"], [500, "D"], [400, "CD"],
-    [100, "C"], [90, "XC"], [50, "L"], [40, "XL"],
-    [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
-  ];
-  let out = "";
-  for (const [v, s] of map) { while (n >= v) { out += s; n -= v; } }
-  return out;
-}
-
 export default async function IssuePage({
   params,
 }: {
@@ -42,6 +31,16 @@ export default async function IssuePage({
   const monthName = getMonthName(issue.month).toUpperCase();
   const arMonth = arMonths[Math.max(0, Math.min(11, issue.month - 1))];
   const featured = issueArticles[0];
+
+  // Legacy issue titles (from MSSQL) sometimes literally contain an Islamic
+  // month name (e.g., "Rabi-ul-Awal"), which obscures the actual Gregorian
+  // edition. Always lead with the derived "Month Year" and keep the legacy
+  // title as a subtitle when it adds information beyond the month.
+  const gregorianTitle = `${getMonthName(issue.month)} ${issue.year}`;
+  const showLegacyTitle =
+    !!issue.title &&
+    issue.isSpecial &&
+    issue.title.trim().toLowerCase() !== gregorianTitle.toLowerCase();
 
   return (
     <div>
@@ -102,7 +101,7 @@ export default async function IssuePage({
                 {issue.issueNumber}
               </div>
               <div className="mr-catalog text-center mt-1">
-                VOLUME {toRoman(issue.volume)} · ISSUE № {issue.issueNumber}
+                VOLUME {issue.volume} · ISSUE № {issue.issueNumber}
               </div>
             </div>
 
@@ -133,9 +132,17 @@ export default async function IssuePage({
             >
               — From the Editor · Dr. Shehzad Saleem —
             </div>
-            <h1 className="font-serif text-3xl sm:text-4xl lg:text-[2.6rem] font-semibold tracking-tight leading-[1.1] mb-4">
-              {issue.title || `${getMonthName(issue.month)} ${issue.year}`}
+            <h1 className="font-serif text-3xl sm:text-4xl lg:text-[2.6rem] font-semibold tracking-tight leading-[1.1] mb-2">
+              {gregorianTitle}
             </h1>
+            {showLegacyTitle && (
+              <div
+                className="font-serif italic text-[18px] mb-4"
+                style={{ color: "var(--mr-saffron-700)" }}
+              >
+                {issue.title}
+              </div>
+            )}
             <p className="font-serif text-[17px] leading-[1.7] text-[var(--mr-ink-soft)] mb-4">
               This issue contains {issueArticles.length} articles and {issueQueries.length} queries —
               scholarly writing, reader questions answered, and a continued record
