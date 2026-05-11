@@ -10,16 +10,6 @@ import { ArticleTools } from "@/components/article/article-tools";
 
 export const dynamic = "force-dynamic";
 
-function toRoman(n: number): string {
-  const map: [number, string][] = [
-    [1000, "M"], [900, "CM"], [500, "D"], [400, "CD"],
-    [100, "C"], [90, "XC"], [50, "L"], [40, "XL"],
-    [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
-  ];
-  let out = ""; for (const [v, s] of map) { while (n >= v) { out += s; n -= v; } }
-  return out;
-}
-
 function initials(name: string): string {
   return name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 }
@@ -56,7 +46,7 @@ export default async function ArticlePage({
             href={`/issues/${article.issue.id}`}
             className="text-foreground hover:text-[var(--mr-green-700)]"
           >
-            Vol. {toRoman(article.issue.volume)} · № {article.issue.issueNumber}
+            Vol. {article.issue.volume} · № {article.issue.issueNumber}
           </Link>
           <span>/</span>
           <span className="truncate max-w-[280px]">{article.title}</span>
