@@ -307,7 +307,7 @@
 .article-content [align="right"] {
   font-family: var(--font-arabic);
   font-style: normal;
-  font-size: 1.35rem;
+  font-size: 1.6em;
   line-height: 2.1;
   text-align: right;
   direction: rtl;
@@ -323,7 +323,7 @@
 
 .article-content .ArabicInLineText {
   font-family: var(--font-arabic);
-  font-size: 1.15em;
+  font-size: 1.4em;
   direction: rtl;
   unicode-bidi: isolate;
   color: var(--mr-green-800);
