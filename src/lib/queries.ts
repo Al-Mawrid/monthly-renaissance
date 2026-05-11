@@ -410,6 +410,33 @@ export async function getArticlesByWriter(writerSlug: string): Promise<Article[]
   }, sample.recentArticles);
 }
 
+export async function getArticlesByWriterPaged(
+  writerSlug: string,
+  page: number,
+  perPage: number,
+): Promise<{ articles: Article[]; total: number }> {
+  const safePage = Math.max(1, page);
+  return withFallback(async () => {
+    const writer = await prisma.writer.findUnique({ where: { slug: writerSlug }, select: { id: true } });
+    if (!writer) return { articles: [], total: 0 };
+    const where = { writerId: writer.id, display: true } as const;
+    const [articles, total] = await Promise.all([
+      prisma.article.findMany({
+        where,
+        orderBy: { dateAdded: "desc" },
+        skip: (safePage - 1) * perPage,
+        take: perPage,
+        include: articleInclude,
+      }),
+      prisma.article.count({ where }),
+    ]);
+    return { articles: articles.map((a) => mapArticle(a as any)), total };
+  }, {
+    articles: sample.recentArticles.slice((safePage - 1) * perPage, safePage * perPage),
+    total: sample.recentArticles.length,
+  });
+}
+
 export async function getAllWriterSlugs(): Promise<string[]> {
   return withFallback(async () => {
     const writers = await prisma.writer.findMany({ where: { displayOnSite: true }, select: { slug: true } });
@@ -451,6 +478,33 @@ export async function getArticlesByTopic(topicSlug: string): Promise<Article[]> 
     });
     return articles.map((a) => mapArticle(a as any));
   }, sample.recentArticles);
+}
+
+export async function getArticlesByTopicPaged(
+  topicSlug: string,
+  page: number,
+  perPage: number,
+): Promise<{ articles: Article[]; total: number }> {
+  const safePage = Math.max(1, page);
+  return withFallback(async () => {
+    const topic = await prisma.topic.findUnique({ where: { slug: topicSlug }, select: { id: true } });
+    if (!topic) return { articles: [], total: 0 };
+    const where = { topicId: topic.id, display: true } as const;
+    const [articles, total] = await Promise.all([
+      prisma.article.findMany({
+        where,
+        orderBy: { dateAdded: "desc" },
+        skip: (safePage - 1) * perPage,
+        take: perPage,
+        include: articleInclude,
+      }),
+      prisma.article.count({ where }),
+    ]);
+    return { articles: articles.map((a) => mapArticle(a as any)), total };
+  }, {
+    articles: sample.recentArticles.slice((safePage - 1) * perPage, safePage * perPage),
+    total: sample.recentArticles.length,
+  });
 }
 
 export async function getAllTopicSlugs(): Promise<string[]> {

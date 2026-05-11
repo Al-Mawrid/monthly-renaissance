@@ -7,21 +7,29 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import {
   getWriterBySlug,
-  getArticlesByWriter,
+  getArticlesByWriterPaged,
 } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
+const PER_PAGE = 20;
+
 export default async function WriterPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { slug } = await params;
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam || "1", 10) || 1);
+
   const writer = await getWriterBySlug(slug);
   if (!writer) notFound();
 
-  const writerArticles = await getArticlesByWriter(slug);
+  const { articles: writerArticles, total } = await getArticlesByWriterPaged(slug, page, PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
@@ -46,7 +54,7 @@ export default async function WriterPage({
             {writer.bio}
           </p>
           <span className="text-sm text-muted-foreground mt-2 block">
-            {writerArticles.length} articles
+            {total} articles
           </span>
         </div>
       </div>
@@ -93,6 +101,34 @@ export default async function WriterPage({
           </p>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4 mt-8">
+          {page > 1 ? (
+            <Link
+              href={`/articles/writers/${slug}?page=${page - 1}`}
+              className="text-sm text-primary hover:underline"
+            >
+              &larr; Previous
+            </Link>
+          ) : (
+            <span className="text-sm text-muted-foreground/50">&larr; Previous</span>
+          )}
+          <span className="text-sm text-muted-foreground">
+            Page {page} of {totalPages}
+          </span>
+          {page < totalPages ? (
+            <Link
+              href={`/articles/writers/${slug}?page=${page + 1}`}
+              className="text-sm text-primary hover:underline"
+            >
+              Next &rarr;
+            </Link>
+          ) : (
+            <span className="text-sm text-muted-foreground/50">Next &rarr;</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,27 +1,34 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, User, Clock } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/lib/variants";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import {
   getTopicBySlug,
-  getArticlesByTopic,
+  getArticlesByTopicPaged,
 } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
+const PER_PAGE = 20;
+
 export default async function TopicPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { slug } = await params;
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam || "1", 10) || 1);
+
   const topic = await getTopicBySlug(slug);
   if (!topic) notFound();
 
-  const topicArticles = await getArticlesByTopic(slug);
+  const { articles: topicArticles, total } = await getArticlesByTopicPaged(slug, page, PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
@@ -37,7 +44,7 @@ export default async function TopicPage({
         <h1 className="text-2xl font-bold tracking-tight">{topic.name}</h1>
         <p className="text-muted-foreground mt-1.5">{topic.description}</p>
         <span className="text-sm text-muted-foreground mt-1 block">
-          {topicArticles.length} articles
+          {total} articles
         </span>
       </div>
 
@@ -76,6 +83,34 @@ export default async function TopicPage({
           </p>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4 mt-8">
+          {page > 1 ? (
+            <Link
+              href={`/articles/topics/${slug}?page=${page - 1}`}
+              className="text-sm text-primary hover:underline"
+            >
+              &larr; Previous
+            </Link>
+          ) : (
+            <span className="text-sm text-muted-foreground/50">&larr; Previous</span>
+          )}
+          <span className="text-sm text-muted-foreground">
+            Page {page} of {totalPages}
+          </span>
+          {page < totalPages ? (
+            <Link
+              href={`/articles/topics/${slug}?page=${page + 1}`}
+              className="text-sm text-primary hover:underline"
+            >
+              Next &rarr;
+            </Link>
+          ) : (
+            <span className="text-sm text-muted-foreground/50">Next &rarr;</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
