@@ -71,7 +71,7 @@ export default async function AdminBooksPage({
                 </TableCell>
                 <TableCell className="text-xs text-muted-foreground truncate max-w-32">{b.fileName}</TableCell>
                 <TableCell>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${b.display ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
+                  <span className={`mr-tag ${b.display ? "mr-tag-success" : "mr-tag-danger"}`}>
                     {b.display ? "Visible" : "Hidden"}
                   </span>
                 </TableCell>

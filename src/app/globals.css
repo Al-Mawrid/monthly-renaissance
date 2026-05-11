@@ -73,6 +73,8 @@
   --mr-saffron-50: #f8edc8;
   --mr-clay-700: #8f3621;
   --mr-clay-500: #b85038;
+  --mr-clay-100: #f0d6cd;
+  --mr-clay-50: #f7e6df;
   --mr-rule: #d4c5a5;
   --mr-rule-soft: #e0d3b0;
   --mr-rule-strong: #ad9d7b;
@@ -474,6 +476,230 @@ body.mr-sepia .article-content * {
   background: var(--foreground);
   color: var(--mr-ivory);
   border-color: var(--foreground);
+}
+
+/* ═══════════════ Status tags (admin pills) ═══════════════ */
+.mr-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-sans), "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid;
+  line-height: 1.5;
+  white-space: nowrap;
+  font-feature-settings: "tnum";
+}
+.mr-tag-success {
+  background: var(--mr-green-50);
+  color: var(--mr-green-900);
+  border-color: var(--mr-green-700);
+}
+.mr-tag-danger {
+  background: var(--mr-clay-50);
+  color: var(--mr-clay-700);
+  border-color: var(--mr-clay-500);
+}
+.mr-tag-warning {
+  background: var(--mr-saffron-50);
+  color: var(--mr-saffron-900);
+  border-color: var(--mr-saffron-700);
+}
+.mr-tag-info {
+  background: var(--mr-cream);
+  color: var(--mr-ink);
+  border-color: var(--mr-rule-strong);
+}
+.mr-tag-neutral {
+  background: var(--mr-vellum);
+  color: var(--mr-ink-soft);
+  border-color: var(--mr-rule-strong);
+}
+
+/* Status callout (amber alert banner / form notes) */
+.mr-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px solid var(--mr-saffron-700);
+  background: var(--mr-saffron-50);
+  color: var(--mr-saffron-900);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.mr-callout-title {
+  font-weight: 600;
+  color: var(--mr-saffron-900);
+}
+.mr-callout-sub {
+  color: var(--mr-ink-muted);
+  font-size: 12px;
+  margin-top: 2px;
+}
+a.mr-callout {
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+a.mr-callout:hover {
+  background: var(--mr-saffron-100);
+  border-color: var(--mr-saffron-900);
+}
+
+/* Icon buttons in admin tables (approve / reject) */
+.mr-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  width: 28px;
+  border-radius: var(--radius);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.mr-icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.mr-icon-btn-approve { color: var(--mr-green-800); }
+.mr-icon-btn-approve:hover:not(:disabled) {
+  background: var(--mr-green-50);
+  border-color: var(--mr-green-700);
+  color: var(--mr-green-900);
+}
+.mr-icon-btn-reject { color: var(--mr-clay-700); }
+.mr-icon-btn-reject:hover:not(:disabled) {
+  background: var(--mr-clay-50);
+  border-color: var(--mr-clay-500);
+  color: var(--mr-clay-700);
+}
+
+/* ═══════════════ HTML editor (admin) ═══════════════ */
+.mr-htmleditor {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  overflow: hidden;
+}
+.mr-htmleditor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  background: var(--mr-cream);
+  border-bottom: 1px solid var(--border);
+}
+.mr-htmleditor-tabs {
+  display: inline-flex;
+  align-items: center;
+  background: var(--mr-ivory);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2px;
+}
+.mr-htmleditor-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: calc(var(--radius) - 1px);
+  color: var(--mr-ink-muted);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.mr-htmleditor-tab:hover { color: var(--foreground); }
+.mr-htmleditor-tab.is-active {
+  background: var(--mr-green-700);
+  color: var(--mr-ivory);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.18);
+}
+.mr-htmleditor-tools {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+.mr-htmleditor-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  min-width: 26px;
+  padding: 0 6px;
+  border-radius: var(--radius);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--mr-ink-soft);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.mr-htmleditor-btn:hover {
+  background: var(--mr-ivory);
+  border-color: var(--mr-rule);
+  color: var(--foreground);
+}
+.mr-htmleditor-btn:active { background: var(--mr-saffron-50); }
+.mr-htmleditor-sep {
+  display: inline-block;
+  width: 1px;
+  height: 16px;
+  background: var(--mr-rule);
+  margin: 0 4px;
+}
+.mr-htmleditor-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  background: var(--card);
+}
+.mr-htmleditor-body.is-split {
+  grid-template-columns: 1fr 1fr;
+}
+.mr-htmleditor-body.is-split > * + * {
+  border-left: 1px solid var(--border);
+}
+.mr-htmleditor-source {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 14px 16px;
+  background: var(--mr-ivory);
+  color: var(--foreground);
+  border: 0;
+  outline: none;
+  resize: vertical;
+}
+.mr-htmleditor-source:focus { background: var(--card); }
+.mr-htmleditor-visual,
+.mr-htmleditor-preview {
+  padding: 18px 22px;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  outline: none;
+  overflow-wrap: anywhere;
+}
+.mr-htmleditor-visual:focus { box-shadow: inset 0 0 0 2px var(--mr-saffron-300); }
+.mr-htmleditor-visual:empty::before {
+  content: attr(data-placeholder);
+  color: var(--mr-ink-faint);
+  font-family: var(--font-sans);
+  font-style: italic;
+  pointer-events: none;
+}
+.mr-htmleditor-preview {
+  background: var(--mr-ivory);
 }
 
 /* Admin sidebar items */

@@ -34,16 +34,13 @@ export default async function AdminDashboard() {
 
       {/* Pending requests alert */}
       {pendingRequests > 0 && (
-        <Link
-          href="/admin/change-requests"
-          className="mb-6 flex items-center gap-3 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-5 py-4 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
-        >
-          <GitPullRequest className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+        <Link href="/admin/change-requests" className="mr-callout mb-6">
+          <GitPullRequest className="h-5 w-5 mt-0.5 shrink-0" />
           <div>
-            <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+            <p className="mr-callout-title">
               {pendingRequests} pending change request{pendingRequests !== 1 ? "s" : ""}
             </p>
-            <p className="text-xs text-amber-700 dark:text-amber-400">
+            <p className="mr-callout-sub">
               {isAdmin ? "Review and approve or reject" : "Awaiting admin review"}
             </p>
           </div>
@@ -92,7 +89,7 @@ async function RecentArticles() {
               {a.writer.name} &middot; {a.topic.title}
             </p>
           </div>
-          <span className={`text-xs px-2 py-0.5 rounded-full ${a.display ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
+          <span className={`mr-tag ${a.display ? "mr-tag-success" : "mr-tag-danger"}`}>
             {a.display ? "Visible" : "Hidden"}
           </span>
         </div>

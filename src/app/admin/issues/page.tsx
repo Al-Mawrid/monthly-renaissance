@@ -73,7 +73,7 @@ export default async function AdminIssuesPage({
                   {issue._count.articleLinks + issue._count.queryLinks}
                 </TableCell>
                 <TableCell>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${issue.display ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
+                  <span className={`mr-tag ${issue.display ? "mr-tag-success" : "mr-tag-danger"}`}>
                     {issue.display ? "Visible" : "Hidden"}
                   </span>
                 </TableCell>

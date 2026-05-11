@@ -185,7 +185,7 @@ export function BookCreateForm({
       </div>
 
       {isTeam && (
-        <p className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg">
+        <p className="mr-callout">
           As a team member, this will be submitted as a change request for admin approval.
         </p>
       )}

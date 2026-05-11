@@ -94,7 +94,7 @@ export default async function AdminWritersPage({
                 <TableCell className="text-sm text-muted-foreground">{w._count.queries}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{w.isQueryWriter ? "Yes" : "No"}</TableCell>
                 <TableCell>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${w.displayOnSite ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
+                  <span className={`mr-tag ${w.displayOnSite ? "mr-tag-success" : "mr-tag-danger"}`}>
                     {w.displayOnSite ? "Yes" : "No"}
                   </span>
                 </TableCell>
