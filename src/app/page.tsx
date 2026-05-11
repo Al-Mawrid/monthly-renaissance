@@ -7,6 +7,7 @@ import {
   getLatestQueries,
   getFeaturedTopics,
   getAllIssues,
+  getArticlesForIssue,
   getMonthName,
 } from "@/lib/queries";
 
@@ -16,19 +17,6 @@ const arMonths = [
   "محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة",
   "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة",
 ];
-
-function toRoman(n: number): string {
-  const map: [number, string][] = [
-    [1000, "M"], [900, "CM"], [500, "D"], [400, "CD"],
-    [100, "C"], [90, "XC"], [50, "L"], [40, "XL"],
-    [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
-  ];
-  let out = "";
-  for (const [v, s] of map) {
-    while (n >= v) { out += s; n -= v; }
-  }
-  return out;
-}
 
 async function loadHomeData() {
   try {
@@ -41,7 +29,20 @@ async function loadHomeData() {
         getFeaturedTopics(6),
         getAllIssues(),
       ]);
-    return { latestIssue, featuredArticle, recentArticles, latestQueries, featuredTopics, allIssues };
+    // The "In this issue" TOC must strictly reflect articles bound to the
+    // current issue — not the global recent-articles feed.
+    const issueArticles = latestIssue
+      ? await getArticlesForIssue(latestIssue.id)
+      : [];
+    return {
+      latestIssue,
+      featuredArticle,
+      recentArticles,
+      latestQueries,
+      featuredTopics,
+      allIssues,
+      issueArticles,
+    };
   } catch (err) {
     console.error("[home] data fetch failed:", err);
     return null;
@@ -60,13 +61,21 @@ function HomeFallback() {
 export default async function Home() {
   const data = await loadHomeData();
   if (!data || !data.latestIssue || !data.featuredArticle) return <HomeFallback />;
-  const { latestIssue, featuredArticle, recentArticles, latestQueries, featuredTopics, allIssues } = data;
+  const { latestIssue, featuredArticle, recentArticles, latestQueries, featuredTopics, allIssues, issueArticles } = data;
 
   const year = latestIssue.year;
-  const vol = toRoman(latestIssue.volume);
+  const vol = latestIssue.volume;
   const issueNum = latestIssue.issueNumber;
   const monthName = getMonthName(latestIssue.month).toUpperCase();
   const arMonth = arMonths[Math.max(0, Math.min(11, latestIssue.month - 1))];
+
+  // "In this issue" must list only articles tied to the current issue.
+  // Fall back to the featured + recent feed only when the issue has no
+  // bound articles yet (e.g., brand-new issue).
+  const tocArticles = (issueArticles.length > 0
+    ? issueArticles
+    : [featuredArticle, ...recentArticles]
+  ).slice(0, 5);
 
   const totalArticles = allIssues.reduce((acc, i) => acc + (i.articleCount ?? 0), 0) || 2017;
   const totalIssues = allIssues.length || 408;
@@ -88,9 +97,6 @@ export default async function Home() {
   }, {});
   const maxCount = Math.max(12, ...Object.values(countsByYear));
 
-  // TOC for latest issue (featured + recent)
-  const tocArticles = [featuredArticle, ...recentArticles].slice(0, 5);
-
   return (
     <div>
       {/* Masthead strip — catalog line */}
@@ -102,7 +108,7 @@ export default async function Home() {
           <div className="mr-catalog">
             VOL. {vol}<span className="dot">·</span>№ {issueNum}<span className="dot">·</span>{monthName} {year}
           </div>
-          <div className="mr-eyebrow hidden sm:block" style={{ color: "var(--mr-saffron-700)" }}>— Est. MCMXCI —</div>
+          <div className="mr-eyebrow hidden sm:block" style={{ color: "var(--mr-saffron-700)" }}>— Est. 1991 —</div>
           <div className="mr-catalog">
             {totalArticles.toLocaleString()} ARTICLES<span className="dot">·</span>{totalIssues} ISSUES<span className="dot">·</span>{writersCount} WRITERS
           </div>
