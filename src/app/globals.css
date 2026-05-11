@@ -9,7 +9,7 @@
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --font-heading: var(--font-serif);
   --font-serif: var(--font-serif), "Source Serif 4", Georgia, serif;
-  --font-arabic: var(--font-arabic), "Scheherazade New", serif;
+  --font-arabic: var(--font-arabic), "Noor-e-Huda", "Scheherazade New", "Amiri", serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -133,7 +133,7 @@
 
 /* ═══════════════ Monthly Renaissance typography utilities ═══════════════ */
 .font-serif { font-family: var(--font-serif), "Source Serif 4", Georgia, serif; }
-.font-arabic { font-family: var(--font-arabic), "Scheherazade New", serif; direction: rtl; unicode-bidi: isolate; }
+.font-arabic { font-family: var(--font-arabic), "Noor-e-Huda", "Scheherazade New", serif; direction: rtl; unicode-bidi: isolate; }
 .font-mono { font-family: var(--font-mono); font-feature-settings: "tnum", "zero"; }
 
 /* Eyebrow — small caps, tracked */
@@ -228,16 +228,33 @@
   color: var(--mr-ink-soft);
   text-wrap: pretty;
 }
-.article-content p { margin: 0 0 1.1em; }
+.article-content p {
+  margin: 0 0 1.1em;
+  text-align: justify;
+  hyphens: auto;
+}
 .article-content p + p { text-indent: 1.5em; margin-top: -0.2em; }
+/* Don't justify the drop-cap paragraph (or single-line ones) — looks sparse */
+.article-content.mr-dropcap > p:first-of-type { text-align: left; }
 
-.article-content h2 {
+.article-content h2,
+.article-content h3,
+.article-content h4,
+.article-content h5,
+.article-content h6 {
+  /* Legacy content sometimes tags headings as <p><strong>…</strong></p> or
+     uses .header — the rules below catch the visible patterns. */
   font-family: var(--font-serif);
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 2.5rem 0 1rem;
+  font-weight: 700;
   color: var(--foreground);
+  padding-left: 0.4em;
+  text-align: left;
+}
+.article-content h2 {
+  font-size: 1.5rem;
+  margin: 2.5rem 0 1rem;
   display: flex; align-items: center; gap: 12px;
+  padding-left: 0;
 }
 .article-content h2::before {
   content: "";
@@ -251,11 +268,29 @@
 }
 
 .article-content h3 {
-  font-family: var(--font-serif);
   font-size: 1.25rem;
-  font-weight: 600;
   margin-top: 2rem;
   margin-bottom: 0.75rem;
+}
+.article-content h4 {
+  font-size: 1.1rem;
+  margin-top: 1.6rem;
+  margin-bottom: 0.5rem;
+}
+/* Legacy "header" / "heading" class patterns from the MSSQL content */
+.article-content p.header,
+.article-content p.Header,
+.article-content p.heading,
+.article-content p.Heading,
+.article-content .ArticleHeading {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--foreground);
+  margin: 1.8rem 0 0.6rem;
+  padding-left: 0.4em;
+  text-align: left;
+  text-indent: 0;
 }
 
 .article-content blockquote {
@@ -312,35 +347,70 @@
   margin-top: 2rem;
   padding-top: 1rem;
   font-family: var(--font-serif);
+  text-align: left;
+}
+
+/* Anchor scroll: keep target clear of the sticky 72px header */
+.article-content [id^="fn"],
+.article-content .FootNote,
+.article-content li.FootNote {
+  scroll-margin-top: 96px;
 }
 
 .article-content sup,
 .article-content .FootNoteLink a {
   font-family: var(--font-mono);
-  font-size: 0.7em;
+  font-size: 0.72em;
   vertical-align: super;
+  line-height: 0;
 }
 .article-content sup a,
 .article-content .FootNoteLink a {
   color: var(--mr-clay-700);
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
-  padding: 0 2px;
+  padding: 1px 4px;
+  margin: 0 1px;
+  border-radius: 3px;
+  background: var(--mr-saffron-50);
+  border: 1px solid var(--mr-saffron-300);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .article-content sup a:hover,
-.article-content .FootNoteLink a:hover { text-decoration: underline; }
+.article-content .FootNoteLink a:hover {
+  background: var(--mr-clay-100);
+  color: var(--mr-clay-700);
+  border-color: var(--mr-clay-500);
+  text-decoration: none;
+}
 
 .article-content em { font-style: italic; }
 
-/* Sepia reading mode (toggled by article Tools) */
-body.mr-sepia {
-  background: #f4ecd8;
-  color: #433422;
+/* Clean white reading mode (toggled by article Tools).
+   The default parchment background makes a warm-on-warm toggle invisible,
+   so reading mode flips to a high-contrast white sheet. */
+body.mr-reading {
+  background: #ffffff !important;
 }
-body.mr-sepia .article-content,
-body.mr-sepia .article-content * {
-  color: #433422 !important;
+body.mr-reading main,
+body.mr-reading article,
+body.mr-reading section {
+  background: #ffffff !important;
+}
+body.mr-reading .article-content,
+body.mr-reading .article-content * {
+  color: #1a1a1a !important;
   background: transparent !important;
+  border-color: #d4d4d4 !important;
+}
+body.mr-reading .article-content .ArabicInLineText {
+  color: #0a3e2d !important;
+}
+body.mr-reading .article-content sup a,
+body.mr-reading .article-content .FootNoteLink a {
+  color: var(--mr-clay-700) !important;
+  background: #fff5ec !important;
+  border-color: var(--mr-saffron-300) !important;
 }
 
 /* ═══════════════ Hover & interaction states ═══════════════ */
@@ -366,6 +436,34 @@ body.mr-sepia .article-content * {
 .mr-nav-link:hover::after { transform: scaleX(1); }
 .mr-nav-link.is-active { color: var(--foreground); }
 .mr-nav-link.is-active::after { transform: scaleX(1); }
+
+/* Header dropdowns (Articles / Issues) */
+.mr-nav-group .mr-nav-dropdown {
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s linear 0.15s;
+  z-index: 60;
+}
+.mr-nav-group:hover .mr-nav-dropdown,
+.mr-nav-group:focus-within .mr-nav-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s linear 0s;
+}
+.mr-nav-group:hover .mr-nav-trigger::after,
+.mr-nav-group:focus-within .mr-nav-trigger::after {
+  transform: scaleX(1);
+}
+.mr-nav-dropdown-item {
+  transition: background-color 0.12s ease, color 0.12s ease;
+  cursor: pointer;
+}
+.mr-nav-dropdown-item:hover {
+  background: var(--mr-cream);
+  color: var(--foreground);
+}
 
 /* Footer / text links */
 .mr-link {
@@ -723,14 +821,6 @@ a.mr-callout:hover {
   transition: background-color 0.12s ease;
 }
 .mr-row:hover { background: var(--mr-cream); }
-
-/* Footnote link hover */
-.article-content sup a:hover,
-.article-content .FootNoteLink a:hover {
-  background: var(--mr-saffron-100);
-  text-decoration: none;
-  border-radius: 2px;
-}
 
 /* Primary button — press state + hover shadow */
 .mr-btn-primary-press:active { transform: translateY(1px); }

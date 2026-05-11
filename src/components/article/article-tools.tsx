@@ -15,7 +15,7 @@ const TYPE_SIZES = [
 
 export function ArticleTools({ citation }: Props) {
   const [sizeIdx, setSizeIdx] = useState(1);
-  const [sepia, setSepia] = useState(false);
+  const [readingMode, setReadingMode] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -25,11 +25,11 @@ export function ArticleTools({ citation }: Props) {
   }, [sizeIdx]);
 
   useEffect(() => {
-    document.body.classList.toggle("mr-sepia", sepia);
+    document.body.classList.toggle("mr-reading", readingMode);
     return () => {
-      document.body.classList.remove("mr-sepia");
+      document.body.classList.remove("mr-reading");
     };
-  }, [sepia]);
+  }, [readingMode]);
 
   const cycleSize = () => setSizeIdx((i) => (i + 1) % TYPE_SIZES.length);
 
@@ -51,8 +51,8 @@ export function ArticleTools({ citation }: Props) {
     },
     {
       icon: "◑",
-      label: sepia ? "Sepia on" : "Sepia mode",
-      onClick: () => setSepia((s) => !s),
+      label: readingMode ? "Reading mode on" : "Reading mode",
+      onClick: () => setReadingMode((s) => !s),
     },
     {
       icon: "⇣",
