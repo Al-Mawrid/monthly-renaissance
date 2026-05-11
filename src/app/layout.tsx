@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Inter, Lora, Amiri, JetBrains_Mono } from "next/font/google";
+import { Inter, Lora, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
@@ -15,10 +16,10 @@ const lora = Lora({
   subsets: ["latin"],
 });
 
-const amiri = Amiri({
+const noorehuda = localFont({
   variable: "--font-arabic",
-  weight: ["400", "700"],
-  subsets: ["arabic", "latin"],
+  src: "../../public/fonts/noorehuda.ttf",
+  display: "swap",
 });
 
 const jetbrains = JetBrains_Mono({
@@ -52,7 +53,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${lora.variable} ${amiri.variable} ${jetbrains.variable} h-full antialiased`}
+      className={`${inter.variable} ${lora.variable} ${noorehuda.variable} ${jetbrains.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <SessionProvider>
