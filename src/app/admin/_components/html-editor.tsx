@@ -1,13 +1,30 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
+import { useEditor, EditorContent, type Editor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Image from "@tiptap/extension-image";
+import { Table } from "@tiptap/extension-table";
+import { TableRow } from "@tiptap/extension-table-row";
+import { TableHeader } from "@tiptap/extension-table-header";
+import { TableCell } from "@tiptap/extension-table-cell";
+import { Placeholder } from "@tiptap/extensions";
 import {
   Bold, Italic, Underline, Heading2, Heading3, Pilcrow,
-  List, ListOrdered, Quote, Link2, Eraser, Undo2, Redo2,
-  Eye, Code2, Columns2,
+  List, ListOrdered, Quote, Link2, Image as ImageIcon, Table as TableIcon,
+  Eraser, Undo2, Redo2, Eye, Code2, Columns2, AlertTriangle,
 } from "lucide-react";
+import { cleanWordHtml } from "@/lib/word-clean";
+import { looksLegacy } from "@/lib/editor/legacy-detect";
+import { ArabicInLineText, EnglishQuote, FootNoteLink, FootNote } from "./editor/extensions";
+import { createImageHandlers, pickImageFile, uploadImage, type ImageEntityType } from "./editor/image-upload";
+import { createSlashCommands } from "./editor/slash-menu";
 
 type Mode = "visual" | "html" | "split";
+
+const CONVERT_WARNING =
+  "Editing this article visually will normalize its legacy markup " +
+  "(old Word/HTML formatting may change). Continue?";
 
 export function HtmlEditor({
   value,
@@ -16,6 +33,7 @@ export function HtmlEditor({
   id,
   placeholder,
   defaultMode = "visual",
+  entityType,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -23,50 +41,145 @@ export function HtmlEditor({
   id?: string;
   placeholder?: string;
   defaultMode?: Mode;
+  entityType?: ImageEntityType;
 }) {
-  const [mode, setMode] = useState<Mode>(defaultMode);
-  const visualRef = useRef<HTMLDivElement>(null);
   const minHeight = `${Math.max(rows * 22, 240)}px`;
 
-  // Sync external value into the contenteditable when (re)entering visual mode
-  // or when the value changes from outside (e.g. typing in HTML mode then switching).
-  useEffect(() => {
-    if (mode === "visual" && visualRef.current && visualRef.current.innerHTML !== value) {
-      visualRef.current.innerHTML = value;
-    }
-  }, [mode, value]);
+  // Legacy content opens in source mode so its markup is never silently
+  // normalized; clean/new content opens in the visual editor.
+  const [mode, setMode] = useState<Mode>(() =>
+    looksLegacy(value) ? "html" : defaultMode,
+  );
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
-  function exec(command: string, arg?: string) {
-    visualRef.current?.focus();
-    document.execCommand(command, false, arg);
-    if (visualRef.current) onChange(visualRef.current.innerHTML);
+  // `onChange` is a useState setter (stable) and `entityType` is a constant prop,
+  // so the once-created editor can capture them directly — no "latest ref" needed.
+
+  // Re-render the toolbar on every transaction so active states stay accurate.
+  const [, forceTick] = useReducer((x) => x + 1, 0);
+
+  const imageHandlers = useMemo(
+    () =>
+      createImageHandlers({
+        getEntityType: () => entityType,
+        getEntityId: () => undefined,
+        onError: setUploadError,
+      }),
+    [entityType],
+  );
+
+  // Opens a file dialog, uploads, and inserts into the given editor. Takes the
+  // editor as an argument so the slash command can pass the live instance
+  // (the component's `editor` is null when the extension is first created).
+  const handleInsertImage = useCallback(
+    async (ed: Editor) => {
+      const file = await pickImageFile();
+      if (!file) return;
+      setUploadError(null);
+      try {
+        const url = await uploadImage(file, entityType, undefined);
+        ed.chain().focus().setImage({ src: url }).run();
+      } catch (err) {
+        setUploadError(err instanceof Error ? err.message : "Image upload failed.");
+      }
+    },
+    [entityType],
+  );
+
+  const slashCommands = useMemo(
+    () => createSlashCommands({ onImage: handleInsertImage }),
+    [handleInsertImage],
+  );
+
+  const extensions = useMemo(
+    () => [
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+        link: {
+          openOnClick: false,
+          autolink: true,
+          HTMLAttributes: { rel: "noopener noreferrer nofollow" },
+        },
+      }),
+      Image.configure({ inline: false, allowBase64: false }),
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      Placeholder.configure({ placeholder: placeholder ?? "" }),
+      ArabicInLineText,
+      EnglishQuote,
+      FootNoteLink,
+      FootNote,
+      slashCommands,
+    ],
+    [slashCommands, placeholder],
+  );
+
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions,
+    content: value,
+    editorProps: {
+      attributes: {
+        class: "mr-htmleditor-visual article-content",
+        style: `min-height:${minHeight}`,
+        ...(placeholder ? { "data-placeholder": placeholder } : {}),
+      },
+      transformPastedHTML: (html) => cleanWordHtml(html),
+      handlePaste: imageHandlers.handlePaste,
+      handleDrop: imageHandlers.handleDrop,
+    },
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
+  });
+
+  // Keep the toolbar in sync with selection/content.
+  useEffect(() => {
+    if (!editor) return;
+    const update = () => forceTick();
+    editor.on("transaction", update);
+    return () => {
+      editor.off("transaction", update);
+    };
+  }, [editor]);
+
+  // Push external value changes (HTML tab edits, programmatic resets) into the
+  // editor, but only when they differ from what the editor already holds — this
+  // guard prevents cursor jumps while typing in the visual editor.
+  useEffect(() => {
+    if (!editor) return;
+    if (value === editor.getHTML()) return;
+    editor.commands.setContent(value, { emitUpdate: false });
+  }, [value, editor]);
+
+  function changeMode(next: Mode) {
+    if (next === "visual" && mode !== "visual" && looksLegacy(value)) {
+      if (!window.confirm(CONVERT_WARNING)) return;
+    }
+    setMode(next);
   }
 
-  function wrapSelection(tag: string, className?: string) {
-    const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return;
-    const range = sel.getRangeAt(0);
-    if (range.collapsed) return;
-    const wrapper = document.createElement(tag);
-    if (className) wrapper.className = className;
-    try {
-      wrapper.appendChild(range.extractContents());
-      range.insertNode(wrapper);
-      sel.removeAllRanges();
-      const newRange = document.createRange();
-      newRange.selectNodeContents(wrapper);
-      sel.addRange(newRange);
-    } catch {
-      // selection spanned non-collapsible boundaries; ignore
-    }
-    if (visualRef.current) onChange(visualRef.current.innerHTML);
+  function run(fn: () => void) {
+    if (!editor) return;
+    fn();
   }
 
   function insertLink() {
-    const url = window.prompt("Link URL");
-    if (!url) return;
-    exec("createLink", url);
+    if (!editor) return;
+    const prev = (editor.getAttributes("link").href as string | undefined) ?? "";
+    const url = window.prompt("Link URL", prev);
+    if (url === null) return;
+    if (url.trim() === "") {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
+      return;
+    }
+    editor.chain().focus().extendMarkRange("link").setLink({ href: url.trim() }).run();
   }
+
+  const isActive = (name: string, attrs?: Record<string, unknown>) =>
+    editor?.isActive(name, attrs) ?? false;
 
   const showToolbar = mode === "visual";
   const showHtml = mode === "html" || mode === "split";
@@ -77,77 +190,61 @@ export function HtmlEditor({
     <div className="mr-htmleditor" id={id}>
       <div className="mr-htmleditor-toolbar">
         <div className="mr-htmleditor-tabs" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "visual"}
+          <button type="button" role="tab" aria-selected={mode === "visual"}
             className={`mr-htmleditor-tab ${mode === "visual" ? "is-active" : ""}`}
-            onClick={() => setMode("visual")}
-          >
+            onClick={() => changeMode("visual")}>
             <Eye className="h-3.5 w-3.5" />
             Visual
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "html"}
+          <button type="button" role="tab" aria-selected={mode === "html"}
             className={`mr-htmleditor-tab ${mode === "html" ? "is-active" : ""}`}
-            onClick={() => setMode("html")}
-          >
+            onClick={() => changeMode("html")}>
             <Code2 className="h-3.5 w-3.5" />
             HTML
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "split"}
+          <button type="button" role="tab" aria-selected={mode === "split"}
             className={`mr-htmleditor-tab ${mode === "split" ? "is-active" : ""}`}
-            onClick={() => setMode("split")}
-          >
+            onClick={() => changeMode("split")}>
             <Columns2 className="h-3.5 w-3.5" />
             Split
           </button>
         </div>
 
-        {showToolbar && (
+        {showToolbar && editor && (
           <div className="mr-htmleditor-tools" aria-label="Formatting">
-            <ToolbarBtn label="Bold" onClick={() => exec("bold")}><Bold className="h-3.5 w-3.5" /></ToolbarBtn>
-            <ToolbarBtn label="Italic" onClick={() => exec("italic")}><Italic className="h-3.5 w-3.5" /></ToolbarBtn>
-            <ToolbarBtn label="Underline" onClick={() => exec("underline")}><Underline className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Bold" active={isActive("bold")} onClick={() => run(() => editor.chain().focus().toggleBold().run())}><Bold className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Italic" active={isActive("italic")} onClick={() => run(() => editor.chain().focus().toggleItalic().run())}><Italic className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Underline" active={isActive("underline")} onClick={() => run(() => editor.chain().focus().toggleUnderline().run())}><Underline className="h-3.5 w-3.5" /></ToolbarBtn>
 
             <span className="mr-htmleditor-sep" />
 
-            <ToolbarBtn label="Heading 2" onClick={() => exec("formatBlock", "H2")}><Heading2 className="h-3.5 w-3.5" /></ToolbarBtn>
-            <ToolbarBtn label="Heading 3" onClick={() => exec("formatBlock", "H3")}><Heading3 className="h-3.5 w-3.5" /></ToolbarBtn>
-            <ToolbarBtn label="Paragraph" onClick={() => exec("formatBlock", "P")}><Pilcrow className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Heading 2" active={isActive("heading", { level: 2 })} onClick={() => run(() => editor.chain().focus().toggleHeading({ level: 2 }).run())}><Heading2 className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Heading 3" active={isActive("heading", { level: 3 })} onClick={() => run(() => editor.chain().focus().toggleHeading({ level: 3 }).run())}><Heading3 className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Paragraph" active={isActive("paragraph")} onClick={() => run(() => editor.chain().focus().setParagraph().run())}><Pilcrow className="h-3.5 w-3.5" /></ToolbarBtn>
 
             <span className="mr-htmleditor-sep" />
 
-            <ToolbarBtn label="Bulleted list" onClick={() => exec("insertUnorderedList")}><List className="h-3.5 w-3.5" /></ToolbarBtn>
-            <ToolbarBtn label="Numbered list" onClick={() => exec("insertOrderedList")}><ListOrdered className="h-3.5 w-3.5" /></ToolbarBtn>
-            <ToolbarBtn label="Blockquote" onClick={() => exec("formatBlock", "BLOCKQUOTE")}><Quote className="h-3.5 w-3.5" /></ToolbarBtn>
-            <ToolbarBtn label="Link" onClick={insertLink}><Link2 className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Bulleted list" active={isActive("bulletList")} onClick={() => run(() => editor.chain().focus().toggleBulletList().run())}><List className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Numbered list" active={isActive("orderedList")} onClick={() => run(() => editor.chain().focus().toggleOrderedList().run())}><ListOrdered className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Blockquote" active={isActive("blockquote")} onClick={() => run(() => editor.chain().focus().toggleBlockquote().run())}><Quote className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Link" active={isActive("link")} onClick={insertLink}><Link2 className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Insert image" onClick={() => handleInsertImage(editor)}><ImageIcon className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Insert table" onClick={() => run(() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run())}><TableIcon className="h-3.5 w-3.5" /></ToolbarBtn>
 
             <span className="mr-htmleditor-sep" />
 
-            <ToolbarBtn
-              label="Wrap selection in Arabic span"
-              onClick={() => wrapSelection("span", "ArabicInLineText")}
-            >
+            <ToolbarBtn label="Arabic inline text" active={isActive("arabicInline")} onClick={() => run(() => editor.chain().focus().toggleMark("arabicInline", { dir: "rtl", lang: "ar" }).run())}>
               <span className="font-arabic text-[13px] leading-none">ع</span>
             </ToolbarBtn>
-            <ToolbarBtn
-              label="Wrap selection in English Quote"
-              onClick={() => wrapSelection("span", "EnglishQuote")}
-            >
+            <ToolbarBtn label="English quote" active={isActive("englishQuote")} onClick={() => run(() => editor.chain().focus().toggleMark("englishQuote").run())}>
               <span className="font-serif italic text-[12px] leading-none">EQ</span>
             </ToolbarBtn>
 
             <span className="mr-htmleditor-sep" />
 
-            <ToolbarBtn label="Clear formatting" onClick={() => exec("removeFormat")}><Eraser className="h-3.5 w-3.5" /></ToolbarBtn>
-            <ToolbarBtn label="Undo" onClick={() => exec("undo")}><Undo2 className="h-3.5 w-3.5" /></ToolbarBtn>
-            <ToolbarBtn label="Redo" onClick={() => exec("redo")}><Redo2 className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Clear formatting" onClick={() => run(() => editor.chain().focus().unsetAllMarks().run())}><Eraser className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Undo" onClick={() => run(() => editor.chain().focus().undo().run())}><Undo2 className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Redo" onClick={() => run(() => editor.chain().focus().redo().run())}><Redo2 className="h-3.5 w-3.5" /></ToolbarBtn>
           </div>
         )}
       </div>
@@ -164,17 +261,12 @@ export function HtmlEditor({
             spellCheck={false}
           />
         )}
-        {showVisual && (
-          <div
-            ref={visualRef}
-            contentEditable
-            suppressContentEditableWarning
-            onInput={(e) => onChange((e.currentTarget as HTMLDivElement).innerHTML)}
-            className="mr-htmleditor-visual article-content"
-            style={{ minHeight }}
-            data-placeholder={placeholder}
-          />
-        )}
+        {/* Always mounted so the editor view never detaches on tab switch;
+            hidden (display:none) when another mode is active. */}
+        <EditorContent
+          editor={editor}
+          className={`mr-htmleditor-visual-wrap ${showVisual ? "" : "hidden"}`}
+        />
         {showPreview && (
           <div
             className="mr-htmleditor-preview article-content"
@@ -183,16 +275,25 @@ export function HtmlEditor({
           />
         )}
       </div>
+
+      {uploadError && (
+        <div className="mr-htmleditor-error" role="alert">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+          <span>{uploadError}</span>
+        </div>
+      )}
     </div>
   );
 }
 
 function ToolbarBtn({
   label,
+  active,
   onClick,
   children,
 }: {
   label: string;
+  active?: boolean;
   onClick: () => void;
   children: React.ReactNode;
 }) {
@@ -201,10 +302,11 @@ function ToolbarBtn({
       type="button"
       title={label}
       aria-label={label}
-      // Prevent the contenteditable from losing selection when the button is pressed.
+      aria-pressed={active ?? undefined}
+      // Prevent the editor from losing selection when the button is pressed.
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
-      className="mr-htmleditor-btn"
+      className={`mr-htmleditor-btn ${active ? "is-active" : ""}`}
     >
       {children}
     </button>
