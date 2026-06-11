@@ -1,13 +1,51 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   getIssueBySlug,
   getArticlesForIssue,
   getQueriesForIssue,
+  getEditorialForIssue,
   getMonthName,
 } from "@/lib/queries";
+import { SITE_URL, SITE_NAME, ISSN } from "@/lib/site-meta";
 
-export const dynamic = "force-dynamic";
+// ISR: issue content changes only via admin mutations, which call
+// revalidatePath. Time-based revalidate is just a backstop (plan I2).
+export const revalidate = 3600;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const issue = await getIssueBySlug(id).catch(() => null);
+  if (!issue) return { title: SITE_NAME };
+
+  const monthName = getMonthName(issue.month);
+  const title = `Vol. ${issue.volume} · № ${issue.issueNumber}, ${monthName} ${issue.year} | ${SITE_NAME}`;
+  const description = issue.title || "Articles from this issue";
+  const canonical = `${SITE_URL}/issues/${id}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url: canonical,
+      siteName: SITE_NAME,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
+}
 
 const arMonths = [
   "محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة",
@@ -23,14 +61,15 @@ export default async function IssuePage({
   const issue = await getIssueBySlug(id);
   if (!issue) notFound();
 
-  const [issueArticles, issueQueries] = await Promise.all([
+  const [issueArticles, issueQueries, editorial] = await Promise.all([
     getArticlesForIssue(id),
     getQueriesForIssue(id),
+    getEditorialForIssue(id),
   ]);
 
   const monthName = getMonthName(issue.month).toUpperCase();
   const arMonth = arMonths[Math.max(0, Math.min(11, issue.month - 1))];
-  const featured = issueArticles[0];
+  const startReading = editorial ?? issueArticles[0];
 
   // Legacy issue titles (from MSSQL) sometimes literally contain an Islamic
   // month name (e.g., "Rabi-ul-Awal"), which obscures the actual Gregorian
@@ -103,6 +142,11 @@ export default async function IssuePage({
               <div className="mr-catalog text-center mt-1">
                 VOLUME {issue.volume} · ISSUE № {issue.issueNumber}
               </div>
+              {ISSN && (
+                <div className="mr-catalog text-center mt-1" style={{ opacity: 0.75 }}>
+                  ISSN: {ISSN}
+                </div>
+              )}
             </div>
 
             <div className="mr-ornament">
@@ -148,10 +192,10 @@ export default async function IssuePage({
               scholarly writing, reader questions answered, and a continued record
               of the journal's ongoing concerns.
             </p>
-            {featured && (
+            {startReading && (
               <div className="flex gap-2.5 flex-wrap">
                 <Link
-                  href={`/articles/${featured.slug}`}
+                  href={`/articles/${startReading.slug}`}
                   className="mr-btn mr-btn-primary"
                 >
                   Start reading →

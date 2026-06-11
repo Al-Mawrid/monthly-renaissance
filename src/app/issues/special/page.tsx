@@ -6,7 +6,7 @@ export const metadata = {
   description: "Special themed issues of Monthly Renaissance — including issues dedicated to specific topics such as Hajj.",
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export default async function SpecialIssuesPage() {
   const issues = await getSpecialIssues();

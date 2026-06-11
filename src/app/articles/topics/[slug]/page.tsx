@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, User, Clock } from "lucide-react";
@@ -8,8 +9,41 @@ import {
   getTopicBySlug,
   getArticlesByTopicPaged,
 } from "@/lib/queries";
+import { SITE_URL, SITE_NAME } from "@/lib/site-meta";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const topic = await getTopicBySlug(slug).catch(() => null);
+  if (!topic) return { title: SITE_NAME };
+
+  const title = `${topic.name} | ${SITE_NAME}`;
+  const description = `Articles on ${topic.name} from ${SITE_NAME}`;
+  const canonical = `${SITE_URL}/articles/topics/${topic.slug}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url: canonical,
+      siteName: SITE_NAME,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
+}
 
 const PER_PAGE = 20;
 
@@ -68,7 +102,7 @@ export default async function TopicPage({
                 <User className="h-3 w-3" />
                 {article.writer.name}
               </span>
-              <span>{article.issue.title}</span>
+              <span>{article.issue?.title}</span>
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
                 {article.readingTime} min

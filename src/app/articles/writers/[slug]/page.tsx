@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Clock } from "lucide-react";
@@ -9,8 +10,41 @@ import {
   getWriterBySlug,
   getArticlesByWriterPaged,
 } from "@/lib/queries";
+import { SITE_URL, SITE_NAME } from "@/lib/site-meta";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const writer = await getWriterBySlug(slug).catch(() => null);
+  if (!writer) return { title: SITE_NAME };
+
+  const title = `${writer.name} | ${SITE_NAME}`;
+  const description = `Articles by ${writer.name} on ${SITE_NAME}`;
+  const canonical = `${SITE_URL}/articles/writers/${writer.slug}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: "profile",
+      title,
+      description,
+      url: canonical,
+      siteName: SITE_NAME,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
+}
 
 const PER_PAGE = 20;
 
@@ -86,7 +120,7 @@ export default async function WriterPage({
               {article.excerpt}
             </p>
             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-              <span>{article.issue.title}</span>
+              <span>{article.issue?.title}</span>
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
                 {article.readingTime} min

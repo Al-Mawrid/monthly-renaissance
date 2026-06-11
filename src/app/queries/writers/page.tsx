@@ -6,7 +6,7 @@ export const metadata = {
   description: "Browse reader queries answered by our scholars.",
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export default async function QueriesByWriterPage() {
   const queryWriters = await getQueryWriters();

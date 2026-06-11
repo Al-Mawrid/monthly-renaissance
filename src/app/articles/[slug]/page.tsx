@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -9,8 +10,51 @@ import {
 import { ArticleTools } from "@/components/article/article-tools";
 import { ReadingToolsFab } from "@/components/article/reading-tools-fab";
 import { FootnoteFocus } from "@/components/article/footnote-focus";
+import { SITE_URL, SITE_NAME } from "@/lib/site-meta";
 
-export const dynamic = "force-dynamic";
+// ISR: article content changes only via admin mutations, which call
+// revalidatePath. Time-based revalidate is just a backstop (plan I2).
+export const revalidate = 3600;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const article = await getArticleBySlug(slug).catch(() => null);
+  if (!article) return { title: SITE_NAME };
+
+  const title = `${article.title} | ${SITE_NAME}`;
+  const description = article.excerpt?.slice(0, 200) || `An article from ${SITE_NAME}.`;
+  const canonical = `${SITE_URL}/articles/${article.slug}`;
+  const writerUrl = article.writer?.slug
+    ? `${SITE_URL}/articles/writers/${article.writer.slug}`
+    : undefined;
+
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    authors: article.writer?.name
+      ? [{ name: article.writer.name, url: writerUrl }]
+      : undefined,
+    openGraph: {
+      type: "article",
+      title: article.title,
+      description,
+      url: canonical,
+      siteName: SITE_NAME,
+      authors: article.writer?.name ? [article.writer.name] : undefined,
+      publishedTime: article.createdAt || undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.title,
+      description,
+    },
+  };
+}
 
 function initials(name: string): string {
   return name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
@@ -25,14 +69,20 @@ export default async function ArticlePage({
   const article = await getArticleBySlug(slug);
   if (!article) notFound();
 
+  const issue = article.issue;
   const [related, issueArticles] = await Promise.all([
     getRelatedArticles(article.topic.slug, article.slug, 3),
-    getArticlesForIssue(article.issue.id),
+    issue ? getArticlesForIssue(issue.id) : Promise.resolve([]),
   ]);
 
   const wordCount = article.bodyHtml
     ? article.bodyHtml.replace(/<[^>]+>/g, "").split(/\s+/).filter(Boolean).length
     : 0;
+
+  const chipMonth = issue ? getMonthName(issue.month).toUpperCase() : "";
+  const citationYear = issue ? issue.year : "";
+  const citationVolume = issue ? issue.volume : "";
+  const citationIssue = issue ? issue.issueNumber : "";
 
   return (
     <div>
@@ -43,13 +93,17 @@ export default async function ArticlePage({
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-3.5 flex items-center gap-2.5 flex-wrap text-[12px] text-muted-foreground">
           <Link href="/issues" className="text-foreground hover:text-[var(--mr-green-700)]">Archive</Link>
-          <span>/</span>
-          <Link
-            href={`/issues/${article.issue.id}`}
-            className="text-foreground hover:text-[var(--mr-green-700)]"
-          >
-            Vol. {article.issue.volume} · № {article.issue.issueNumber}
-          </Link>
+          {issue && (
+            <>
+              <span>/</span>
+              <Link
+                href={`/issues/${issue.id}`}
+                className="text-foreground hover:text-[var(--mr-green-700)]"
+              >
+                Vol. {issue.volume} · № {issue.issueNumber}
+              </Link>
+            </>
+          )}
           <span>/</span>
           <span className="truncate max-w-[280px]">{article.title}</span>
           <div className="ml-auto mr-catalog">
@@ -108,6 +162,22 @@ export default async function ArticlePage({
               {article.title}
             </h1>
 
+            {issue && (
+              <Link
+                href={`/issues/${issue.id}`}
+                className="mr-catalog inline-flex items-center gap-2 mb-4 px-2 py-1 border transition-colors hover:text-[var(--mr-green-700)]"
+                style={{
+                  borderColor: "var(--border)",
+                  background: "var(--mr-cream)",
+                  color: "var(--mr-clay-700)",
+                }}
+              >
+                <span>{chipMonth} {issue.year}</span>
+                <span aria-hidden style={{ opacity: 0.5 }}>·</span>
+                <span>ISSUE № {issue.issueNumber}</span>
+              </Link>
+            )}
+
             {/* Author line */}
             <div
               className="flex items-center gap-3.5 pb-5 border-b"
@@ -126,8 +196,20 @@ export default async function ArticlePage({
                 >
                   {article.writer.name}
                 </Link>
+                {article.translator && (
+                  <div className="text-[11px] text-muted-foreground">
+                    Translated by{" "}
+                    <Link
+                      href={`/articles/writers/${article.translator.slug}`}
+                      className="hover:text-[var(--mr-green-700)]"
+                    >
+                      {article.translator.name}
+                    </Link>
+                  </div>
+                )}
                 <div className="text-[11px] text-muted-foreground">
-                  {getMonthName(article.issue.month)} {article.issue.year} · {article.readingTime} min read
+                  {issue ? `${getMonthName(issue.month)} ${issue.year} · ` : ""}
+                  {article.readingTime} min read
                 </div>
               </div>
             </div>
@@ -209,7 +291,7 @@ export default async function ArticlePage({
             <div className="sticky top-[140px]">
               <div className="mr-eyebrow mb-3.5">Tools</div>
               <ArticleTools
-                citation={`${article.writer.name} (${article.issue.year}). ${article.title}. Monthly Renaissance, ${article.issue.volume}(${article.issue.issueNumber}).`}
+                citation={`${article.writer.name} (${citationYear}). ${article.title}. Monthly Renaissance, ${citationVolume}(${citationIssue}).`}
               />
               <hr className="my-5" style={{ borderColor: "var(--border)" }} />
               <div
@@ -222,7 +304,7 @@ export default async function ArticlePage({
                 className="font-mono text-[10px] leading-[1.6] text-muted-foreground p-2.5"
                 style={{ background: "var(--mr-cream)", border: "1px solid var(--border)" }}
               >
-                {article.writer.name} ({article.issue.year}). {article.title}. <i>Monthly Renaissance</i>, {article.issue.volume}({article.issue.issueNumber}).
+                {article.writer.name} ({citationYear}). {article.title}. <i>Monthly Renaissance</i>, {citationVolume}({citationIssue}).
               </div>
             </div>
           </aside>
@@ -230,7 +312,7 @@ export default async function ArticlePage({
       </div>
 
       <ReadingToolsFab
-        citation={`${article.writer.name} (${article.issue.year}). ${article.title}. Monthly Renaissance, ${article.issue.volume}(${article.issue.issueNumber}).`}
+        citation={`${article.writer.name} (${citationYear}). ${article.title}. Monthly Renaissance, ${citationVolume}(${citationIssue}).`}
       />
     </div>
   );

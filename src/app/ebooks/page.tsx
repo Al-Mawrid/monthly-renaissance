@@ -6,7 +6,7 @@ export const metadata = {
   description: "Free downloadable e-books on Islamic scholarship and thought.",
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export default async function EBooksPage() {
   const ebooks = await getAllEbooks();

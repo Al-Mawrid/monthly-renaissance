@@ -7,7 +7,7 @@ export const metadata = {
   description: "Browse articles by our contributing scholars and writers.",
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export default async function WritersPage() {
   const writers = await getAllWriters();
