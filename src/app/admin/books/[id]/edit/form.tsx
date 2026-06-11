@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateBook } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, FileText, X } from "lucide-react";
+import { Upload, FileText } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { MutationError, MutationRequested } from "@/app/admin/_components/mutation-result";
 
 type Book = {
   id: number;
@@ -34,7 +35,7 @@ export function BookEditForm({
 }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [saving, setSaving] = useState(false);
+  const [pending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
   const [title, setTitle] = useState(book.title);
   const [fileName, setFileName] = useState(book.fileName);
@@ -45,6 +46,8 @@ export function BookEditForm({
   const [isBookType, setIsBookType] = useState(book.isBook);
   const [display, setDisplay] = useState(book.display);
   const [uploadError, setUploadError] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [requested, setRequested] = useState(false);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -74,31 +77,38 @@ export function BookEditForm({
     setUploading(false);
   }
 
-  async function handleSave() {
-    setSaving(true);
-    try {
-      const result = await updateBook(book.id, {
-        title,
-        fileName,
-        writerId: writerId !== "none" ? parseInt(writerId, 10) : null,
-        translatorId: translatorId !== "none" ? parseInt(translatorId, 10) : null,
-        isEbook,
-        isBook: isBookType,
-        display,
-      });
-      if ("requested" in result) {
-        router.push("/admin/change-requests");
-      } else {
+  function handleSave() {
+    setErrorMsg(null);
+    setRequested(false);
+
+    startTransition(async () => {
+      try {
+        const result = await updateBook(book.id, {
+          title,
+          fileName,
+          writerId: writerId !== "none" ? parseInt(writerId, 10) : null,
+          translatorId: translatorId !== "none" ? parseInt(translatorId, 10) : null,
+          isEbook,
+          isBook: isBookType,
+          display,
+        });
+        if (result && "ok" in result && result.ok === false) {
+          setErrorMsg(result.error || "Failed to save changes.");
+          return;
+        }
+        if (result && "requested" in result && result.requested) {
+          setRequested(true);
+          return;
+        }
         router.push("/admin/books");
+      } catch {
+        setErrorMsg("Something went wrong. Please try again.");
       }
-    } catch {
-      setSaving(false);
-    }
+    });
   }
 
   return (
     <div className="max-w-xl space-y-6">
-      {/* Current / replacement file */}
       <div className="space-y-2">
         <Label>Book File</Label>
         <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
@@ -187,11 +197,14 @@ export function BookEditForm({
       )}
 
       <div className="flex gap-3">
-        <Button onClick={handleSave} disabled={saving || uploading}>
-          {saving ? "Submitting..." : isTeam ? "Submit Request" : "Save Changes"}
+        <Button onClick={handleSave} disabled={pending || uploading}>
+          {pending ? "Submitting..." : isTeam ? "Submit Request" : "Save Changes"}
         </Button>
         <Button variant="outline" onClick={() => router.push("/admin/books")}>Cancel</Button>
       </div>
+
+      {errorMsg && <MutationError message={errorMsg} />}
+      {requested && <MutationRequested />}
     </div>
   );
 }

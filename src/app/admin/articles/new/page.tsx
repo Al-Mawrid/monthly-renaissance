@@ -13,9 +13,13 @@ export default async function NewArticlePage() {
   const session = await auth();
   const isAdmin = canManageContent(session!.user.role);
 
-  const [topics, writers] = await Promise.all([
+  const [topics, writers, issues] = await Promise.all([
     prisma.topic.findMany({ orderBy: { title: "asc" } }),
     prisma.writer.findMany({ orderBy: { name: "asc" } }),
+    prisma.issue.findMany({
+      orderBy: [{ issueDate: "desc" }, { id: "desc" }],
+      select: { id: true, title: true, volumeNumber: true, issueNumber: true, issueDate: true },
+    }),
   ]);
 
   return (
@@ -32,7 +36,18 @@ export default async function NewArticlePage() {
         {isAdmin ? "New Article" : "Request New Article"}
       </h1>
 
-      <ArticleCreateForm topics={topics} writers={writers} isTeam={!isAdmin} />
+      <ArticleCreateForm
+        topics={topics}
+        writers={writers}
+        issues={issues.map((i) => ({
+          id: i.id,
+          title: i.title,
+          volumeNumber: i.volumeNumber,
+          issueNumber: i.issueNumber,
+          issueDate: i.issueDate ? i.issueDate.toISOString() : null,
+        }))}
+        isTeam={!isAdmin}
+      />
     </div>
   );
 }

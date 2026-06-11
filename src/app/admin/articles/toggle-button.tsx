@@ -23,7 +23,11 @@ export function ToggleDisplayButton({
   const action = toggleFns[type];
 
   return (
-    <form action={() => action(id)}>
+    <form
+      action={async () => {
+        await action(id);
+      }}
+    >
       <Button variant="ghost" size="sm" type="submit" className="h-7 w-7 p-0">
         <Eye className="h-3.5 w-3.5" />
         <span className="sr-only">Toggle display</span>

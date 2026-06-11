@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createBook } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Upload, FileText, X } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { MutationError, MutationRequested } from "@/app/admin/_components/mutation-result";
 
 type Writer = { id: number; name: string };
 
@@ -22,7 +23,7 @@ export function BookCreateForm({
 }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [saving, setSaving] = useState(false);
+  const [pending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
   const [title, setTitle] = useState("");
   const [fileName, setFileName] = useState("");
@@ -32,6 +33,8 @@ export function BookCreateForm({
   const [isEbook, setIsEbook] = useState(false);
   const [isBookType, setIsBookType] = useState(true);
   const [uploadError, setUploadError] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [requested, setRequested] = useState(false);
 
   function generateSlug(text: string) {
     return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -60,7 +63,6 @@ export function BookCreateForm({
       setFileName(data.fileName);
       setOriginalFileName(data.originalName);
 
-      // Auto-fill title from filename if empty
       if (!title) {
         const name = file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ");
         setTitle(name.charAt(0).toUpperCase() + name.slice(1));
@@ -77,32 +79,39 @@ export function BookCreateForm({
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  async function handleSave() {
+  function handleSave() {
     if (!title || !fileName) return;
-    setSaving(true);
-    try {
-      const result = await createBook({
-        title,
-        slug: generateSlug(title),
-        fileName,
-        writerId: writerId !== "none" ? parseInt(writerId, 10) : undefined,
-        translatorId: translatorId !== "none" ? parseInt(translatorId, 10) : undefined,
-        isEbook,
-        isBook: isBookType,
-      });
-      if ("requested" in result) {
-        router.push("/admin/change-requests");
-      } else {
+    setErrorMsg(null);
+    setRequested(false);
+
+    startTransition(async () => {
+      try {
+        const result = await createBook({
+          title,
+          slug: generateSlug(title),
+          fileName,
+          writerId: writerId !== "none" ? parseInt(writerId, 10) : undefined,
+          translatorId: translatorId !== "none" ? parseInt(translatorId, 10) : undefined,
+          isEbook,
+          isBook: isBookType,
+        });
+        if (result && "ok" in result && result.ok === false) {
+          setErrorMsg(result.error || "Failed to create book.");
+          return;
+        }
+        if (result && "requested" in result && result.requested) {
+          setRequested(true);
+          return;
+        }
         router.push("/admin/books");
+      } catch {
+        setErrorMsg("Something went wrong. Please try again.");
       }
-    } catch {
-      setSaving(false);
-    }
+    });
   }
 
   return (
     <div className="max-w-xl space-y-6">
-      {/* File Upload */}
       <div className="space-y-2">
         <Label>Book File</Label>
         {fileName ? (
@@ -191,11 +200,14 @@ export function BookCreateForm({
       )}
 
       <div className="flex gap-3">
-        <Button onClick={handleSave} disabled={saving || uploading || !title || !fileName}>
-          {saving ? "Submitting..." : isTeam ? "Submit Request" : "Create Book"}
+        <Button onClick={handleSave} disabled={pending || uploading || !title || !fileName}>
+          {pending ? "Submitting..." : isTeam ? "Submit Request" : "Create Book"}
         </Button>
         <Button variant="outline" onClick={() => router.push("/admin/books")}>Cancel</Button>
       </div>
+
+      {errorMsg && <MutationError message={errorMsg} />}
+      {requested && <MutationRequested />}
     </div>
   );
 }

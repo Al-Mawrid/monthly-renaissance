@@ -1,45 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createIssue } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MutationError, MutationRequested } from "@/app/admin/_components/mutation-result";
 
 export function IssueCreateForm({ isTeam }: { isTeam: boolean }) {
   const router = useRouter();
-  const [saving, setSaving] = useState(false);
+  const [pending, startTransition] = useTransition();
   const [title, setTitle] = useState("");
   const [volumeNumber, setVolumeNumber] = useState("");
   const [issueNumber, setIssueNumber] = useState("");
   const [issueDate, setIssueDate] = useState("");
   const [isSpecial, setIsSpecial] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [requested, setRequested] = useState(false);
 
   function generateSlug(text: string) {
     return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   }
 
-  async function handleSave() {
+  function handleSave() {
     if (!title) return;
-    setSaving(true);
-    try {
-      const result = await createIssue({
-        title,
-        slug: generateSlug(title),
-        volumeNumber: volumeNumber || undefined,
-        issueNumber: issueNumber || undefined,
-        issueDate: issueDate || undefined,
-        isSpecial,
-      });
-      if ("requested" in result) {
-        router.push("/admin/change-requests");
-      } else {
+    setErrorMsg(null);
+    setRequested(false);
+
+    startTransition(async () => {
+      try {
+        const result = await createIssue({
+          title,
+          slug: generateSlug(title),
+          volumeNumber: volumeNumber || undefined,
+          issueNumber: issueNumber || undefined,
+          issueDate: issueDate || undefined,
+          isSpecial,
+        });
+        if (result && "ok" in result && result.ok === false) {
+          setErrorMsg(result.error || "Failed to create issue.");
+          return;
+        }
+        if (result && "requested" in result && result.requested) {
+          setRequested(true);
+          return;
+        }
         router.push("/admin/issues");
+      } catch {
+        setErrorMsg("Something went wrong. Please try again.");
       }
-    } catch {
-      setSaving(false);
-    }
+    });
   }
 
   return (
@@ -77,11 +88,14 @@ export function IssueCreateForm({ isTeam }: { isTeam: boolean }) {
       )}
 
       <div className="flex gap-3">
-        <Button onClick={handleSave} disabled={saving || !title}>
-          {saving ? "Submitting..." : isTeam ? "Submit Request" : "Create Issue"}
+        <Button onClick={handleSave} disabled={pending || !title}>
+          {pending ? "Submitting..." : isTeam ? "Submit Request" : "Create Issue"}
         </Button>
         <Button variant="outline" onClick={() => router.push("/admin/issues")}>Cancel</Button>
       </div>
+
+      {errorMsg && <MutationError message={errorMsg} />}
+      {requested && <MutationRequested />}
     </div>
   );
 }

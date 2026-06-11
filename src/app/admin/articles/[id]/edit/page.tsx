@@ -22,16 +22,37 @@ export default async function EditArticlePage({
   const session = await auth();
   const isAdmin = canManageContent(session!.user.role);
 
-  const [article, topics, writers] = await Promise.all([
+  const [article, topics, writers, issues, articleLink] = await Promise.all([
     prisma.article.findUnique({
       where: { id: articleId },
       include: { topic: true, writer: true },
     }),
     prisma.topic.findMany({ orderBy: { title: "asc" } }),
     prisma.writer.findMany({ orderBy: { name: "asc" } }),
+    prisma.issue.findMany({
+      orderBy: [{ issueDate: "desc" }, { id: "desc" }],
+      select: { id: true, title: true, volumeNumber: true, issueNumber: true, issueDate: true },
+    }),
+    prisma.articleIssueLink.findFirst({
+      where: { articleId },
+      select: { issueId: true },
+    }),
   ]);
 
   if (!article) notFound();
+
+  let initialIssueId: number | null = null;
+  let initialRoleInIssue: "regular" | "editorial" | "intro" = "regular";
+  if (article.introIssueId) {
+    initialIssueId = article.introIssueId;
+    initialRoleInIssue = "intro";
+  } else if (article.editorialIssueId) {
+    initialIssueId = article.editorialIssueId;
+    initialRoleInIssue = "editorial";
+  } else if (articleLink) {
+    initialIssueId = articleLink.issueId;
+    initialRoleInIssue = "regular";
+  }
 
   return (
     <div>
@@ -48,9 +69,26 @@ export default async function EditArticlePage({
       </h1>
 
       <ArticleEditForm
-        article={article}
+        article={{
+          id: article.id,
+          title: article.title,
+          bodyHtml: article.bodyHtml,
+          topicId: article.topicId,
+          writerId: article.writerId,
+          translatorId: article.translatorId,
+          display: article.display,
+        }}
         topics={topics}
         writers={writers}
+        issues={issues.map((i) => ({
+          id: i.id,
+          title: i.title,
+          volumeNumber: i.volumeNumber,
+          issueNumber: i.issueNumber,
+          issueDate: i.issueDate ? i.issueDate.toISOString() : null,
+        }))}
+        initialIssueId={initialIssueId}
+        initialRoleInIssue={initialRoleInIssue}
         isTeam={!isAdmin}
       />
     </div>

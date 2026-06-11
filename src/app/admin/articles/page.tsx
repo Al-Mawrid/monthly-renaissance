@@ -33,10 +33,32 @@ export default async function AdminArticlesPage({
       orderBy: articleOrderBy(sort, order),
       skip: (page - 1) * perPage,
       take: perPage,
-      include: { writer: true, topic: true },
+      include: {
+        writer: true,
+        topic: true,
+        issueLinks: {
+          take: 1,
+          include: { issue: { select: { id: true, title: true, slug: true, volumeNumber: true, issueNumber: true } } },
+        },
+      },
     }),
     prisma.article.count(),
   ]);
+
+  const issueIdsToFetch = Array.from(
+    new Set(
+      articles
+        .map((a) => a.editorialIssueId ?? a.introIssueId)
+        .filter((id): id is number => typeof id === "number"),
+    ),
+  );
+  const flagIssues = issueIdsToFetch.length
+    ? await prisma.issue.findMany({
+        where: { id: { in: issueIdsToFetch } },
+        select: { id: true, title: true, slug: true, volumeNumber: true, issueNumber: true },
+      })
+    : [];
+  const flagIssueMap = new Map(flagIssues.map((i) => [i.id, i]));
 
   const totalPages = Math.ceil(total / perPage);
 
@@ -62,19 +84,37 @@ export default async function AdminArticlesPage({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-12">ID</TableHead>
+              <TableHead className="w-14">ID</TableHead>
               <Suspense><SortableHead column="title">Title</SortableHead></Suspense>
               <Suspense><SortableHead column="writer">Writer</SortableHead></Suspense>
               <Suspense><SortableHead column="topic">Topic</SortableHead></Suspense>
+              <TableHead>Issue</TableHead>
               <Suspense><SortableHead column="date">Date</SortableHead></Suspense>
               <Suspense><SortableHead column="status" className="w-20">Status</SortableHead></Suspense>
               <TableHead className="w-28">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {articles.map((article) => (
+            {articles.map((article) => {
+              const flagIssue =
+                article.editorialIssueId ? flagIssueMap.get(article.editorialIssueId) :
+                article.introIssueId ? flagIssueMap.get(article.introIssueId) :
+                undefined;
+              const linkIssue = article.issueLinks[0]?.issue;
+              const issue = flagIssue ?? linkIssue;
+              const issueRole = article.editorialIssueId
+                ? "Editorial"
+                : article.introIssueId
+                ? "Intro"
+                : null;
+              return (
               <TableRow key={article.id}>
-                <TableCell className="text-muted-foreground text-xs">{article.oldId}</TableCell>
+                <TableCell
+                  className="text-muted-foreground text-xs font-mono"
+                  title={article.oldId != null ? `Legacy ID: ${article.oldId}` : "No legacy ID"}
+                >
+                  {article.id}
+                </TableCell>
                 <TableCell>
                   <Link
                     href={`/admin/articles/${article.id}/edit`}
@@ -85,6 +125,20 @@ export default async function AdminArticlesPage({
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">{article.writer.name}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{article.topic.title}</TableCell>
+                <TableCell className="text-xs">
+                  {issue ? (
+                    <span className="text-muted-foreground">
+                      {issue.title}
+                      {issueRole && (
+                        <span className="ml-1 inline-block rounded bg-primary/10 px-1 py-0.5 text-[10px] font-medium uppercase text-primary">
+                          {issueRole}
+                        </span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="italic text-amber-600 dark:text-amber-400">Unattached</span>
+                  )}
+                </TableCell>
                 <TableCell className="text-xs text-muted-foreground">
                   {article.dateAdded?.toLocaleDateString() ?? "—"}
                 </TableCell>
@@ -110,7 +164,8 @@ export default async function AdminArticlesPage({
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </div>

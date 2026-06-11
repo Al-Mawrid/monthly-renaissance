@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateIssue } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MutationError, MutationRequested } from "@/app/admin/_components/mutation-result";
 
 type Issue = {
   id: number;
@@ -19,33 +20,43 @@ type Issue = {
 
 export function IssueEditForm({ issue, isTeam }: { issue: Issue; isTeam: boolean }) {
   const router = useRouter();
-  const [saving, setSaving] = useState(false);
+  const [pending, startTransition] = useTransition();
   const [title, setTitle] = useState(issue.title);
   const [volumeNumber, setVolumeNumber] = useState(issue.volumeNumber ?? "");
   const [issueNumber, setIssueNumber] = useState(issue.issueNumber ?? "");
   const [issueDate, setIssueDate] = useState(issue.issueDate?.toISOString().split("T")[0] ?? "");
   const [display, setDisplay] = useState(issue.display);
   const [isSpecial, setIsSpecial] = useState(issue.isSpecial);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [requested, setRequested] = useState(false);
 
-  async function handleSave() {
-    setSaving(true);
-    try {
-      const result = await updateIssue(issue.id, {
-        title,
-        volumeNumber: volumeNumber || undefined,
-        issueNumber: issueNumber || undefined,
-        issueDate: issueDate || undefined,
-        display,
-        isSpecial,
-      });
-      if ("requested" in result) {
-        router.push("/admin/change-requests");
-      } else {
+  function handleSave() {
+    setErrorMsg(null);
+    setRequested(false);
+
+    startTransition(async () => {
+      try {
+        const result = await updateIssue(issue.id, {
+          title,
+          volumeNumber: volumeNumber || undefined,
+          issueNumber: issueNumber || undefined,
+          issueDate: issueDate || undefined,
+          display,
+          isSpecial,
+        });
+        if (result && "ok" in result && result.ok === false) {
+          setErrorMsg(result.error || "Failed to save changes.");
+          return;
+        }
+        if (result && "requested" in result && result.requested) {
+          setRequested(true);
+          return;
+        }
         router.push("/admin/issues");
+      } catch {
+        setErrorMsg("Something went wrong. Please try again.");
       }
-    } catch {
-      setSaving(false);
-    }
+    });
   }
 
   return (
@@ -89,11 +100,14 @@ export function IssueEditForm({ issue, isTeam }: { issue: Issue; isTeam: boolean
       )}
 
       <div className="flex gap-3">
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? "Submitting..." : isTeam ? "Submit Request" : "Save Changes"}
+        <Button onClick={handleSave} disabled={pending}>
+          {pending ? "Submitting..." : isTeam ? "Submit Request" : "Save Changes"}
         </Button>
         <Button variant="outline" onClick={() => router.push("/admin/issues")}>Cancel</Button>
       </div>
+
+      {errorMsg && <MutationError message={errorMsg} />}
+      {requested && <MutationRequested />}
     </div>
   );
 }
