@@ -1,7 +1,7 @@
-import { parse } from "node-html-parser";
 import { prisma } from "./db";
 import type { Writer, Topic, Issue, Article, EBook } from "./types";
 import { sample } from "./sample-data";
+import { sanitizeArticleHtml } from "./html-sanitize";
 
 const DB_UNAVAILABLE = process.env.NODE_ENV === "development";
 
@@ -65,13 +65,13 @@ function readingTime(html: string): number {
   return Math.max(1, Math.ceil(words / 200));
 }
 
-// Legacy bodyHtml from the old ASP.NET CMS contains stray closing tags
-// (Word-import artifacts). When passed to dangerouslySetInnerHTML, these
-// close the parent container early during initial SSR, pushing content
-// to body root. Parsing + re-serializing balances the tags.
+// Kept as a cheap read-time safety net until the A3.3 backfill cleans stored
+// HTML in place; remove this call site (mapArticle / mapQuery) once
+// `scripts/clean-word-residue.mjs --apply` has completed in production.
+// Write-time sanitization now lives in sanitizeArticleHtml; this is a passthrough
+// to a single source of truth.
 function sanitizeHtml(html: string): string {
-  if (!html) return html;
-  return parse(html).toString();
+  return sanitizeArticleHtml(html);
 }
 
 // ─── Mappers (Prisma → Interface) ────────────────────────────
@@ -133,12 +133,15 @@ function mapIssue(i: PrismaIssue): Issue {
 type PrismaArticle = {
   id: number; title: string; slug: string; bodyHtml: string;
   dateAdded: Date | null; display: boolean;
+  editorialIssueId?: number | null;
+  introIssueId?: number | null;
   topic: PrismaTopic; writer: PrismaWriter;
+  translator?: { id: number; name: string; slug: string } | null;
   issueLinks: { issue: PrismaIssue }[];
 };
 
-function mapArticle(a: PrismaArticle): Article {
-  const issue = a.issueLinks[0]?.issue;
+function mapArticle(a: PrismaArticle, contextIssue?: PrismaIssue | null): Article {
+  const issue = contextIssue ?? a.issueLinks[0]?.issue ?? null;
   return {
     id: String(a.id),
     title: a.title,
@@ -147,7 +150,10 @@ function mapArticle(a: PrismaArticle): Article {
     bodyHtml: sanitizeHtml(a.bodyHtml),
     writer: mapWriter(a.writer),
     topic: mapTopic(a.topic),
-    issue: issue ? mapIssue(issue) : { id: "", year: 0, month: 0, volume: 0, issueNumber: 0, title: "", isSpecial: false, articleCount: 0 },
+    issue: issue ? mapIssue(issue) : null,
+    translator: a.translator
+      ? { name: a.translator.name, slug: a.translator.slug }
+      : null,
     type: "article",
     createdAt: a.dateAdded?.toISOString().split("T")[0] ?? "",
     readingTime: readingTime(a.bodyHtml),
@@ -173,7 +179,8 @@ function mapQuery(q: PrismaQuery): Article {
     bodyHtml: sanitizeHtml(body),
     writer: mapWriter(q.writer),
     topic: mapTopic(q.topic, "query"),
-    issue: issue ? mapIssue(issue) : { id: "", year: 0, month: 0, volume: 0, issueNumber: 0, title: "", isSpecial: false, articleCount: 0 },
+    issue: issue ? mapIssue(issue) : null,
+    translator: null,
     type: "query",
     createdAt: q.dateAdded?.toISOString().split("T")[0] ?? "",
     readingTime: readingTime(body),
@@ -184,6 +191,7 @@ function mapQuery(q: PrismaQuery): Article {
 const articleInclude = {
   topic: true,
   writer: true,
+  translator: true,
   issueLinks: { include: { issue: true }, take: 1 },
 } as const;
 
@@ -312,14 +320,47 @@ export async function getArticlesForIssue(issueSlug: string): Promise<Article[]>
   return withFallback(async () => {
     const issue = await prisma.issue.findUnique({ where: { slug: issueSlug }, select: { id: true } });
     if (!issue) return [];
-    const links = await prisma.articleIssueLink.findMany({
-      where: { issueId: issue.id },
-      include: { article: { include: articleInclude } },
-    });
-    return links
-      .filter((l) => l.article.display)
-      .map((l) => mapArticle(l.article as any));
+
+    const [linked, editorial, intro] = await Promise.all([
+      prisma.articleIssueLink.findMany({
+        where: { issueId: issue.id, article: { display: true } },
+        include: { article: { include: articleInclude } },
+      }),
+      prisma.article.findMany({
+        where: { editorialIssueId: issue.id, display: true },
+        include: articleInclude,
+      }),
+      prisma.article.findMany({
+        where: { introIssueId: issue.id, display: true },
+        include: articleInclude,
+      }),
+    ]);
+
+    const seen = new Set<number>();
+    const ordered: Article[] = [];
+    const push = (raw: any) => {
+      if (seen.has(raw.id)) return;
+      seen.add(raw.id);
+      ordered.push(mapArticle(raw));
+    };
+    intro.forEach(push);
+    editorial.forEach(push);
+    linked.forEach((l) => push(l.article));
+    return ordered;
   }, sample.recentArticles);
+}
+
+export async function getEditorialForIssue(issueSlug: string): Promise<Article | null> {
+  return withFallback(async () => {
+    const issue = await prisma.issue.findUnique({ where: { slug: issueSlug }, select: { id: true } });
+    if (!issue) return null;
+    const article = await prisma.article.findFirst({
+      where: { editorialIssueId: issue.id, display: true },
+      include: articleInclude,
+      orderBy: { dateAdded: "desc" },
+    });
+    return article ? mapArticle(article as any) : null;
+  }, null);
 }
 
 export async function getQueriesForIssue(issueSlug: string): Promise<Article[]> {
@@ -344,7 +385,19 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
       where: { slug, display: true },
       include: articleInclude,
     });
-    if (article) return mapArticle(article as any);
+    if (article) {
+      const a = article as any;
+      const fallbackIssueId: number | null =
+        a.introIssueId ?? a.editorialIssueId ?? null;
+      let contextIssue: PrismaIssue | null = null;
+      if (!a.issueLinks[0] && fallbackIssueId) {
+        contextIssue = await prisma.issue.findUnique({
+          where: { id: fallbackIssueId },
+          include: { _count: { select: { articleLinks: true, queryLinks: true } } },
+        }) as PrismaIssue | null;
+      }
+      return mapArticle(a, contextIssue);
+    }
 
     // Check queries too (they share the article detail page)
     const query = await prisma.queryEntry.findFirst({
@@ -779,8 +832,8 @@ export async function getAllEbooks(): Promise<EBook[]> {
       author: b.writer?.name ?? "Unknown",
       translator: b.translator?.name,
       description: "",
-      coverUrl: `/ebooks/${b.slug}-cover.jpg`,
-      fileUrl: `/ebooks/${b.fileName}`,
+      coverUrl: null,
+      fileUrl: `/files/books/${b.fileName}`,
     }));
   }, sample.allEbooks);
 }

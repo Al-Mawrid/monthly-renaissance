@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Masthead } from "./header";
+import { ISSN } from "@/lib/site-meta";
 
 const footerColumns = [
   {
@@ -82,7 +83,10 @@ export function Footer() {
             >
               MADE WITH <span style={{ color: "var(--mr-clay-700)" }}>♥</span> BY TABLETURNERR.COM
             </a>
-            <div className="mr-catalog">© {new Date().getFullYear()} AL-MAWRID</div>
+            <div className="mr-catalog flex items-center gap-3">
+              {ISSN && <span>ISSN: {ISSN}</span>}
+              <span>© {new Date().getFullYear()} AL-MAWRID</span>
+            </div>
           </div>
         </div>
       </div>

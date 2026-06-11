@@ -35,7 +35,8 @@ export interface Article {
   bodyHtml: string;
   writer: Writer;
   topic: Topic;
-  issue: Issue;
+  issue: Issue | null;
+  translator?: { name: string; slug: string } | null;
   type: "article" | "query";
   createdAt: string;
   readingTime: number;
@@ -47,6 +48,6 @@ export interface EBook {
   author: string;
   translator?: string;
   description: string;
-  coverUrl: string;
+  coverUrl: string | null;
   fileUrl: string;
 }
