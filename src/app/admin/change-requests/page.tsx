@@ -4,6 +4,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ReviewButtons } from "./review-buttons";
+import { DiffPanel } from "./diff-panel";
+import { fetchCurrentEntity } from "./fetch-current";
 
 export const dynamic = "force-dynamic";
 
@@ -17,12 +19,21 @@ export default async function ChangeRequestsPage() {
       requestedBy: { select: { name: true, email: true, image: true } },
       reviewedBy: { select: { name: true } },
     },
-    // TEAM users only see their own requests
     ...(!isAdmin ? { where: { requestedById: session?.user.id } } : {}),
   });
 
   const pending = changeRequests.filter((cr) => cr.status === "PENDING");
   const resolved = changeRequests.filter((cr) => cr.status !== "PENDING");
+
+  const pendingWithCurrent = await Promise.all(
+    pending.map(async (cr) => {
+      const current =
+        cr.action !== "CREATE" && cr.entityId
+          ? await fetchCurrentEntity(cr.entityType, cr.entityId)
+          : null;
+      return { cr, current };
+    }),
+  );
 
   return (
     <div>
@@ -33,64 +44,76 @@ export default async function ChangeRequestsPage() {
         </p>
       </div>
 
-      {pending.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-3">Pending</h2>
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">ID</TableHead>
-                  <TableHead>Action</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Entity ID</TableHead>
-                  <TableHead>Requested By</TableHead>
-                  <TableHead>Note</TableHead>
-                  <TableHead>Date</TableHead>
-                  {isAdmin && <TableHead className="w-32">Review</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pending.map((cr) => (
-                  <TableRow key={cr.id}>
-                    <TableCell className="text-muted-foreground text-xs">{cr.id}</TableCell>
-                    <TableCell>
-                      <span className={`mr-tag ${
-                        cr.action === "CREATE"
+      {pendingWithCurrent.length > 0 && (
+        <div className="mb-8 space-y-4">
+          <h2 className="text-lg font-semibold">Pending</h2>
+          {pendingWithCurrent.map(({ cr, current }) => {
+            const proposed =
+              cr.data && typeof cr.data === "object" && !Array.isArray(cr.data)
+                ? (cr.data as Record<string, unknown>)
+                : null;
+            const action = cr.action as "CREATE" | "UPDATE" | "DELETE";
+
+            return (
+              <div
+                key={cr.id}
+                className="rounded-xl border border-border bg-card overflow-hidden"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-3">
+                  <div className="flex flex-wrap items-center gap-3 text-sm">
+                    <span className="text-xs text-muted-foreground">#{cr.id}</span>
+                    <span
+                      className={`mr-tag ${
+                        action === "CREATE"
                           ? "mr-tag-info"
-                          : cr.action === "UPDATE"
+                          : action === "UPDATE"
                             ? "mr-tag-warning"
                             : "mr-tag-danger"
-                      }`}>
-                        {cr.action}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-sm capitalize">{cr.entityType}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{cr.entityId ?? "New"}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {cr.requestedBy.image ? (
-                          <img src={cr.requestedBy.image} alt="" className="h-5 w-5 rounded-full" />
-                        ) : null}
-                        <span className="text-sm">{cr.requestedBy.name ?? cr.requestedBy.email}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground max-w-48 truncate">
-                      {cr.note ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {cr.createdAt.toLocaleDateString()}
-                    </TableCell>
-                    {isAdmin && (
-                      <TableCell>
-                        <ReviewButtons requestId={cr.id} />
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                      }`}
+                    >
+                      {action}
+                    </span>
+                    <span className="capitalize">{cr.entityType}</span>
+                    <span className="text-muted-foreground">
+                      {cr.entityId ? `id ${cr.entityId}` : "new"}
+                    </span>
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      {cr.requestedBy.image ? (
+                        <img
+                          src={cr.requestedBy.image}
+                          alt=""
+                          className="h-4 w-4 rounded-full"
+                        />
+                      ) : null}
+                      {cr.requestedBy.name ?? cr.requestedBy.email}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {cr.createdAt.toLocaleString()}
+                    </span>
+                  </div>
+                  {isAdmin && <ReviewButtons requestId={cr.id} />}
+                </div>
+
+                {cr.note && (
+                  <div className="border-b border-border bg-muted/30 px-4 py-2 text-sm">
+                    <span className="font-medium">Note: </span>
+                    <span className="text-muted-foreground">{cr.note}</span>
+                  </div>
+                )}
+
+                <div className="p-4">
+                  <DiffPanel
+                    action={action}
+                    current={current}
+                    proposed={proposed}
+                    currentMissing={
+                      action === "DELETE" && cr.entityId !== null && current === null
+                    }
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
