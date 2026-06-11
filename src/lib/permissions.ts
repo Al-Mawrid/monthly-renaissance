@@ -1,21 +1,21 @@
 import type { Role } from "@prisma/client";
 
-export function canAccessAdmin(role: Role): boolean {
+export function canAccessAdmin(role: Role | null | undefined): boolean {
   return role === "ADMIN" || role === "TEAM";
 }
 
-export function canManageContent(role: Role): boolean {
+export function canManageContent(role: Role | null | undefined): boolean {
   return role === "ADMIN";
 }
 
-export function canEditContent(role: Role): boolean {
+export function canEditContent(role: Role | null | undefined): boolean {
   return role === "ADMIN" || role === "TEAM";
 }
 
-export function canManageUsers(role: Role): boolean {
+export function canManageUsers(role: Role | null | undefined): boolean {
   return role === "ADMIN";
 }
 
-export function canManageSettings(role: Role): boolean {
+export function canManageSettings(role: Role | null | undefined): boolean {
   return role === "ADMIN";
 }
