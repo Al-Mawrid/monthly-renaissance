@@ -46,7 +46,7 @@ model Topic {
 
 model Issue {
   id           Int       @id @default(autoincrement())
-  oldId        Int       @unique @map("old_id")
+  oldId        Int?      @unique @map("old_id")
   title        String
   slug         String    @unique
   volumeNumber String?   @map("volume_number")
@@ -63,9 +63,9 @@ model Issue {
 
 model Article {
   id               Int       @id @default(autoincrement())
-  oldId            Int       @unique @map("old_id")
+  oldId            Int?      @unique @map("old_id")
   title            String    @db.VarChar(255)
-  slug             String    @db.VarChar(255)
+  slug             String    @unique @db.VarChar(255)
   bodyHtml         String    @map("body_html") @db.LongText
   topicId          Int       @map("topic_id")
   writerId         Int       @map("writer_id")
@@ -88,7 +88,7 @@ model Article {
 
 model QueryEntry {
   id              Int       @id @default(autoincrement())
-  oldId           Int       @unique @map("old_id")
+  oldId           Int?      @unique @map("old_id")
   title           String
   slug            String
   questionHtml    String    @map("question_html") @db.LongText
@@ -132,7 +132,7 @@ model QueryIssueLink {
 
 model Book {
   id           Int       @id @default(autoincrement())
-  oldId        Int       @unique @map("old_id")
+  oldId        Int?      @unique @map("old_id")
   title        String
   slug         String
   isEbook      Boolean   @default(false) @map("is_ebook")
@@ -235,10 +235,30 @@ model User {
   accounts              Account[]
   sessions              Session[]
   writer                Writer?
+  uploads               Upload[]
   changeRequests        ChangeRequest[] @relation("ChangeRequestRequester")
   reviewedChangeRequests ChangeRequest[] @relation("ChangeRequestReviewer")
 
   @@map("users")
+}
+
+model Upload {
+  id           Int      @id @default(autoincrement())
+  fileName     String   @map("file_name") @db.VarChar(255)
+  originalName String   @map("original_name") @db.VarChar(255)
+  mimeType     String   @map("mime_type") @db.VarChar(120)
+  sizeBytes    Int      @map("size_bytes")
+  relPath      String   @unique @map("rel_path") @db.VarChar(500)
+  uploadedById String   @map("uploaded_by_id")
+  entityType   String?  @map("entity_type") @db.VarChar(40)
+  entityId     Int?     @map("entity_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  uploadedBy User @relation(fields: [uploadedById], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([uploadedById])
+  @@map("uploads")
 }
 
 model Account {
