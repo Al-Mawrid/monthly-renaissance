@@ -120,6 +120,15 @@ export const bookUpdateSchema = z
 
 export const bookDeleteSchema = z.object({}).strict();
 
+export const writerCreateSchema = z
+  .object({
+    name: z.string().min(1).max(255),
+    email: z.string().email().optional(),
+    displayOnSite: z.boolean().optional(),
+    isQueryWriter: z.boolean().optional(),
+  })
+  .strict();
+
 const schemas = {
   "article-create": articleCreateSchema,
   "article-update": articleUpdateSchema,
@@ -133,6 +142,7 @@ const schemas = {
   "book-create": bookCreateSchema,
   "book-update": bookUpdateSchema,
   "book-delete": bookDeleteSchema,
+  "writer-create": writerCreateSchema,
 } as const;
 
 export type ChangeRequestKind = keyof typeof schemas;

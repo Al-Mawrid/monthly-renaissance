@@ -11,6 +11,7 @@ import {
   schemaKindFor,
   type ChangeRequestKind,
 } from "@/lib/validation/change-requests";
+import { feedbackUpdateSchema } from "@/lib/validation/feedback";
 import { sanitizeArticleHtml } from "@/lib/html-sanitize";
 import { logError } from "@/lib/log";
 
@@ -61,7 +62,7 @@ function mapPrismaError(err: unknown): string {
 function fail(
   err: unknown,
   context?: Record<string, unknown>,
-): MutationResult {
+): { ok: false; error: string } {
   const known =
     err instanceof Prisma.PrismaClientKnownRequestError ||
     err instanceof Prisma.PrismaClientValidationError;
@@ -138,6 +139,21 @@ async function findAvailableSlug(base: string): Promise<string> {
   let n = 2;
   while (await prisma.article.findUnique({ where: { slug: candidate }, select: { id: true } })) {
     candidate = `${base}-${n}`;
+    n += 1;
+  }
+  return candidate;
+}
+
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+async function findAvailableWriterSlug(base: string): Promise<string> {
+  const safeBase = base || "writer";
+  let candidate = safeBase;
+  let n = 2;
+  while (await prisma.writer.findUnique({ where: { slug: candidate }, select: { id: true } })) {
+    candidate = `${safeBase}-${n}`;
     n += 1;
   }
   return candidate;
@@ -598,6 +614,50 @@ export async function toggleIssueDisplay(id: number): Promise<MutationResult> {
 
 // ─── Writer Actions ──────────────────────────────────────────
 
+export type CreateWriterResult =
+  | { ok: true; applied: true; writer: { id: number; name: string; slug: string; isQueryWriter: boolean } }
+  | { ok: true; requested: true }
+  | { ok: false; error: string };
+
+export async function createWriter(data: {
+  name: string;
+  email?: string;
+  displayOnSite?: boolean;
+  isQueryWriter?: boolean;
+}): Promise<CreateWriterResult> {
+  const session = await requireAuth();
+  if (!canEditContent(session.user.role)) throw new Error("Forbidden");
+
+  const name = data.name?.trim();
+  if (!name) return { ok: false, error: "Name is required." };
+  const email = data.email?.trim() || undefined;
+  const payload = {
+    name,
+    email,
+    displayOnSite: data.displayOnSite ?? true,
+    isQueryWriter: data.isQueryWriter ?? false,
+  };
+
+  if (canManageContent(session.user.role)) {
+    try {
+      const slug = await findAvailableWriterSlug(slugify(name));
+      const writer = await prisma.writer.create({
+        data: { ...payload, slug },
+        select: { id: true, name: true, slug: true, isQueryWriter: true },
+      });
+      revalidatePath("/admin/writers");
+      revalidatePath("/");
+      return { ok: true, applied: true, writer };
+    } catch (err) {
+      return fail(err, { entityType: "writer", action: "CREATE" });
+    }
+  }
+
+  const cr = await createChangeRequest(session.user.id, "CREATE", "writer", null, payload);
+  if (cr.ok === false) return cr;
+  return { ok: true, requested: true };
+}
+
 export async function updateWriter(id: number, data: {
   name?: string;
   email?: string;
@@ -1033,7 +1093,18 @@ export async function approveChangeRequest(requestId: number): Promise<MutationR
         break;
 
       case "writer":
-        if (cr.action === "UPDATE" && cr.entityId) {
+        if (cr.action === "CREATE") {
+          const slug = await findAvailableWriterSlug(slugify(data.name as string));
+          await prisma.writer.create({
+            data: {
+              name: data.name as string,
+              slug,
+              email: (data.email as string | undefined) ?? null,
+              displayOnSite: (data.displayOnSite as boolean | undefined) ?? true,
+              isQueryWriter: (data.isQueryWriter as boolean | undefined) ?? false,
+            },
+          });
+        } else if (cr.action === "UPDATE" && cr.entityId) {
           await prisma.writer.update({ where: { id: cr.entityId }, data });
         }
         revalidatePath("/admin/writers");
@@ -1113,5 +1184,56 @@ export async function rejectChangeRequest(
     return { ok: true, applied: true };
   } catch (err) {
     return fail(err, { entityType: "changeRequest", entityId: requestId, action: "REJECT" });
+  }
+}
+
+// ─── Feedback Actions ────────────────────────────────────────
+// Feedback is internal triage (not public content), so ADMIN + TEAM both
+// update status/notes directly — no ChangeRequest detour. Only ADMIN deletes.
+
+export async function updateFeedback(
+  id: number,
+  input: { status?: string; adminNote?: string | null },
+): Promise<MutationResult> {
+  const session = await requireAuth();
+  if (!canEditContent(session.user.role)) throw new Error("Forbidden");
+
+  const parsed = feedbackUpdateSchema.safeParse(input);
+  if (!parsed.success) {
+    const first = parsed.error.issues[0];
+    return { ok: false, error: first?.message || "Invalid update." };
+  }
+  const { status, adminNote } = parsed.data;
+
+  try {
+    const data: Prisma.FeedbackUpdateInput = {};
+    if (adminNote !== undefined) data.adminNote = adminNote;
+    if (status !== undefined) {
+      data.status = status;
+      const isResolved = status === "RESOLVED" || status === "DISMISSED";
+      data.resolvedAt = isResolved ? new Date() : null;
+      data.resolvedBy = isResolved
+        ? { connect: { id: session.user.id } }
+        : { disconnect: true };
+    }
+
+    await prisma.feedback.update({ where: { id }, data });
+    revalidatePath("/admin/feedback");
+    return { ok: true, applied: true };
+  } catch (err) {
+    return fail(err, { entityType: "feedback", entityId: id, action: "UPDATE" });
+  }
+}
+
+export async function deleteFeedback(id: number): Promise<MutationResult> {
+  const session = await requireAuth();
+  if (!canManageContent(session.user.role)) throw new Error("Forbidden");
+
+  try {
+    await prisma.feedback.delete({ where: { id } });
+    revalidatePath("/admin/feedback");
+    return { ok: true, applied: true };
+  } catch (err) {
+    return fail(err, { entityType: "feedback", entityId: id, action: "DELETE" });
   }
 }

@@ -6,7 +6,8 @@ import { AssignUserSelect } from "./assign-user-select";
 import { SortableHead } from "../sortable-head";
 import { writerOrderBy, parseSort } from "../sort-utils";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Plus } from "lucide-react";
+import Link from "next/link";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -42,9 +43,17 @@ export default async function AdminWritersPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Writers</h1>
-        <p className="text-sm text-muted-foreground">{writers.length} total writers</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Writers</h1>
+          <p className="text-sm text-muted-foreground">{writers.length} total writers</p>
+        </div>
+        <Link href="/admin/writers/new">
+          <Button size="sm">
+            <Plus className="h-4 w-4 mr-1.5" />
+            {isAdmin ? "New Writer" : "Request New Writer"}
+          </Button>
+        </Link>
       </div>
 
       <div className="rounded-xl border border-border bg-card overflow-hidden">
