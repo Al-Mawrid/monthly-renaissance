@@ -55,7 +55,7 @@ export function Masthead({ compact = false }: { compact?: boolean }) {
       <div className="leading-[1.05]">
         <div
           className="font-serif font-semibold tracking-tight"
-          style={{ fontSize: compact ? 17 : 22, color: "var(--foreground)" }}
+          style={{ fontSize: compact ? 26 : 38, color: "var(--foreground)" }}
         >
           <span className="italic" style={{ color: "var(--mr-green-800)" }}>Renaissance</span>
         </div>
@@ -67,7 +67,7 @@ export function Masthead({ compact = false }: { compact?: boolean }) {
             color: "var(--mr-ink-soft)",
           }}
         >
-          <span>Islamic Journal</span>
+          <span>Monthly Islamic Journal</span>
           <span style={{ color: "var(--mr-saffron-700)", opacity: 0.55 }}>·</span>
           <span>Pakistan</span>
         </div>
