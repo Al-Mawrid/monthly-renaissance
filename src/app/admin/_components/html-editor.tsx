@@ -2,12 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Image from "@tiptap/extension-image";
-import { Table } from "@tiptap/extension-table";
-import { TableRow } from "@tiptap/extension-table-row";
-import { TableHeader } from "@tiptap/extension-table-header";
-import { TableCell } from "@tiptap/extension-table-cell";
 import { Placeholder } from "@tiptap/extensions";
 import {
   Bold, Italic, Underline, Heading2, Heading3, Pilcrow,
@@ -16,7 +10,7 @@ import {
 } from "lucide-react";
 import { cleanWordHtml } from "@/lib/word-clean";
 import { looksLegacy } from "@/lib/editor/legacy-detect";
-import { ArabicInLineText, EnglishQuote, FootNoteLink, FootNote } from "./editor/extensions";
+import { contentExtensions } from "@/lib/editor/schema";
 import { createImageHandlers, pickImageFile, uploadImage, type ImageEntityType } from "./editor/image-upload";
 import { createSlashCommands } from "./editor/slash-menu";
 
@@ -91,26 +85,13 @@ export function HtmlEditor({
     [handleInsertImage],
   );
 
+  // `contentExtensions` is the shared schema (src/lib/editor/schema.ts) the
+  // round-trip audit also builds from. Only UI-only extensions are appended here:
+  // Placeholder (decoration, no serialization) and the slash-command menu.
   const extensions = useMemo(
     () => [
-      StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
-        link: {
-          openOnClick: false,
-          autolink: true,
-          HTMLAttributes: { rel: "noopener noreferrer nofollow" },
-        },
-      }),
-      Image.configure({ inline: false, allowBase64: false }),
-      Table.configure({ resizable: true }),
-      TableRow,
-      TableHeader,
-      TableCell,
+      ...contentExtensions,
       Placeholder.configure({ placeholder: placeholder ?? "" }),
-      ArabicInLineText,
-      EnglishQuote,
-      FootNoteLink,
-      FootNote,
       slashCommands,
     ],
     [slashCommands, placeholder],

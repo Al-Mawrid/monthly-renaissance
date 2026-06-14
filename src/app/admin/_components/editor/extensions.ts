@@ -83,11 +83,19 @@ export const FootNoteLink = Mark.create({
 // Block footnote definition: <p class="FootNote" id="1.">…</p>
 // Also parses legacy <li class="FootNote"> but always re-renders as a paragraph;
 // list-based footnote sets are legacy content that opens in source mode anyway.
+//
+// Precedence over the plain paragraph is set on the parse RULES (priority 100,
+// above ProseMirror's default rule priority of 50), NOT on the extension. An
+// extension-level priority would also push `footNote` to the front of the schema's
+// block group, which makes ProseMirror pick it as the *default* wrapper for orphan
+// inline text — so a body with no block tags (e.g. plain-text legacy imports) would
+// be wrapped in <p class="FootNote"> and the whole article would render as a
+// footnote. Keeping the default extension priority leaves `paragraph` as the
+// default block while the rule priority still claims `p.FootNote` before `p`.
 export const FootNote = Node.create({
   name: "footNote",
   group: "block",
   content: "inline*",
-  priority: 1100,
   defining: true,
 
   addAttributes() {
@@ -101,7 +109,10 @@ export const FootNote = Node.create({
   },
 
   parseHTML() {
-    return [{ tag: "p.FootNote" }, { tag: "li.FootNote" }];
+    return [
+      { tag: "p.FootNote", priority: 100 },
+      { tag: "li.FootNote", priority: 100 },
+    ];
   },
 
   renderHTML({ HTMLAttributes }) {
