@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Masthead } from "./header";
 import { ISSN } from "@/lib/site-meta";
+import { FeedbackTrigger } from "@/components/feedback/feedback-trigger";
 
 const footerColumns = [
   {
@@ -57,6 +58,7 @@ export function Footer() {
                   {l.name}
                 </Link>
               ))}
+              {col.h === "About" && <FeedbackTrigger variant="footer" />}
             </div>
           ))}
         </div>

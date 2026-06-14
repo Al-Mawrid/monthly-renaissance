@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Accessibility } from "lucide-react";
+import { useFeedback, type FeedbackContextValue } from "@/components/feedback/feedback-provider";
 
 type Props = {
   citation: string;
+  feedbackContext?: FeedbackContextValue;
 };
 
 const TYPE_SIZES = [
@@ -19,7 +21,8 @@ const EDGE_PAD = 12;
 const STORAGE_KEY = "mr-reading-fab-pos";
 const DRAG_THRESHOLD = 6;
 
-export function ReadingToolsFab({ citation }: Props) {
+export function ReadingToolsFab({ citation, feedbackContext }: Props) {
+  const { open: openFeedback } = useFeedback();
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [open, setOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -226,6 +229,14 @@ export function ReadingToolsFab({ citation }: Props) {
       icon: "◈",
       label: copied ? "Copied!" : "Cite this",
       onClick: handleCite,
+    },
+    {
+      icon: "⚑",
+      label: "Report a problem",
+      onClick: () => {
+        setOpen(false);
+        openFeedback(feedbackContext);
+      },
     },
   ];
 

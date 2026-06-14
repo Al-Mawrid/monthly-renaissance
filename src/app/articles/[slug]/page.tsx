@@ -9,6 +9,7 @@ import {
 } from "@/lib/queries";
 import { ArticleTools } from "@/components/article/article-tools";
 import { ReadingToolsFab } from "@/components/article/reading-tools-fab";
+import { FeedbackTrigger } from "@/components/feedback/feedback-trigger";
 import { FootnoteFocus } from "@/components/article/footnote-focus";
 import { SITE_URL, SITE_NAME } from "@/lib/site-meta";
 
@@ -293,6 +294,15 @@ export default async function ArticlePage({
               <ArticleTools
                 citation={`${article.writer.name} (${citationYear}). ${article.title}. Monthly Renaissance, ${citationVolume}(${citationIssue}).`}
               />
+              <FeedbackTrigger
+                variant="article"
+                context={{
+                  kind: "article",
+                  articleId: Number(article.id),
+                  articleSlug: article.slug,
+                  label: article.title,
+                }}
+              />
               <hr className="my-5" style={{ borderColor: "var(--border)" }} />
               <div
                 className="mr-eyebrow mb-2.5"
@@ -313,6 +323,12 @@ export default async function ArticlePage({
 
       <ReadingToolsFab
         citation={`${article.writer.name} (${citationYear}). ${article.title}. Monthly Renaissance, ${citationVolume}(${citationIssue}).`}
+        feedbackContext={{
+          kind: "article",
+          articleId: Number(article.id),
+          articleSlug: article.slug,
+          label: article.title,
+        }}
       />
     </div>
   );

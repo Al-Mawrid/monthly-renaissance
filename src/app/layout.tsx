@@ -5,6 +5,7 @@ import "./globals.css";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { SessionProvider } from "@/components/auth/session-provider";
+import { FeedbackProvider } from "@/components/feedback/feedback-provider";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -57,9 +58,11 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <SessionProvider>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <FeedbackProvider>
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </FeedbackProvider>
         </SessionProvider>
       </body>
     </html>
