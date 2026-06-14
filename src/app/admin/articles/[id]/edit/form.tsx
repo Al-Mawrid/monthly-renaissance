@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateArticle } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
@@ -8,17 +8,27 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { HtmlEditor } from "@/app/admin/_components/html-editor";
 import {
+  previewChannelName,
+  previewUrl,
+  storeArticlePreview,
+  type ArticlePreviewPayload,
+} from "@/lib/article-preview";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { Search, Eye, ExternalLink } from "lucide-react";
 import { MutationError, MutationRequested } from "@/app/admin/_components/mutation-result";
+import { WriterSelect } from "@/app/admin/_components/writer-select";
+import { buttonVariants } from "@/lib/variants";
+import { cn } from "@/lib/utils";
 
 type Article = {
   id: number;
+  slug: string;
   title: string;
   bodyHtml: string;
   topicId: number;
@@ -75,28 +85,79 @@ export function ArticleEditForm({
   const [translatorId, setTranslatorId] = useState(
     article.translatorId ? String(article.translatorId) : "none",
   );
+  const [writerList, setWriterList] = useState<Writer[]>(writers);
   const [issueId, setIssueId] = useState(initialIssueId ? String(initialIssueId) : "");
   const [roleInIssue, setRoleInIssue] = useState<"regular" | "editorial" | "intro">(initialRoleInIssue);
   const [display, setDisplay] = useState(article.display);
   const [topicSearch, setTopicSearch] = useState("");
-  const [writerSearch, setWriterSearch] = useState("");
-  const [translatorSearch, setTranslatorSearch] = useState("");
   const [issueSearch, setIssueSearch] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [requested, setRequested] = useState(false);
+
+  // Live preview: keep a single BroadcastChannel for this article and push the
+  // current form state to localStorage + the channel on every change. The
+  // preview tab (opened by the Preview button) reads the localStorage snapshot
+  // on load and re-renders on each broadcast, so edits appear there as you type.
+  const previewChannelRef = useRef<BroadcastChannel | null>(null);
+  useEffect(() => {
+    if (typeof BroadcastChannel === "undefined") return;
+    const channel = new BroadcastChannel(previewChannelName(article.id));
+    previewChannelRef.current = channel;
+    return () => {
+      channel.close();
+      previewChannelRef.current = null;
+    };
+  }, [article.id]);
+
+  const previewPayload = useMemo<ArticlePreviewPayload>(() => {
+    const selectedIssue = issues.find((i) => String(i.id) === issueId);
+    return {
+      id: article.id,
+      title,
+      bodyHtml,
+      topicName: topics.find((t) => String(t.id) === topicId)?.title ?? "",
+      writerName: writerList.find((w) => String(w.id) === writerId)?.name ?? "",
+      translatorName:
+        translatorId !== "none"
+          ? writerList.find((w) => String(w.id) === translatorId)?.name ?? null
+          : null,
+      issueLabel: selectedIssue ? issueLabel(selectedIssue) : null,
+      roleInIssue,
+    };
+  }, [
+    article.id,
+    title,
+    bodyHtml,
+    topicId,
+    writerId,
+    translatorId,
+    issueId,
+    roleInIssue,
+    topics,
+    writerList,
+    issues,
+  ]);
+
+  useEffect(() => {
+    storeArticlePreview(previewPayload);
+    previewChannelRef.current?.postMessage(previewPayload);
+  }, [previewPayload]);
+
+  function handlePreview() {
+    // Make sure the freshest snapshot is stored before the tab reads it.
+    storeArticlePreview(previewPayload);
+    window.open(previewUrl(article.id), `mr-preview-${article.id}`);
+  }
 
   const filteredTopics = topics.filter((t) => {
     const q = topicSearch.toLowerCase();
     return t.title.toLowerCase().includes(q) || String(t.id).includes(q);
   });
-  const filteredWriters = writers.filter((w) => {
-    const q = writerSearch.toLowerCase();
-    return w.name.toLowerCase().includes(q) || String(w.id).includes(q);
-  });
-  const filteredTranslators = writers.filter((w) => {
-    const q = translatorSearch.toLowerCase();
-    return w.name.toLowerCase().includes(q) || String(w.id).includes(q);
-  });
+
+  function addWriter(w: Writer) {
+    setWriterList((prev) => [...prev, w].sort((a, b) => a.name.localeCompare(b.name)));
+  }
+
   const filteredIssues = issues.filter((i) => {
     const q = issueSearch.toLowerCase();
     return (
@@ -157,7 +218,11 @@ export function ArticleEditForm({
             onValueChange={(v) => v && setTopicId(v)}
             onOpenChange={(open) => { if (!open) setTopicSearch(""); }}
           >
-            <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full">
+              <SelectValue>
+                {(value) => topics.find((t) => String(t.id) === value)?.title}
+              </SelectValue>
+            </SelectTrigger>
             <SelectContent
               alignItemWithTrigger={false}
               header={
@@ -178,7 +243,7 @@ export function ArticleEditForm({
             >
               {filteredTopics.length > 0 ? (
                 filteredTopics.map((t) => (
-                  <SelectItem key={t.id} value={String(t.id)}>{t.title}</SelectItem>
+                  <SelectItem key={t.id} value={String(t.id)}>#{t.id} — {t.title}</SelectItem>
                 ))
               ) : (
                 <div className="px-3 py-2 text-sm text-muted-foreground">No topics found</div>
@@ -187,82 +252,27 @@ export function ArticleEditForm({
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label>Writer</Label>
-          <Select
-            value={writerId}
-            onValueChange={(v) => v && setWriterId(v)}
-            onOpenChange={(open) => { if (!open) setWriterSearch(""); }}
-          >
-            <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-            <SelectContent
-              alignItemWithTrigger={false}
-              header={
-                <div className="flex items-center gap-1.5 px-2 py-1.5">
-                  <Search className="size-3.5 shrink-0 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={writerSearch}
-                    onChange={(e) => setWriterSearch(e.target.value)}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    placeholder="Search writers..."
-                    className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                    autoFocus
-                  />
-                </div>
-              }
-            >
-              {filteredWriters.length > 0 ? (
-                filteredWriters.map((w) => (
-                  <SelectItem key={w.id} value={String(w.id)}>{w.name}</SelectItem>
-                ))
-              ) : (
-                <div className="px-3 py-2 text-sm text-muted-foreground">No writers found</div>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
+        <WriterSelect
+          label="Writer"
+          value={writerId}
+          onValueChange={setWriterId}
+          writers={writerList}
+          onWriterCreated={addWriter}
+          isTeam={isTeam}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Translator <span className="text-muted-foreground">(optional)</span></Label>
-          <Select
-            value={translatorId}
-            onValueChange={(v) => v && setTranslatorId(v)}
-            onOpenChange={(open) => { if (!open) setTranslatorSearch(""); }}
-          >
-            <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-            <SelectContent
-              alignItemWithTrigger={false}
-              header={
-                <div className="flex items-center gap-1.5 px-2 py-1.5">
-                  <Search className="size-3.5 shrink-0 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={translatorSearch}
-                    onChange={(e) => setTranslatorSearch(e.target.value)}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    placeholder="Search writers..."
-                    className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                    autoFocus
-                  />
-                </div>
-              }
-            >
-              <SelectItem value="none">None</SelectItem>
-              {filteredTranslators.length > 0 ? (
-                filteredTranslators.map((w) => (
-                  <SelectItem key={w.id} value={String(w.id)}>{w.name}</SelectItem>
-                ))
-              ) : (
-                <div className="px-3 py-2 text-sm text-muted-foreground">No writers found</div>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
+        <WriterSelect
+          label={<>Translator <span className="text-muted-foreground">(optional)</span></>}
+          value={translatorId}
+          onValueChange={setTranslatorId}
+          writers={writerList}
+          onWriterCreated={addWriter}
+          isTeam={isTeam}
+          includeNone
+          placeholder="Select translator"
+        />
 
         <div className="space-y-2">
           <Label>Role in issue</Label>
@@ -284,7 +294,14 @@ export function ArticleEditForm({
           onValueChange={(v) => v && setIssueId(v)}
           onOpenChange={(open) => { if (!open) setIssueSearch(""); }}
         >
-          <SelectTrigger className="w-full"><SelectValue placeholder="Select issue" /></SelectTrigger>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select issue">
+              {(value) => {
+                const sel = issues.find((i) => String(i.id) === value);
+                return sel ? issueLabel(sel) : "Select issue";
+              }}
+            </SelectValue>
+          </SelectTrigger>
           <SelectContent
             alignItemWithTrigger={false}
             header={
@@ -305,7 +322,7 @@ export function ArticleEditForm({
           >
             {filteredIssues.length > 0 ? (
               filteredIssues.map((i) => (
-                <SelectItem key={i.id} value={String(i.id)}>{issueLabel(i)}</SelectItem>
+                <SelectItem key={i.id} value={String(i.id)}>#{i.id} — {issueLabel(i)}</SelectItem>
               ))
             ) : (
               <div className="px-3 py-2 text-sm text-muted-foreground">No issues found</div>
@@ -348,6 +365,21 @@ export function ArticleEditForm({
         <Button onClick={handleSave} disabled={pending}>
           {pending ? "Submitting..." : isTeam ? "Submit Request" : "Save Changes"}
         </Button>
+        <Button variant="outline" onClick={handlePreview}>
+          <Eye className="mr-1.5 h-3.5 w-3.5" />
+          Preview
+        </Button>
+        {article.display && (
+          <a
+            href={`/articles/${article.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
+            <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+            View published page
+          </a>
+        )}
         <Button variant="outline" onClick={() => router.push("/admin/articles")}>
           Cancel
         </Button>

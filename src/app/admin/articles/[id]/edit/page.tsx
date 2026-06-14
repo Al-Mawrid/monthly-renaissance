@@ -71,6 +71,7 @@ export default async function EditArticlePage({
       <ArticleEditForm
         article={{
           id: article.id,
+          slug: article.slug,
           title: article.title,
           bodyHtml: article.bodyHtml,
           topicId: article.topicId,
