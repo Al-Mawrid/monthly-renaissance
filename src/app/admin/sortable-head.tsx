@@ -1,8 +1,8 @@
 "use client";
 
-import { useSearchParams, usePathname } from "next/navigation";
-import Link from "next/link";
-import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { useTransition } from "react";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import { ArrowUp, ArrowDown, ArrowUpDown, Loader2 } from "lucide-react";
 import { TableHead } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
@@ -17,20 +17,17 @@ export function SortableHead({
 }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const currentSort = searchParams.get("sort");
   const currentOrder = searchParams.get("order") ?? "asc";
   const isActive = currentSort === column;
 
-  // Toggle: inactive → asc, asc → desc, desc → remove sort
   let nextOrder: string | null;
-  if (!isActive) {
-    nextOrder = "asc";
-  } else if (currentOrder === "asc") {
-    nextOrder = "desc";
-  } else {
-    nextOrder = null;
-  }
+  if (!isActive) nextOrder = "asc";
+  else if (currentOrder === "asc") nextOrder = "desc";
+  else nextOrder = null;
 
   const params = new URLSearchParams(searchParams.toString());
   if (nextOrder) {
@@ -40,19 +37,21 @@ export function SortableHead({
     params.delete("sort");
     params.delete("order");
   }
-  // Reset to page 1 when sorting changes
   params.delete("page");
 
   const href = `${pathname}?${params.toString()}`;
 
   return (
     <TableHead className={cn("select-none", className)}>
-      <Link
-        href={href}
-        className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+      <button
+        onClick={() => startTransition(() => router.push(href))}
+        disabled={isPending}
+        className="inline-flex items-center gap-1 hover:text-foreground transition-colors disabled:opacity-70"
       >
         {children}
-        {isActive ? (
+        {isPending ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : isActive ? (
           currentOrder === "asc" ? (
             <ArrowUp className="h-3 w-3 text-primary" />
           ) : (
@@ -61,7 +60,7 @@ export function SortableHead({
         ) : (
           <ArrowUpDown className="h-3 w-3 opacity-30" />
         )}
-      </Link>
+      </button>
     </TableHead>
   );
 }
