@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { UndoProvider } from "./undo-context";
 import {
   LayoutDashboard,
   FileText,
@@ -11,6 +12,7 @@ import {
   Settings,
   Shield,
   GitPullRequest,
+  MessageSquareWarning,
 } from "lucide-react";
 import { auth } from "@/lib/auth";
 
@@ -26,6 +28,7 @@ const navItems = [
 
 const sharedExtraItems = [
   { name: "Change Requests", href: "/admin/change-requests", icon: GitPullRequest },
+  { name: "Feedback", href: "/admin/feedback", icon: MessageSquareWarning },
 ];
 
 const adminOnlyItems = [
@@ -135,7 +138,9 @@ export default async function AdminLayout({
 
       {/* Main content */}
       <main className="flex-1 overflow-auto">
-        <div className="p-6 lg:p-8">{children}</div>
+        <UndoProvider>
+          <div className="p-6 lg:p-8">{children}</div>
+        </UndoProvider>
       </main>
     </div>
   );

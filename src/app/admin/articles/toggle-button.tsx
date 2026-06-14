@@ -1,8 +1,10 @@
 "use client";
 
+import { useTransition } from "react";
 import { toggleArticleDisplay, toggleQueryDisplay, toggleIssueDisplay, toggleWriterDisplay, toggleTopicDisplay, toggleBookDisplay } from "../actions";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, Loader2 } from "lucide-react";
+import { useRegisterUndo } from "../undo-context";
 
 const toggleFns = {
   article: toggleArticleDisplay,
@@ -21,17 +23,34 @@ export function ToggleDisplayButton({
   type: keyof typeof toggleFns;
 }) {
   const action = toggleFns[type];
+  const [isPending, startTransition] = useTransition();
+  const registerUndo = useRegisterUndo();
+
+  function handleClick() {
+    startTransition(async () => {
+      await action(id);
+      registerUndo(() => {
+        startTransition(async () => {
+          await action(id);
+        });
+      });
+    });
+  }
 
   return (
-    <form
-      action={async () => {
-        await action(id);
-      }}
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-7 w-7 p-0"
+      disabled={isPending}
+      onClick={handleClick}
     >
-      <Button variant="ghost" size="sm" type="submit" className="h-7 w-7 p-0">
+      {isPending ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : (
         <Eye className="h-3.5 w-3.5" />
-        <span className="sr-only">Toggle display</span>
-      </Button>
-    </form>
+      )}
+      <span className="sr-only">Toggle display</span>
+    </Button>
   );
 }
