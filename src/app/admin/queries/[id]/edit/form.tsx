@@ -10,11 +10,15 @@ import { HtmlEditor } from "@/app/admin/_components/html-editor";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { Search, ExternalLink } from "lucide-react";
 import { MutationError, MutationRequested } from "@/app/admin/_components/mutation-result";
+import { WriterSelect } from "@/app/admin/_components/writer-select";
+import { buttonVariants } from "@/lib/variants";
+import { cn } from "@/lib/utils";
 
 type QueryEntry = {
   id: number;
+  slug: string;
   title: string;
   questionHtml: string;
   answerHtml: string | null;
@@ -45,9 +49,9 @@ export function QueryEditForm({
   const [questioner, setQuestioner] = useState(query.questioner ?? "");
   const [topicId, setTopicId] = useState(String(query.topicId));
   const [writerId, setWriterId] = useState(String(query.writerId));
+  const [writerList, setWriterList] = useState<Writer[]>(writers);
   const [display, setDisplay] = useState(query.display);
   const [topicSearch, setTopicSearch] = useState("");
-  const [writerSearch, setWriterSearch] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [requested, setRequested] = useState(false);
 
@@ -55,10 +59,10 @@ export function QueryEditForm({
     const q = topicSearch.toLowerCase();
     return t.title.toLowerCase().includes(q) || String(t.id).includes(q);
   });
-  const filteredWriters = writers.filter((w) => {
-    const q = writerSearch.toLowerCase();
-    return w.name.toLowerCase().includes(q) || String(w.id).includes(q);
-  });
+
+  function addWriter(w: Writer) {
+    setWriterList((prev) => [...prev, w].sort((a, b) => a.name.localeCompare(b.name)));
+  }
 
   function handleSave() {
     setErrorMsg(null);
@@ -139,42 +143,15 @@ export function QueryEditForm({
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
-          <Label>Writer</Label>
-          <Select
-            value={writerId}
-            onValueChange={(v) => v && setWriterId(v)}
-            onOpenChange={(open) => { if (!open) setWriterSearch(""); }}
-          >
-            <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-            <SelectContent
-              alignItemWithTrigger={false}
-              header={
-                <div className="flex items-center gap-1.5 px-2 py-1.5">
-                  <Search className="size-3.5 shrink-0 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={writerSearch}
-                    onChange={(e) => setWriterSearch(e.target.value)}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    placeholder="Search writers..."
-                    className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                    autoFocus
-                  />
-                </div>
-              }
-            >
-              {filteredWriters.length > 0 ? (
-                filteredWriters.map((w) => (
-                  <SelectItem key={w.id} value={String(w.id)}>{w.name}</SelectItem>
-                ))
-              ) : (
-                <div className="px-3 py-2 text-sm text-muted-foreground">No writers found</div>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
+        <WriterSelect
+          label="Writer"
+          value={writerId}
+          onValueChange={setWriterId}
+          writers={writerList}
+          onWriterCreated={addWriter}
+          isTeam={isTeam}
+          defaultQueryWriter
+        />
       </div>
 
       <div className="space-y-2">
@@ -204,6 +181,17 @@ export function QueryEditForm({
         <Button onClick={handleSave} disabled={pending}>
           {pending ? "Submitting..." : isTeam ? "Submit Request" : "Save Changes"}
         </Button>
+        {query.display && (
+          <a
+            href={`/articles/${query.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
+            <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+            View published page
+          </a>
+        )}
         <Button variant="outline" onClick={() => router.push("/admin/queries")}>Cancel</Button>
       </div>
 

@@ -7,12 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload, FileText, X } from "lucide-react";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 import { MutationError, MutationRequested } from "@/app/admin/_components/mutation-result";
-
-type Writer = { id: number; name: string };
+import { WriterSelect, type Writer } from "@/app/admin/_components/writer-select";
 
 export function BookCreateForm({
   writers,
@@ -30,6 +26,7 @@ export function BookCreateForm({
   const [originalFileName, setOriginalFileName] = useState("");
   const [writerId, setWriterId] = useState("none");
   const [translatorId, setTranslatorId] = useState("none");
+  const [writerList, setWriterList] = useState<Writer[]>(writers);
   const [isEbook, setIsEbook] = useState(false);
   const [isBookType, setIsBookType] = useState(true);
   const [uploadError, setUploadError] = useState("");
@@ -38,6 +35,10 @@ export function BookCreateForm({
 
   function generateSlug(text: string) {
     return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  }
+
+  function addWriter(w: Writer) {
+    setWriterList((prev) => [...prev, w].sort((a, b) => a.name.localeCompare(b.name)));
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -156,30 +157,26 @@ export function BookCreateForm({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Writer</Label>
-          <Select value={writerId} onValueChange={(v) => v && setWriterId(v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              {writers.map((w) => (
-                <SelectItem key={w.id} value={String(w.id)}>{w.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Translator</Label>
-          <Select value={translatorId} onValueChange={(v) => v && setTranslatorId(v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              {writers.map((w) => (
-                <SelectItem key={w.id} value={String(w.id)}>{w.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <WriterSelect
+          label="Writer"
+          value={writerId}
+          onValueChange={setWriterId}
+          writers={writerList}
+          onWriterCreated={addWriter}
+          isTeam={isTeam}
+          includeNone
+          placeholder="Select writer"
+        />
+        <WriterSelect
+          label="Translator"
+          value={translatorId}
+          onValueChange={setTranslatorId}
+          writers={writerList}
+          onWriterCreated={addWriter}
+          isTeam={isTeam}
+          includeNone
+          placeholder="Select translator"
+        />
       </div>
 
       <div className="flex items-center gap-6">

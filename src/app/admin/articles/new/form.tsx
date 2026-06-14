@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
 import { MutationError, MutationRequested } from "@/app/admin/_components/mutation-result";
+import { WriterSelect } from "@/app/admin/_components/writer-select";
 
 type Topic = { id: number; title: string };
 type Writer = { id: number; name: string };
@@ -53,11 +54,10 @@ export function ArticleCreateForm({
   const [topicId, setTopicId] = useState("");
   const [writerId, setWriterId] = useState("");
   const [translatorId, setTranslatorId] = useState("none");
+  const [writerList, setWriterList] = useState<Writer[]>(writers);
   const [issueId, setIssueId] = useState("");
   const [roleInIssue, setRoleInIssue] = useState<"regular" | "editorial" | "intro">("regular");
   const [topicSearch, setTopicSearch] = useState("");
-  const [writerSearch, setWriterSearch] = useState("");
-  const [translatorSearch, setTranslatorSearch] = useState("");
   const [issueSearch, setIssueSearch] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [requested, setRequested] = useState(false);
@@ -66,14 +66,11 @@ export function ArticleCreateForm({
     const q = topicSearch.toLowerCase();
     return t.title.toLowerCase().includes(q) || String(t.id).includes(q);
   });
-  const filteredWriters = writers.filter((w) => {
-    const q = writerSearch.toLowerCase();
-    return w.name.toLowerCase().includes(q) || String(w.id).includes(q);
-  });
-  const filteredTranslators = writers.filter((w) => {
-    const q = translatorSearch.toLowerCase();
-    return w.name.toLowerCase().includes(q) || String(w.id).includes(q);
-  });
+
+  function addWriter(w: Writer) {
+    setWriterList((prev) => [...prev, w].sort((a, b) => a.name.localeCompare(b.name)));
+  }
+
   const filteredIssues = issues.filter((i) => {
     const q = issueSearch.toLowerCase();
     return (
@@ -168,82 +165,27 @@ export function ArticleCreateForm({
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label>Writer</Label>
-          <Select
-            value={writerId}
-            onValueChange={(v) => v && setWriterId(v)}
-            onOpenChange={(open) => { if (!open) setWriterSearch(""); }}
-          >
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select writer" /></SelectTrigger>
-            <SelectContent
-              alignItemWithTrigger={false}
-              header={
-                <div className="flex items-center gap-1.5 px-2 py-1.5">
-                  <Search className="size-3.5 shrink-0 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={writerSearch}
-                    onChange={(e) => setWriterSearch(e.target.value)}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    placeholder="Search writers..."
-                    className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                    autoFocus
-                  />
-                </div>
-              }
-            >
-              {filteredWriters.length > 0 ? (
-                filteredWriters.map((w) => (
-                  <SelectItem key={w.id} value={String(w.id)}>{w.name}</SelectItem>
-                ))
-              ) : (
-                <div className="px-3 py-2 text-sm text-muted-foreground">No writers found</div>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
+        <WriterSelect
+          label="Writer"
+          value={writerId}
+          onValueChange={setWriterId}
+          writers={writerList}
+          onWriterCreated={addWriter}
+          isTeam={isTeam}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Translator <span className="text-muted-foreground">(optional)</span></Label>
-          <Select
-            value={translatorId}
-            onValueChange={(v) => v && setTranslatorId(v)}
-            onOpenChange={(open) => { if (!open) setTranslatorSearch(""); }}
-          >
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select translator" /></SelectTrigger>
-            <SelectContent
-              alignItemWithTrigger={false}
-              header={
-                <div className="flex items-center gap-1.5 px-2 py-1.5">
-                  <Search className="size-3.5 shrink-0 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={translatorSearch}
-                    onChange={(e) => setTranslatorSearch(e.target.value)}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    placeholder="Search writers..."
-                    className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                    autoFocus
-                  />
-                </div>
-              }
-            >
-              <SelectItem value="none">None</SelectItem>
-              {filteredTranslators.length > 0 ? (
-                filteredTranslators.map((w) => (
-                  <SelectItem key={w.id} value={String(w.id)}>{w.name}</SelectItem>
-                ))
-              ) : (
-                <div className="px-3 py-2 text-sm text-muted-foreground">No writers found</div>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
+        <WriterSelect
+          label={<>Translator <span className="text-muted-foreground">(optional)</span></>}
+          value={translatorId}
+          onValueChange={setTranslatorId}
+          writers={writerList}
+          onWriterCreated={addWriter}
+          isTeam={isTeam}
+          includeNone
+          placeholder="Select translator"
+        />
 
         <div className="space-y-2">
           <Label>Role in issue</Label>
