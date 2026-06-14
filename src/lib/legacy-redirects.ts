@@ -9,7 +9,21 @@
  * Route handlers under src/app/issue/*.aspx/ (and the root /content.aspx alias)
  * call these and 301-redirect to the returned path.
  */
+import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+
+/**
+ * Public origin for building redirect targets. Behind Passenger the app binds
+ * to 0.0.0.0:3000, so `request.nextUrl.origin` is the internal address and must
+ * not be used in a Location header. Prefer the proxy-forwarded host.
+ */
+export function originFor(request: NextRequest): string {
+  const host =
+    request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  if (!host) return request.nextUrl.origin;
+  const proto = request.headers.get("x-forwarded-proto") ?? "https";
+  return `${proto}://${host}`;
+}
 
 /** Parse the legacy `?id=` query value into a positive integer, or null. */
 export function parseLegacyId(raw: string | null): number | null {
