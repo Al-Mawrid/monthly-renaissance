@@ -1,13 +1,14 @@
 {
   "name": "monthly-renaissance",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "export-data": "node scripts/export-to-json.mjs"
+    "export-data": "node scripts/export-to-json.mjs",
+    "roundtrip": "tsx scripts/tiptap-roundtrip.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
@@ -42,11 +43,13 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/jsdom": "^28.0.3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "jsdom": "^29.1.1",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"
