@@ -5,6 +5,7 @@ import { canManageContent } from "@/lib/permissions";
 import { ToggleDisplayButton } from "../articles/toggle-button";
 import { DeleteButton } from "../delete-button";
 import { Button } from "@/components/ui/button";
+import { PaginationNav } from "@/components/ui/pagination-nav";
 import { Pencil, Plus, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import {
@@ -124,11 +125,12 @@ export default async function AdminQueriesPage({
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-6">
-          {page > 1 && <Link href={`/admin/queries?page=${page - 1}${sortQuery}`} className="text-sm text-primary hover:underline">&larr; Previous</Link>}
-          <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
-          {page < totalPages && <Link href={`/admin/queries?page=${page + 1}${sortQuery}`} className="text-sm text-primary hover:underline">Next &rarr;</Link>}
-        </div>
+        <PaginationNav
+          page={page}
+          totalPages={totalPages}
+          prevHref={`/admin/queries?page=${page - 1}${sortQuery}`}
+          nextHref={`/admin/queries?page=${page + 1}${sortQuery}`}
+        />
       )}
     </div>
   );

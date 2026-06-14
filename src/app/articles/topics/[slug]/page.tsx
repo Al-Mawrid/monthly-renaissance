@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, User, Clock } from "lucide-react";
 import { buttonVariants } from "@/lib/variants";
 import { Separator } from "@/components/ui/separator";
+import { PaginationNav } from "@/components/ui/pagination-nav";
 import { cn } from "@/lib/utils";
 import {
   getTopicBySlug,
@@ -119,31 +120,13 @@ export default async function TopicPage({
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-4 mt-8">
-          {page > 1 ? (
-            <Link
-              href={`/articles/topics/${slug}?page=${page - 1}`}
-              className="text-sm text-primary hover:underline"
-            >
-              &larr; Previous
-            </Link>
-          ) : (
-            <span className="text-sm text-muted-foreground/50">&larr; Previous</span>
-          )}
-          <span className="text-sm text-muted-foreground">
-            Page {page} of {totalPages}
-          </span>
-          {page < totalPages ? (
-            <Link
-              href={`/articles/topics/${slug}?page=${page + 1}`}
-              className="text-sm text-primary hover:underline"
-            >
-              Next &rarr;
-            </Link>
-          ) : (
-            <span className="text-sm text-muted-foreground/50">Next &rarr;</span>
-          )}
-        </div>
+        <PaginationNav
+          page={page}
+          totalPages={totalPages}
+          prevHref={`/articles/topics/${slug}?page=${page - 1}`}
+          nextHref={`/articles/topics/${slug}?page=${page + 1}`}
+          className="gap-4 mt-8"
+        />
       )}
     </div>
   );

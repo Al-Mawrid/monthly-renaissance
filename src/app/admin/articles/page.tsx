@@ -8,6 +8,7 @@ import { DeleteButton } from "../delete-button";
 import { SortableHead } from "../sortable-head";
 import { articleOrderBy, parseSort } from "../sort-utils";
 import { Button } from "@/components/ui/button";
+import { PaginationNav } from "@/components/ui/pagination-nav";
 import { Plus, Pencil, ExternalLink } from "lucide-react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -171,21 +172,12 @@ export default async function AdminArticlesPage({
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-6">
-          {page > 1 && (
-            <Link href={`/admin/articles?page=${page - 1}${sortQuery}`} className="text-sm text-primary hover:underline">
-              &larr; Previous
-            </Link>
-          )}
-          <span className="text-sm text-muted-foreground">
-            Page {page} of {totalPages}
-          </span>
-          {page < totalPages && (
-            <Link href={`/admin/articles?page=${page + 1}${sortQuery}`} className="text-sm text-primary hover:underline">
-              Next &rarr;
-            </Link>
-          )}
-        </div>
+        <PaginationNav
+          page={page}
+          totalPages={totalPages}
+          prevHref={`/admin/articles?page=${page - 1}${sortQuery}`}
+          nextHref={`/admin/articles?page=${page + 1}${sortQuery}`}
+        />
       )}
     </div>
   );
