@@ -11,7 +11,7 @@ datasource db {
 
 model Writer {
   id           Int     @id @default(autoincrement())
-  oldId        Int     @unique @map("old_id")
+  oldId        Int?    @unique @map("old_id")
   name         String
   slug         String  @unique
   email        String?
@@ -221,6 +221,18 @@ enum ChangeAction {
   DELETE
 }
 
+enum FeedbackType {
+  PROBLEM
+  SUGGESTION
+}
+
+enum FeedbackStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  DISMISSED
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -238,6 +250,8 @@ model User {
   uploads               Upload[]
   changeRequests        ChangeRequest[] @relation("ChangeRequestRequester")
   reviewedChangeRequests ChangeRequest[] @relation("ChangeRequestReviewer")
+  submittedFeedback     Feedback[]      @relation("FeedbackSubmitter")
+  resolvedFeedback      Feedback[]      @relation("FeedbackResolver")
 
   @@map("users")
 }
@@ -310,6 +324,32 @@ model ChangeRequest {
   reviewedBy  User? @relation("ChangeRequestReviewer", fields: [reviewedById], references: [id])
 
   @@map("change_requests")
+}
+
+model Feedback {
+  id            Int            @id @default(autoincrement())
+  type          FeedbackType
+  status        FeedbackStatus @default(NEW)
+  message       String         @db.Text
+  email         String?        @db.VarChar(255)
+  pageUrl       String?        @map("page_url") @db.VarChar(500)
+  pageTitle     String?        @map("page_title") @db.VarChar(300)
+  context       Json?
+  submittedById String?        @map("submitted_by_id")
+  ipHash        String?        @map("ip_hash") @db.VarChar(64)
+  adminNote     String?        @map("admin_note") @db.Text
+  resolvedById  String?        @map("resolved_by_id")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  resolvedAt    DateTime?      @map("resolved_at")
+
+  submittedBy User? @relation("FeedbackSubmitter", fields: [submittedById], references: [id])
+  resolvedBy  User? @relation("FeedbackResolver", fields: [resolvedById], references: [id])
+
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@map("feedback")
 }
 
 model VerificationToken {
