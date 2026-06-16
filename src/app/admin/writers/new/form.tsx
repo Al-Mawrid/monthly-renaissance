@@ -47,7 +47,7 @@ export function WriterCreateForm({ isTeam }: { isTeam: boolean }) {
   }
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="name">Name</Label>
         <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Writer name" />

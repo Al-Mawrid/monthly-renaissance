@@ -110,7 +110,7 @@ export function BookEditForm({
   }
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="space-y-6">
       <div className="space-y-2">
         <Label>Book File</Label>
         <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">

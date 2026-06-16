@@ -60,7 +60,7 @@ export function IssueEditForm({ issue, isTeam }: { issue: Issue; isTeam: boolean
   }
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
         <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />

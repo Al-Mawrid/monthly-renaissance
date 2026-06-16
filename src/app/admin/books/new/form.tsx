@@ -112,7 +112,7 @@ export function BookCreateForm({
   }
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="space-y-6">
       <div className="space-y-2">
         <Label>Book File</Label>
         {fileName ? (
