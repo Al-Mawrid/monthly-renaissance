@@ -6,12 +6,15 @@ import { Placeholder } from "@tiptap/extensions";
 import {
   Bold, Italic, Underline, Heading2, Heading3, Pilcrow,
   List, ListOrdered, Quote, Link2, Image as ImageIcon, Table as TableIcon,
-  Eraser, Undo2, Redo2, Eye, Code2, Columns2, AlertTriangle,
+  Eraser, Undo2, Redo2, Eye, Code2, Columns2, AlertTriangle, AlignLeft,
+  FileUp, Loader2,
 } from "lucide-react";
 import { cleanWordHtml } from "@/lib/word-clean";
+import { formatHtml } from "@/lib/editor/format-html";
 import { looksLegacy } from "@/lib/editor/legacy-detect";
 import { contentExtensions } from "@/lib/editor/schema";
 import { createImageHandlers, pickImageFile, uploadImage, type ImageEntityType } from "./editor/image-upload";
+import { pickDocxFile, importDocx } from "./editor/docx-import";
 import { createSlashCommands } from "./editor/slash-menu";
 
 type Mode = "visual" | "html" | "split";
@@ -45,6 +48,8 @@ export function HtmlEditor({
     looksLegacy(value) ? "html" : defaultMode,
   );
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
 
   // `onChange` is a useState setter (stable) and `entityType` is a constant prop,
   // so the once-created editor can capture them directly — no "latest ref" needed.
@@ -147,6 +152,45 @@ export function HtmlEditor({
     fn();
   }
 
+  // Re-indent the raw HTML by block structure. Render-safe: only whitespace
+  // between block tags changes, so it is offered even for legacy markup.
+  function handleFormat() {
+    const formatted = formatHtml(value);
+    if (formatted !== value) onChange(formatted);
+  }
+
+  // Import a Word .docx: the server returns clean HTML with embedded images
+  // already uploaded to /files/... URLs. Inserts at the cursor (non-destructive;
+  // it never wipes existing content), so on an empty body it simply fills it.
+  async function handleImportDocx() {
+    if (!editor || importing) return;
+    const file = await pickDocxFile();
+    if (!file) return;
+    setUploadError(null);
+    setImportStatus(null);
+    setImporting(true);
+    try {
+      const { html, images, warnings } = await importDocx(file, entityType);
+      if (!html.trim()) {
+        setUploadError("No readable content was found in that document.");
+        return;
+      }
+      // insertContent fires onUpdate, which already pushes the new HTML to onChange.
+      editor.chain().focus().insertContent(html).run();
+      const summary = [`Imported "${file.name}"`];
+      if (images > 0) summary.push(`${images} image${images === 1 ? "" : "s"}`);
+      setImportStatus(
+        warnings.length > 0
+          ? `${summary.join(" · ")} — ${warnings.join("; ")}`
+          : summary.join(" · "),
+      );
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Word import failed.");
+    } finally {
+      setImporting(false);
+    }
+  }
+
   function insertLink() {
     if (!editor) return;
     const prev = (editor.getAttributes("link").href as string | undefined) ?? "";
@@ -193,6 +237,13 @@ export function HtmlEditor({
 
         {showToolbar && editor && (
           <div className="mr-htmleditor-tools" aria-label="Formatting">
+            <ToolbarBtn label="Import a Word (.docx) document at the cursor" onClick={handleImportDocx} disabled={importing}>
+              {importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileUp className="h-3.5 w-3.5" />}
+              <span className="mr-htmleditor-btn-label">{importing ? "Importing…" : "Word"}</span>
+            </ToolbarBtn>
+
+            <span className="mr-htmleditor-sep" />
+
             <ToolbarBtn label="Bold" active={isActive("bold")} onClick={() => run(() => editor.chain().focus().toggleBold().run())}><Bold className="h-3.5 w-3.5" /></ToolbarBtn>
             <ToolbarBtn label="Italic" active={isActive("italic")} onClick={() => run(() => editor.chain().focus().toggleItalic().run())}><Italic className="h-3.5 w-3.5" /></ToolbarBtn>
             <ToolbarBtn label="Underline" active={isActive("underline")} onClick={() => run(() => editor.chain().focus().toggleUnderline().run())}><Underline className="h-3.5 w-3.5" /></ToolbarBtn>
@@ -228,6 +279,15 @@ export function HtmlEditor({
             <ToolbarBtn label="Redo" onClick={() => run(() => editor.chain().focus().redo().run())}><Redo2 className="h-3.5 w-3.5" /></ToolbarBtn>
           </div>
         )}
+
+        {showHtml && (
+          <div className="mr-htmleditor-tools" aria-label="Source actions">
+            <ToolbarBtn label="Format HTML (re-indent by structure)" onClick={handleFormat}>
+              <AlignLeft className="h-3.5 w-3.5" />
+              <span className="mr-htmleditor-btn-label">Format</span>
+            </ToolbarBtn>
+          </div>
+        )}
       </div>
 
       <div className={`mr-htmleditor-body ${mode === "split" ? "is-split" : ""}`}>
@@ -246,7 +306,7 @@ export function HtmlEditor({
             hidden (display:none) when another mode is active. */}
         <EditorContent
           editor={editor}
-          className={`mr-htmleditor-visual-wrap ${showVisual ? "" : "hidden"}`}
+          className={`mr-htmleditor-visual-wrap ${showVisual ? "" : "is-hidden"}`}
         />
         {showPreview && (
           <div
@@ -263,6 +323,13 @@ export function HtmlEditor({
           <span>{uploadError}</span>
         </div>
       )}
+
+      {importStatus && (
+        <div className="mr-htmleditor-info" role="status">
+          <FileUp className="h-3.5 w-3.5 shrink-0" />
+          <span>{importStatus}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -271,11 +338,13 @@ function ToolbarBtn({
   label,
   active,
   onClick,
+  disabled,
   children,
 }: {
   label: string;
   active?: boolean;
   onClick: () => void;
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -284,6 +353,7 @@ function ToolbarBtn({
       title={label}
       aria-label={label}
       aria-pressed={active ?? undefined}
+      disabled={disabled}
       // Prevent the editor from losing selection when the button is pressed.
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}

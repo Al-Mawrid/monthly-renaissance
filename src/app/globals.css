@@ -821,6 +821,7 @@ a.mr-callout:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 5px;
   height: 26px;
   min-width: 26px;
   padding: 0 6px;
@@ -837,6 +838,20 @@ a.mr-callout:hover {
   color: var(--foreground);
 }
 .mr-htmleditor-btn:active { background: var(--mr-saffron-50); }
+.mr-htmleditor-btn-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.mr-htmleditor-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.mr-htmleditor-btn:disabled:hover {
+  background: transparent;
+  border-color: transparent;
+  color: var(--mr-ink-soft);
+}
 .mr-htmleditor-sep {
   display: inline-block;
   width: 1px;
@@ -889,7 +904,11 @@ a.mr-callout:hover {
 }
 
 /* ── Tiptap (ProseMirror) editing surface ── */
+/* This rule is unlayered, so it outranks Tailwind's layered `.hidden` utility.
+   Hide the wrapper with the component's own `.is-hidden` modifier (also
+   unlayered, higher specificity) rather than `.hidden`, which never applies. */
 .mr-htmleditor-visual-wrap { display: block; }
+.mr-htmleditor-visual-wrap.is-hidden { display: none; }
 .mr-htmleditor .ProseMirror { outline: none; }
 .mr-htmleditor .ProseMirror:focus { box-shadow: inset 0 0 0 2px var(--mr-saffron-300); }
 
@@ -1004,6 +1023,18 @@ a.mr-callout:hover {
   color: var(--mr-clay-700);
   background: var(--mr-saffron-50);
   border-top: 1px solid var(--mr-saffron-300);
+}
+
+/* Inline status line, e.g. after a successful Word import */
+.mr-htmleditor-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  color: var(--mr-ink-soft);
+  background: var(--mr-cream);
+  border-top: 1px solid var(--mr-rule);
 }
 
 /* Admin sidebar items */
