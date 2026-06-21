@@ -272,8 +272,17 @@ export function HtmlEditor({
 
             <span className="mr-htmleditor-sep" />
 
-            <ToolbarBtn label="Arabic inline text" active={isActive("arabicInline")} onClick={() => run(() => editor.chain().focus().toggleMark("arabicInline", { dir: "rtl", lang: "ar" }).run())}>
-              <span className="font-arabic text-[13px] leading-none">ع</span>
+            {/* Arabic presentation styles. Block (boxed) is the standalone
+                verse/quote box; "within text" blends inline at the body size;
+                emphasis is the larger green inline run. */}
+            <ToolbarBtn label="Arabic block (boxed verse / quote)" active={isActive("arabicBlock")} onClick={() => run(() => editor.chain().focus().toggleNode("arabicBlock", "paragraph", { dir: "rtl", lang: "ar" }).run())}>
+              <span className="font-arabic text-[12px] leading-none rounded-[2px] border border-current px-1">ع</span>
+            </ToolbarBtn>
+            <ToolbarBtn label="Arabic within text (blends inline)" active={isActive("arabicWithin")} onClick={() => run(() => editor.chain().focus().toggleMark("arabicWithin", { dir: "rtl", lang: "ar" }).run())}>
+              <span className="font-arabic text-[13px] leading-none border-b border-current">ع</span>
+            </ToolbarBtn>
+            <ToolbarBtn label="Arabic inline emphasis (larger, green)" active={isActive("arabicInline")} onClick={() => run(() => editor.chain().focus().toggleMark("arabicInline", { dir: "rtl", lang: "ar" }).run())}>
+              <span className="font-arabic text-[13px] leading-none" style={{ color: "var(--mr-green-800)" }}>ع</span>
             </ToolbarBtn>
             <ToolbarBtn label="English quote" active={isActive("englishQuote")} onClick={() => run(() => editor.chain().focus().toggleMark("englishQuote").run())}>
               <span className="font-serif italic text-[12px] leading-none">EQ</span>
