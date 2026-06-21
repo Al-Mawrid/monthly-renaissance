@@ -55,3 +55,6 @@ next-env.d.ts
 /public/books/
 
 /private/
+
+# Playwright MCP browser-testing artifacts (snapshots, logs, screenshots)
+.playwright-mcp/

@@ -8,6 +8,9 @@ const WATCH_IGNORED = [
   "**/data/**",
   "**/DB backups/**",
   "**/.claude/**",
+  // Playwright MCP writes a snapshot/log/screenshot file here on every browser
+  // action; without this the dev watcher Fast-Refreshes on each one.
+  "**/.playwright-mcp/**",
 ];
 
 const nextConfig: NextConfig = {
