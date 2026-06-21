@@ -12,6 +12,7 @@
 
 import mammoth from "mammoth";
 import { cleanWordHtml } from "@/lib/word-clean";
+import { restoreFootnotes } from "@/lib/docx-footnotes";
 
 export type DocxConversion = {
   html: string;
@@ -70,9 +71,11 @@ export async function convertDocxToHtml(
     if (message.type === "error") warnings.push(message.message);
   }
 
-  // Drop the placeholders left by images we could not persist, then run the
-  // markup through the same normaliser the paste path uses.
+  // Drop the placeholders left by images we could not persist, convert mammoth's
+  // footnote/endnote markup into the editor's FootNote/FootNoteLink schema, then
+  // run the markup through the same normaliser the paste path uses.
   let html = result.value.replace(/<img\b[^>]*\bsrc=""[^>]*>/gi, "");
+  html = restoreFootnotes(html);
   html = cleanWordHtml(html);
 
   for (const [reason, count] of skipped) {
