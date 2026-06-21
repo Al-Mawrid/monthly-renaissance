@@ -22,6 +22,8 @@ import { TableHeader } from "@tiptap/extension-table-header";
 import { TableCell } from "@tiptap/extension-table-cell";
 import {
   ArabicInLineText,
+  ArabicWithinText,
+  ArabicBlock,
   EnglishQuote,
   FootNoteLink,
   FootNote,
@@ -48,6 +50,8 @@ export const contentExtensions: Extensions = [
   TableHeader,
   TableCell,
   ArabicInLineText,
+  ArabicWithinText,
+  ArabicBlock,
   EnglishQuote,
   FootNoteLink,
   FootNote,

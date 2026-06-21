@@ -34,6 +34,73 @@ export const ArabicInLineText = Mark.create({
   },
 });
 
+// Inline Arabic that blends into the running text ("within text"): same size and
+// colour as the surrounding text, only the script font (Noor-e-Huda) and RTL bidi
+// differ. Distinct from ArabicInLineText, which is deliberately emphasised
+// (larger, coloured). <span class="arabic-within" dir="rtl" lang="ar">…</span>.
+export const ArabicWithinText = Mark.create({
+  name: "arabicWithin",
+
+  addAttributes() {
+    return {
+      dir: {
+        default: "rtl",
+        parseHTML: (el) => el.getAttribute("dir") || "rtl",
+        renderHTML: (attrs) => (attrs.dir ? { dir: attrs.dir } : {}),
+      },
+      lang: {
+        default: "ar",
+        parseHTML: (el) => el.getAttribute("lang") || "ar",
+        renderHTML: (attrs) => (attrs.lang ? { lang: attrs.lang } : {}),
+      },
+    };
+  },
+
+  parseHTML() {
+    return [{ tag: "span.arabic-within" }];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return ["span", mergeAttributes(HTMLAttributes, { class: "arabic-within" }), 0];
+  },
+});
+
+// Block-level Arabic presented in its own bordered area (the cream box) for
+// standalone verses / quotations: <p class="arabic-block" dir="rtl" lang="ar">…</p>.
+// Rendered as a paragraph (NOT a <div>, which would trip looks-legacy). Parse-rule
+// priority 100 claims `p.arabic-block` before the plain paragraph; the extension
+// keeps default priority so `paragraph` stays the default block wrapper (see the
+// FootNote note below for why that matters).
+export const ArabicBlock = Node.create({
+  name: "arabicBlock",
+  group: "block",
+  content: "inline*",
+  defining: true,
+
+  addAttributes() {
+    return {
+      dir: {
+        default: "rtl",
+        parseHTML: (el) => el.getAttribute("dir") || "rtl",
+        renderHTML: (attrs) => (attrs.dir ? { dir: attrs.dir } : {}),
+      },
+      lang: {
+        default: "ar",
+        parseHTML: (el) => el.getAttribute("lang") || "ar",
+        renderHTML: (attrs) => (attrs.lang ? { lang: attrs.lang } : {}),
+      },
+    };
+  },
+
+  parseHTML() {
+    return [{ tag: "p.arabic-block", priority: 100 }];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return ["p", mergeAttributes(HTMLAttributes, { class: "arabic-block" }), 0];
+  },
+});
+
 // Inline English quote span: <span class="EnglishQuote">…</span>
 export const EnglishQuote = Mark.create({
   name: "englishQuote",

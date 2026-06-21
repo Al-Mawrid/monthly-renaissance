@@ -16,6 +16,8 @@ const CLEAN_CLASS_TOKENS = new Set([
   "FootNote",
   "FootNoteLink",
   "ArabicInLineText",
+  "arabic-within",
+  "arabic-block",
   "EnglishQuote",
   "arabic-quote",
   "ArticleHeading",
