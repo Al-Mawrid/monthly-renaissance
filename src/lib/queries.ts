@@ -218,8 +218,11 @@ export async function getLatestIssue(): Promise<Issue | null> {
 
 export async function getFeaturedArticle(): Promise<Article | null> {
   return withFallback(async () => {
+    // The home hero is the "Editorial" slot (see app/page.tsx) — feature only
+    // editorial articles. The most recent one normally belongs to the current
+    // issue, keeping the "From this month's issue" eyebrow truthful.
     const article = await prisma.article.findFirst({
-      where: { display: true },
+      where: { display: true, isEditorial: true },
       orderBy: { dateAdded: "desc" },
       include: articleInclude,
     });
