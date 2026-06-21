@@ -54,10 +54,10 @@ export function Masthead({ compact = false }: { compact?: boolean }) {
       />
       <div className="leading-[1.05]">
         <div
-          className="font-serif font-semibold tracking-tight"
+          className="font-serif font-bold tracking-tight"
           style={{ fontSize: compact ? 26 : 38, color: "var(--foreground)" }}
         >
-          <span className="italic" style={{ color: "var(--mr-green-800)" }}>Renaissance</span>
+          <span style={{ color: "var(--mr-green-800)" }}>Renaissance</span>
         </div>
         <div
           className="flex items-center gap-2 mt-1 font-semibold uppercase"
