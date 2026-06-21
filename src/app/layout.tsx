@@ -17,10 +17,24 @@ const lora = Lora({
   subsets: ["latin"],
 });
 
+// Noor-e-Huda is scoped to Arabic-script codepoints via unicode-range so it can
+// sit FIRST in every font stack without touching Latin: the browser only reaches
+// for it on Arabic/Urdu glyphs and lets Latin fall through to Inter/Lora. This is
+// what makes unclassed inline Arabic (legacy <p> content with no .ArabicInLineText
+// wrapper) render in Noor-e-Huda. adjustFontFallback is off because its Arial
+// fallback face carries Arabic glyphs and would otherwise win Arabic first.
 const noorehuda = localFont({
   variable: "--font-arabic",
   src: "../../public/fonts/noorehuda.ttf",
   display: "swap",
+  adjustFontFallback: false,
+  declarations: [
+    {
+      prop: "unicode-range",
+      value:
+        "U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200D",
+    },
+  ],
 });
 
 const jetbrains = JetBrains_Mono({

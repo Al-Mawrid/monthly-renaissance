@@ -5,10 +5,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-arabic), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --font-heading: var(--font-serif);
-  --font-serif: var(--font-serif), "Source Serif 4", Georgia, serif;
+  --font-serif: var(--font-arabic), var(--font-serif), "Source Serif 4", Georgia, serif;
   --font-arabic: var(--font-arabic), "Noor-e-Huda", "Scheherazade New", "Amiri", serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -132,7 +132,7 @@
 }
 
 /* ═══════════════ Monthly Renaissance typography utilities ═══════════════ */
-.font-serif { font-family: var(--font-serif), "Source Serif 4", Georgia, serif; }
+.font-serif { font-family: var(--font-arabic), var(--font-serif), "Source Serif 4", Georgia, serif; }
 .font-arabic { font-family: var(--font-arabic), "Noor-e-Huda", "Scheherazade New", serif; direction: rtl; unicode-bidi: isolate; }
 .font-mono { font-family: var(--font-mono); font-feature-settings: "tnum", "zero"; }
 
@@ -222,7 +222,10 @@
 
 /* ═══════════════ Article content styles ═══════════════ */
 .article-content {
-  font-family: var(--font-serif);
+  /* Noor-e-Huda (--font-arabic) leads the stack: it is unicode-range-scoped to
+     Arabic-script codepoints, so unclassed inline Arabic in legacy <p> bodies
+     renders in Noor-e-Huda while Latin falls through to the serif (Lora). */
+  font-family: var(--font-arabic), var(--font-serif);
   font-size: 1.125rem;
   line-height: 1.78;
   color: var(--mr-ink-soft);
@@ -253,7 +256,7 @@
 .article-content h6 {
   /* Legacy content sometimes tags headings as <p><strong>…</strong></p> or
      uses .header — the rules below catch the visible patterns. */
-  font-family: var(--font-serif);
+  font-family: var(--font-arabic), var(--font-serif);
   font-weight: 700;
   color: var(--foreground);
   padding-left: 0.4em;
@@ -292,7 +295,7 @@
 .article-content p.heading,
 .article-content p.Heading,
 .article-content .ArticleHeading {
-  font-family: var(--font-serif);
+  font-family: var(--font-arabic), var(--font-serif);
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--foreground);
@@ -343,6 +346,25 @@
   padding: 0;
   margin: 0;
   border: none;
+}
+
+/* "Within text" Arabic: blends into the running text. The script font (Noor-e-Huda)
+   and RTL bidi differ, but size and colour are inherited and there is no box, so
+   the Arabic stays part of the surrounding sentence. The two-class specificity here
+   (0,2,0) beats the [dir="rtl"]/[lang="ar"] box rule above (0,1,1), so the span
+   flows inline even though it carries dir/lang for correct bidi. */
+.article-content .arabic-within {
+  font-family: var(--font-arabic) !important;
+  direction: rtl;
+  unicode-bidi: isolate;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  text-align: inherit;
 }
 
 .article-content .EnglishQuote {
