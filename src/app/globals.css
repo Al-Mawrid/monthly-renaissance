@@ -238,6 +238,14 @@
 /* Don't justify the drop-cap paragraph (or single-line ones) — looks sparse */
 .article-content.mr-dropcap > p:first-of-type { text-align: left; }
 
+/* Block alignment from the editor (class-based, see editor/extensions.ts).
+   Two classes beat the single-class `.article-content p { text-align: justify }`
+   default on specificity, so an explicit choice always wins. */
+.article-content .align-left { text-align: left; }
+.article-content .align-center { text-align: center; }
+.article-content .align-right { text-align: right; }
+.article-content .align-justify { text-align: justify; }
+
 .article-content h2,
 .article-content h3,
 .article-content h4,
@@ -307,7 +315,9 @@
 .article-content [lang="ar"],
 .article-content .ArabicInLineText,
 .article-content .arabic-block {
-  font-family: var(--font-arabic);
+  /* !important so Noor-e-Huda wins over the inline `font-family:'Amiri'`
+     baked into legacy/imported article HTML (Amiri is no longer loaded). */
+  font-family: var(--font-arabic) !important;
   font-style: normal;
   font-size: 1.6em;
   line-height: 2.1;
@@ -324,7 +334,7 @@
 }
 
 .article-content .ArabicInLineText {
-  font-family: var(--font-arabic);
+  font-family: var(--font-arabic) !important;
   font-size: 1.4em;
   direction: rtl;
   unicode-bidi: isolate;
