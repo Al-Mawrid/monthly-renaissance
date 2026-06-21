@@ -25,6 +25,7 @@ import {
   EnglishQuote,
   FootNoteLink,
   FootNote,
+  TextAlign,
 } from "../../app/admin/_components/editor/extensions";
 
 // Order matches the editor exactly. FootNoteLink sets extension priority 1100 so
@@ -50,4 +51,8 @@ export const contentExtensions: Extensions = [
   EnglishQuote,
   FootNoteLink,
   FootNote,
+  // Class-based block alignment (align-left/center/right/justify). A global
+  // attribute on paragraph/heading; default null so non-aligned content is
+  // unchanged and still round-trips byte-identically.
+  TextAlign,
 ];

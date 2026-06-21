@@ -19,6 +19,11 @@ const CLEAN_CLASS_TOKENS = new Set([
   "EnglishQuote",
   "arabic-quote",
   "ArticleHeading",
+  // Block alignment classes emitted by the TextAlign extension (extensions.ts).
+  "align-left",
+  "align-center",
+  "align-right",
+  "align-justify",
 ]);
 
 // Tags / attributes that our Tiptap output never produces.

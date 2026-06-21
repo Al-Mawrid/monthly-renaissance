@@ -6,7 +6,8 @@ import { Placeholder } from "@tiptap/extensions";
 import {
   Bold, Italic, Underline, Heading2, Heading3, Pilcrow,
   List, ListOrdered, Quote, Link2, Image as ImageIcon, Table as TableIcon,
-  Eraser, Undo2, Redo2, Eye, Code2, Columns2, AlertTriangle, AlignLeft,
+  Eraser, Undo2, Redo2, Eye, Code2, Columns2, AlertTriangle,
+  AlignLeft, AlignCenter, AlignRight,
   FileUp, Loader2,
 } from "lucide-react";
 import { cleanWordHtml } from "@/lib/word-clean";
@@ -256,6 +257,12 @@ export function HtmlEditor({
 
             <span className="mr-htmleditor-sep" />
 
+            <ToolbarBtn label="Align left" active={editor.isActive({ textAlign: "left" })} onClick={() => run(() => setAlign(editor, "left"))}><AlignLeft className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Align center" active={editor.isActive({ textAlign: "center" })} onClick={() => run(() => setAlign(editor, "center"))}><AlignCenter className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Align right" active={editor.isActive({ textAlign: "right" })} onClick={() => run(() => setAlign(editor, "right"))}><AlignRight className="h-3.5 w-3.5" /></ToolbarBtn>
+
+            <span className="mr-htmleditor-sep" />
+
             <ToolbarBtn label="Bulleted list" active={isActive("bulletList")} onClick={() => run(() => editor.chain().focus().toggleBulletList().run())}><List className="h-3.5 w-3.5" /></ToolbarBtn>
             <ToolbarBtn label="Numbered list" active={isActive("orderedList")} onClick={() => run(() => editor.chain().focus().toggleOrderedList().run())}><ListOrdered className="h-3.5 w-3.5" /></ToolbarBtn>
             <ToolbarBtn label="Blockquote" active={isActive("blockquote")} onClick={() => run(() => editor.chain().focus().toggleBlockquote().run())}><Quote className="h-3.5 w-3.5" /></ToolbarBtn>
@@ -332,6 +339,17 @@ export function HtmlEditor({
       )}
     </div>
   );
+}
+
+// Toggle block alignment: clicking the already-active alignment clears it back
+// to the default (paragraphs justify, headings left), so the user is never stuck
+// without a "justify" button.
+function setAlign(editor: Editor, alignment: "left" | "center" | "right") {
+  if (editor.isActive({ textAlign: alignment })) {
+    editor.chain().focus().unsetTextAlign().run();
+  } else {
+    editor.chain().focus().setTextAlign(alignment).run();
+  }
 }
 
 function ToolbarBtn({

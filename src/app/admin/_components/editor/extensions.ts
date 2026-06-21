@@ -3,7 +3,7 @@
 // the selectors exactly: `FootNote`, `FootNoteLink`, `ArabicInLineText`,
 // `EnglishQuote`, plus dir/lang on Arabic spans.
 
-import { Mark, Node, mergeAttributes } from "@tiptap/core";
+import { Extension, Mark, Node, mergeAttributes } from "@tiptap/core";
 
 // Inline Arabic span: <span class="ArabicInLineText" dir="rtl" lang="ar">…</span>
 // The CSS keys off the class; dir/lang are preserved so bidi rendering survives.
@@ -117,5 +117,87 @@ export const FootNote = Node.create({
 
   renderHTML({ HTMLAttributes }) {
     return ["p", mergeAttributes(HTMLAttributes, { class: "FootNote" }), 0];
+  },
+});
+
+// Block text alignment for paragraphs and headings.
+//
+// Unlike the official @tiptap/extension-text-align (which emits inline
+// `style="text-align:…"`), this renders a CSS class — `align-left`,
+// `align-center`, `align-right`, `align-justify`. Inline styles are a hard
+// no-go in this schema: looks-legacy (legacy-detect.ts) flags ANY `style=`
+// attribute as legacy markup, so style-based alignment would push every
+// aligned article back into the source-mode/"this is legacy" path and break the
+// round-trip contract (clean output carries no inline styles). The classes here
+// are whitelisted in CLEAN_CLASS_TOKENS and styled under `.article-content` in
+// globals.css. `justify` is the paragraph default in that CSS, so it is parsed
+// (to absorb legacy markup on convert) but not offered as its own toolbar button.
+const ALIGNMENTS = ["left", "center", "right", "justify"] as const;
+const ALIGN_CLASS_PREFIX = "align-";
+
+declare module "@tiptap/core" {
+  interface Commands<ReturnType> {
+    textAlign: {
+      setTextAlign: (alignment: string) => ReturnType;
+      unsetTextAlign: () => ReturnType;
+    };
+  }
+}
+
+export const TextAlign = Extension.create({
+  name: "textAlign",
+
+  addOptions() {
+    return {
+      types: ["paragraph", "heading"] as string[],
+      alignments: [...ALIGNMENTS] as string[],
+    };
+  },
+
+  addGlobalAttributes() {
+    return [
+      {
+        types: this.options.types,
+        attributes: {
+          textAlign: {
+            default: null as string | null,
+            // Prefer our own `align-*` class; fall back to a legacy inline
+            // `text-align` style so converting old markup keeps its alignment.
+            parseHTML: (element: HTMLElement) => {
+              const fromClass = Array.from(element.classList)
+                .filter((c) => c.startsWith(ALIGN_CLASS_PREFIX))
+                .map((c) => c.slice(ALIGN_CLASS_PREFIX.length))[0];
+              const value = fromClass || element.style.textAlign || null;
+              return value && (ALIGNMENTS as readonly string[]).includes(value)
+                ? value
+                : null;
+            },
+            renderHTML: (attributes: { textAlign?: string | null }) =>
+              attributes.textAlign
+                ? { class: `${ALIGN_CLASS_PREFIX}${attributes.textAlign}` }
+                : {},
+          },
+        },
+      },
+    ];
+  },
+
+  addCommands() {
+    return {
+      setTextAlign:
+        (alignment: string) =>
+        ({ commands }) => {
+          if (!this.options.alignments.includes(alignment)) return false;
+          return (this.options.types as string[])
+            .map((type) => commands.updateAttributes(type, { textAlign: alignment }))
+            .every((applied) => applied);
+        },
+      unsetTextAlign:
+        () =>
+        ({ commands }) =>
+          (this.options.types as string[])
+            .map((type) => commands.resetAttributes(type, "textAlign"))
+            .every((applied) => applied),
+    };
   },
 });
