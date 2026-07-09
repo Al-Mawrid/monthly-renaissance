@@ -69,6 +69,7 @@ export const queryDeleteSchema = z.object({}).strict();
 export const issueCreateSchema = z
   .object({
     title: z.string().min(1),
+    description: z.string().optional(),
     slug: z.string().min(1),
     volumeNumber: z.string().optional(),
     issueNumber: z.string().optional(),
@@ -81,6 +82,7 @@ export const issueCreateSchema = z
 export const issueUpdateSchema = z
   .object({
     title: z.string().min(1).optional(),
+    description: z.string().optional(),
     slug: z.string().min(1).optional(),
     volumeNumber: z.string().optional(),
     issueNumber: z.string().optional(),

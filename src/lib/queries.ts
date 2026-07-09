@@ -111,7 +111,7 @@ function mapTopic(t: PrismaTopic, type?: "article" | "query"): Topic {
 
 type PrismaIssue = {
   id: number; title: string; slug: string; volumeNumber: string | null;
-  issueNumber: string | null; issueDate: Date | null;
+  description: string | null; issueNumber: string | null; issueDate: Date | null;
   display: boolean; isSpecial: boolean;
   _count?: { articleLinks?: number; queryLinks?: number };
 };
@@ -125,6 +125,7 @@ function mapIssue(i: PrismaIssue): Issue {
     volume: i.volumeNumber ? parseInt(i.volumeNumber, 10) : 0,
     issueNumber: i.issueNumber ? parseInt(i.issueNumber, 10) : 0,
     title: i.title,
+    description: i.description,
     isSpecial: i.isSpecial,
     articleCount: (i._count?.articleLinks ?? 0) + (i._count?.queryLinks ?? 0),
   };

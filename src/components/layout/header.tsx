@@ -55,7 +55,7 @@ export function Masthead({ compact = false }: { compact?: boolean }) {
       <div className="leading-[1.05]">
         <div
           className="font-serif font-bold tracking-tight"
-          style={{ fontSize: compact ? 26 : 38, color: "var(--foreground)" }}
+          style={{ fontSize: compact ? 30 : 42, color: "var(--foreground)" }}
         >
           <span style={{ color: "var(--mr-green-800)" }}>Renaissance</span>
         </div>
@@ -63,11 +63,11 @@ export function Masthead({ compact = false }: { compact?: boolean }) {
           className="flex items-center gap-2 mt-1 font-semibold uppercase"
           style={{
             fontSize: compact ? 9 : 10,
-            letterSpacing: "0.16em",
+            letterSpacing: "0.12em",
             color: "var(--mr-ink-soft)",
           }}
         >
-          <span>Monthly Islamic Journal</span>
+          <span>A Monthly Islamic Journal</span>
           <span style={{ color: "var(--mr-saffron-700)", opacity: 0.55 }}>·</span>
           <span>Pakistan</span>
         </div>

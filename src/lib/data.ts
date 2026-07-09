@@ -78,6 +78,7 @@ function generateIssues(): Issue[] {
       issues.push({
         id: `${year}-${String(m).padStart(2, "0")}`,
         year,
+        description: null,
         month: m,
         volume: vol,
         issueNumber: m,

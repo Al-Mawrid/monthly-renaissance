@@ -6,11 +6,13 @@ import { updateIssue } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { MutationError, MutationRequested } from "@/app/admin/_components/mutation-result";
 
 type Issue = {
   id: number;
   title: string;
+  description: string | null;
   volumeNumber: string | null;
   issueNumber: string | null;
   issueDate: Date | null;
@@ -22,6 +24,7 @@ export function IssueEditForm({ issue, isTeam }: { issue: Issue; isTeam: boolean
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [title, setTitle] = useState(issue.title);
+  const [description, setDescription] = useState(issue.description ?? "");
   const [volumeNumber, setVolumeNumber] = useState(issue.volumeNumber ?? "");
   const [issueNumber, setIssueNumber] = useState(issue.issueNumber ?? "");
   const [issueDate, setIssueDate] = useState(issue.issueDate?.toISOString().split("T")[0] ?? "");
@@ -36,14 +39,29 @@ export function IssueEditForm({ issue, isTeam }: { issue: Issue; isTeam: boolean
 
     startTransition(async () => {
       try {
-        const result = await updateIssue(issue.id, {
+        const payload: {
+          title?: string;
+          description?: string | null;
+          volumeNumber?: string;
+          issueNumber?: string;
+          issueDate?: string;
+          display?: boolean;
+          isSpecial?: boolean;
+        } = {
           title,
           volumeNumber: volumeNumber || undefined,
           issueNumber: issueNumber || undefined,
           issueDate: issueDate || undefined,
           display,
           isSpecial,
-        });
+        };
+
+        const initialDescription = issue.description ?? "";
+        if (description !== initialDescription) {
+          payload.description = description;
+        }
+
+        const result = await updateIssue(issue.id, payload);
         if (result && "ok" in result && result.ok === false) {
           setErrorMsg(result.error || "Failed to save changes.");
           return;
@@ -64,6 +82,17 @@ export function IssueEditForm({ issue, isTeam }: { issue: Issue; isTeam: boolean
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
         <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Optional custom description shown on the public issue page"
+          rows={5}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">

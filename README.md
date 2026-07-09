@@ -90,10 +90,11 @@ The site deploys through Hostinger's git pipeline to shared hosting (Passenger +
 - `public/` is wiped on every deploy. Uploaded files live outside the app in the directory pointed to by `UPLOAD_DIR` and are served through the app, never from `public/`.
 - Schema changes are applied on the server with `prisma db push` after the code deploys, followed by `touch tmp/restart.txt` to restart Passenger. Take a database backup first; `db push` has no migration history.
 
-Full mechanics are in `CLAUDE.md` (Deployment section) and `Fable-Improved-Plan.md`.
+Full mechanics are in `.codex/skills/monthly-renaissance/references/project-guide.md` and `Fable-Improved-Plan.md`.
 
 ## Documentation
 
 - `MIGRATION_PLAN.md` — the original migration plan: legacy database inventory, old URL structure, content mapping.
 - `Fable-Improved-Plan.md` — the current implementation plan: open bugs, uploads infrastructure, editor migration, redirects, SEO, hardening.
-- `CLAUDE.md` / `AGENTS.md` — working notes and conventions for AI coding agents.
+- `.codex/skills/monthly-renaissance/` — Codex project guidance and repo-specific workflow references.
+- `CLAUDE.md` / `AGENTS.md` — legacy Claude guidance and repo agent notes.

@@ -25,7 +25,7 @@ export async function generateMetadata({
 
   const monthName = getMonthName(issue.month);
   const title = `Vol. ${issue.volume} · № ${issue.issueNumber}, ${monthName} ${issue.year} | ${SITE_NAME}`;
-  const description = issue.title || "Articles from this issue";
+  const description = issue.description || issue.title || "Articles from this issue";
   const canonical = `${SITE_URL}/issues/${id}`;
 
   return {
@@ -47,11 +47,6 @@ export async function generateMetadata({
   };
 }
 
-const arMonths = [
-  "محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة",
-  "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة",
-];
-
 export default async function IssuePage({
   params,
 }: {
@@ -68,8 +63,11 @@ export default async function IssuePage({
   ]);
 
   const monthName = getMonthName(issue.month).toUpperCase();
-  const arMonth = arMonths[Math.max(0, Math.min(11, issue.month - 1))];
   const startReading = editorial ?? issueArticles[0];
+  const coverArticles = issueArticles.slice(0, 3);
+  const coverQueries = issueQueries.slice(0, 3);
+  const hasMoreArticles = issueArticles.length > 3;
+  const hasMoreQueries = issueQueries.length > 3;
 
   // Legacy issue titles (from MSSQL) sometimes literally contain an Islamic
   // month name (e.g., "Rabi-ul-Awal"), which obscures the actual Gregorian
@@ -80,6 +78,10 @@ export default async function IssuePage({
     !!issue.title &&
     issue.isSpecial &&
     issue.title.trim().toLowerCase() !== gregorianTitle.toLowerCase();
+  const fallbackDescription =
+    `This issue contains ${issueArticles.length} articles and ${issueQueries.length} queries - ` +
+    "scholarly writing, reader questions answered, and a continued record of the journal's ongoing concerns.";
+  const issueDescription = issue.description ?? fallbackDescription;
 
   return (
     <div>
@@ -88,21 +90,25 @@ export default async function IssuePage({
         className="border-b"
         style={{ background: "var(--card)", borderColor: "var(--border)" }}
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-3 text-[12px] text-muted-foreground flex items-center gap-2 flex-wrap">
-          <Link href="/issues" className="text-foreground hover:text-[var(--mr-green-700)]">Archive</Link>
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-3 text-[12px] text-muted-foreground sm:px-6 lg:px-10">
+          <Link href="/issues" className="text-foreground hover:text-[var(--mr-green-700)]">
+            Archive
+          </Link>
           <span>/</span>
           <span>{issue.year}</span>
           <span>/</span>
-          <span>{getMonthName(issue.month)} — № {issue.issueNumber}</span>
+          <span>
+            {getMonthName(issue.month)} - № {issue.issueNumber}
+          </span>
         </div>
       </div>
 
       {/* Cover */}
       <section className="border-b" style={{ borderColor: "var(--foreground)" }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-14 grid lg:grid-cols-2 gap-10 lg:gap-16">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-10">
           {/* Cover plate */}
           <div
-            className="relative p-9 pt-12"
+            className="relative flex flex-col p-9 pt-10"
             style={{ background: "var(--card)", border: "1px solid var(--foreground)" }}
           >
             <span className="mr-corner tl" />
@@ -110,61 +116,95 @@ export default async function IssuePage({
             <span className="mr-corner bl" />
             <span className="mr-corner br" />
 
-            <div
-              className="mr-eyebrow text-center"
-              style={{ color: "var(--mr-saffron-700)" }}
-            >
-              — Monthly Renaissance —
-            </div>
-            <div className="flex justify-center mt-3.5">
+            <div className="flex justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/brand/al-mawrid-wordmark.svg"
-                alt="Al-Mawrid"
+                src="/brand/logo-long.svg"
+                alt="Monthly Renaissance"
                 className="opacity-80"
-                style={{ height: 28, width: "auto" }}
+                style={{ height: 24, width: "auto" }}
               />
             </div>
 
-            <div className="mr-ornament">
+            <div className="mt-5 text-center">
+              <div className="mr-catalog" style={{ color: "var(--mr-clay-700)" }}>
+                VOLUME {issue.volume} · ISSUE № {issue.issueNumber}
+              </div>
+            </div>
+
+            <div className="mt-5 mr-ornament">
               <span className="mr-diamond" />
               <span className="mr-star" style={{ width: 12, height: 12 }} />
               <span className="mr-diamond" />
             </div>
 
-            <div className="text-center my-3">
-              <div
-                className="font-serif font-semibold leading-[0.9] tracking-[-0.05em]"
-                style={{ fontSize: 140, color: "var(--mr-clay-700)" }}
-              >
-                {issue.issueNumber}
-              </div>
-              <div className="mr-catalog text-center mt-1">
-                VOLUME {issue.volume} · ISSUE № {issue.issueNumber}
-              </div>
-              {ISSN && (
-                <div className="mr-catalog text-center mt-1" style={{ opacity: 0.75 }}>
-                  ISSN: {ISSN}
+            <div className="py-8">
+              {(coverArticles.length > 0 || coverQueries.length > 0) && (
+                <div className="mt-3 grid gap-6">
+                  {coverArticles.length > 0 && (
+                    <div>
+                      <div
+                        className="mr-eyebrow mb-2.5 text-center"
+                        style={{ color: "var(--mr-saffron-700)" }}
+                      >
+                        Articles
+                      </div>
+                      <div className="space-y-3 text-center">
+                        {coverArticles.map((article, index) => (
+                          <Link
+                            key={article.id}
+                            href={hasMoreArticles && index === 2 ? "#contents" : `/articles/${article.slug}`}
+                            className="block rounded-sm border-b px-3 py-2 font-serif text-[16px] leading-snug transition-[color,background-color,padding] duration-150 hover:bg-[var(--paper)] hover:pl-4 hover:text-[var(--mr-green-700)]"
+                            style={{ borderColor: "var(--border)" }}
+                          >
+                            {hasMoreArticles && index === 2 ? "And More..." : article.title}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {coverQueries.length > 0 && (
+                    <div>
+                      <div
+                        className="mr-eyebrow mb-2.5 text-center"
+                        style={{ color: "var(--mr-clay-700)" }}
+                      >
+                        Queries
+                      </div>
+                      <div className="space-y-3 text-center">
+                        {coverQueries.map((query, index) => (
+                          <Link
+                            key={query.id}
+                            href={hasMoreQueries && index === 2 ? "#contents" : `/articles/${query.slug}`}
+                            className="block rounded-sm border-b px-3 py-2 font-serif text-[14px] italic leading-snug transition-[color,background-color,padding] duration-150 hover:bg-[var(--paper)] hover:pl-4 hover:text-[var(--mr-green-700)]"
+                            style={{ borderColor: "var(--border)" }}
+                          >
+                            {hasMoreQueries && index === 2 ? "And More..." : `“${query.title}”`}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            <div className="mr-ornament">
+            <div className="mb-5 mr-ornament">
               <span className="mr-diamond" />
               <span className="mr-star" style={{ width: 12, height: 12 }} />
               <span className="mr-diamond" />
             </div>
 
-            <div className="text-center mt-3.5">
-              <div className="font-serif text-[22px] font-semibold">
+            <div className="text-center">
+              <div className="mr-catalog" style={{ opacity: 0.75 }}>
                 {monthName} {issue.year}
               </div>
-              <div
-                className="font-arabic mt-1"
-                style={{ fontSize: 18, color: "var(--mr-saffron-700)" }}
-              >
-                {arMonth} {issue.year}
-              </div>
+              {ISSN && (
+                <div className="mr-catalog mt-2" style={{ opacity: 0.75 }}>
+                  ISSN: {ISSN}
+                </div>
+              )}
             </div>
           </div>
 
@@ -174,30 +214,25 @@ export default async function IssuePage({
               className="mr-eyebrow mb-2.5"
               style={{ color: "var(--mr-clay-700)" }}
             >
-              — From the Editor · Dr. Shehzad Saleem —
+              - From the Editor · Dr. Shehzad Saleem -
             </div>
-            <h1 className="font-serif text-3xl sm:text-4xl lg:text-[2.6rem] font-semibold tracking-tight leading-[1.1] mb-2">
+            <h1 className="mb-2 font-serif text-3xl font-semibold leading-[1.1] tracking-tight sm:text-4xl lg:text-[2.6rem]">
               {gregorianTitle}
             </h1>
             {showLegacyTitle && (
               <div
-                className="font-serif italic text-[18px] mb-4"
+                className="mb-4 font-serif text-[18px] italic"
                 style={{ color: "var(--mr-saffron-700)" }}
               >
                 {issue.title}
               </div>
             )}
-            <p className="font-serif text-[17px] leading-[1.7] text-[var(--mr-ink-soft)] mb-4">
-              This issue contains {issueArticles.length} articles and {issueQueries.length} queries —
-              scholarly writing, reader questions answered, and a continued record
-              of the journal's ongoing concerns.
+            <p className="mb-4 whitespace-pre-line font-serif text-[17px] leading-[1.7] text-[var(--mr-ink-soft)]">
+              {issueDescription}
             </p>
             {startReading && (
-              <div className="flex gap-2.5 flex-wrap">
-                <Link
-                  href={`/articles/${startReading.slug}`}
-                  className="mr-btn mr-btn-primary"
-                >
+              <div className="flex flex-wrap gap-2.5">
+                <Link href={`/articles/${startReading.slug}`} className="mr-btn mr-btn-primary">
                   Start reading →
                 </Link>
               </div>
@@ -207,27 +242,27 @@ export default async function IssuePage({
       </section>
 
       {/* TOC proper */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-12">
-        <div className="flex items-baseline justify-between mb-6 flex-wrap gap-3">
-          <h2 className="font-serif text-2xl sm:text-3xl font-semibold">Contents</h2>
+      <section id="contents" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-10">
+        <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
+          <h2 className="font-serif text-2xl font-semibold sm:text-3xl">Contents</h2>
           <div className="mr-catalog">
             {issueArticles.length} ARTICLES · {issueQueries.length} QUERIES
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[1.6fr_1fr] gap-10">
+        <div className="grid gap-10 lg:grid-cols-[1.6fr_1fr]">
           <div>
             <div
               className="mr-eyebrow mb-3.5"
               style={{ color: "var(--mr-saffron-700)" }}
             >
-              — Articles —
+              - Articles -
             </div>
             {issueArticles.map((a, i) => (
               <Link
                 key={a.id}
                 href={`/articles/${a.slug}`}
-                className="mr-toc-row--cream grid py-4 border-b cursor-pointer"
+                className="mr-toc-row--cream grid cursor-pointer border-b py-4"
                 style={{
                   gridTemplateColumns: "40px 1fr 60px",
                   gap: 14,
@@ -245,7 +280,7 @@ export default async function IssuePage({
                   <div className="mr-toc-title font-serif text-[18px] font-semibold">
                     {a.title}
                   </div>
-                  <div className="text-[12px] text-muted-foreground mt-1">
+                  <div className="mt-1 text-[12px] text-muted-foreground">
                     {a.writer.name} · {a.topic.name}
                   </div>
                 </div>
@@ -253,7 +288,7 @@ export default async function IssuePage({
               </Link>
             ))}
             {issueArticles.length === 0 && (
-              <p className="text-[14px] text-muted-foreground italic">No articles yet.</p>
+              <p className="text-[14px] italic text-muted-foreground">No articles yet.</p>
             )}
           </div>
 
@@ -262,16 +297,16 @@ export default async function IssuePage({
               className="mr-eyebrow mb-3.5"
               style={{ color: "var(--mr-clay-700)" }}
             >
-              — Queries —
+              - Queries -
             </div>
             {issueQueries.map((q, i) => (
               <Link
                 key={q.id}
                 href={`/articles/${q.slug}`}
-                className="mr-toc-row--cream block py-3.5 border-b cursor-pointer"
+                className="mr-toc-row--cream block cursor-pointer border-b py-3.5"
                 style={{ borderColor: "var(--border)" }}
               >
-                <div className="flex items-center gap-2 mb-1.5">
+                <div className="mb-1.5 flex items-center gap-2">
                   <span
                     className="font-mono text-[10px] font-semibold"
                     style={{ color: "var(--mr-clay-700)" }}
@@ -279,18 +314,20 @@ export default async function IssuePage({
                     Q.{i + 1}
                   </span>
                   <span
-                    className="inline-flex text-[10px] font-semibold uppercase tracking-[0.08em] px-1.5 py-0.5 rounded-sm border text-muted-foreground"
+                    className="inline-flex rounded-sm border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
                     style={{ borderColor: "var(--border)" }}
                   >
                     {q.topic.name}
                   </span>
                 </div>
-                <div className="font-serif text-[14px] italic leading-snug">"{q.title}"</div>
-                <div className="text-[11px] text-muted-foreground mt-1">— {q.writer.name}</div>
+                <div className="font-serif text-[14px] italic leading-snug">
+                  &quot;{q.title}&quot;
+                </div>
+                <div className="mt-1 text-[11px] text-muted-foreground">- {q.writer.name}</div>
               </Link>
             ))}
             {issueQueries.length === 0 && (
-              <p className="text-[14px] text-muted-foreground italic">No queries in this issue.</p>
+              <p className="text-[14px] italic text-muted-foreground">No queries in this issue.</p>
             )}
           </div>
         </div>

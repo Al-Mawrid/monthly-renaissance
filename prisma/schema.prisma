@@ -48,6 +48,7 @@ model Issue {
   id           Int       @id @default(autoincrement())
   oldId        Int?      @unique @map("old_id")
   title        String
+  description  String?   @db.Text
   slug         String    @unique
   volumeNumber String?   @map("volume_number")
   issueNumber  String?   @map("issue_number")

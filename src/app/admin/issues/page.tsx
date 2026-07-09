@@ -51,6 +51,7 @@ export default async function AdminIssuesPage({
             <TableRow>
               <TableHead className="w-12">ID</TableHead>
               <Suspense><SortableHead column="title">Title</SortableHead></Suspense>
+              <TableHead>Description</TableHead>
               <Suspense><SortableHead column="volume">Volume</SortableHead></Suspense>
               <Suspense><SortableHead column="issueNumber">Issue #</SortableHead></Suspense>
               <Suspense><SortableHead column="date">Date</SortableHead></Suspense>
@@ -64,6 +65,15 @@ export default async function AdminIssuesPage({
               <TableRow key={issue.id}>
                 <TableCell className="text-muted-foreground text-xs">{issue.oldId}</TableCell>
                 <TableCell className="text-sm font-medium">{issue.title}</TableCell>
+                <TableCell className="max-w-[320px] text-sm text-muted-foreground">
+                  {issue.description ? (
+                    issue.description.replace(/\s+/g, " ").length > 96
+                      ? `${issue.description.replace(/\s+/g, " ").slice(0, 96)}...`
+                      : issue.description.replace(/\s+/g, " ")
+                  ) : (
+                    <span className="italic">Auto fallback</span>
+                  )}
+                </TableCell>
                 <TableCell className="text-sm text-muted-foreground">{issue.volumeNumber ?? "—"}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{issue.issueNumber ?? "—"}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">

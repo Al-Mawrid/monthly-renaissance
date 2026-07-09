@@ -40,6 +40,7 @@ const sampleWriters: Writer[] = [
 const sampleIssue: Issue = {
   id: "2026-03",
   year: 2026,
+  description: null,
   month: 3,
   volume: 36,
   issueNumber: 3,
@@ -51,6 +52,7 @@ const sampleIssue: Issue = {
 const sampleIssue2: Issue = {
   id: "2026-02",
   year: 2026,
+  description: null,
   month: 2,
   volume: 36,
   issueNumber: 2,
@@ -62,6 +64,7 @@ const sampleIssue2: Issue = {
 const sampleIssue3: Issue = {
   id: "2026-01",
   year: 2026,
+  description: null,
   month: 1,
   volume: 36,
   issueNumber: 1,

@@ -6,12 +6,14 @@ import { createIssue } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { MutationError, MutationRequested } from "@/app/admin/_components/mutation-result";
 
 export function IssueCreateForm({ isTeam }: { isTeam: boolean }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [volumeNumber, setVolumeNumber] = useState("");
   const [issueNumber, setIssueNumber] = useState("");
   const [issueDate, setIssueDate] = useState("");
@@ -30,14 +32,25 @@ export function IssueCreateForm({ isTeam }: { isTeam: boolean }) {
 
     startTransition(async () => {
       try {
-        const result = await createIssue({
+        const payload: {
+          title: string;
+          slug: string;
+          volumeNumber?: string;
+          issueNumber?: string;
+          issueDate?: string;
+          isSpecial?: boolean;
+          description?: string;
+        } = {
           title,
           slug: generateSlug(title),
           volumeNumber: volumeNumber || undefined,
           issueNumber: issueNumber || undefined,
           issueDate: issueDate || undefined,
           isSpecial,
-        });
+        };
+        if (description.trim()) payload.description = description;
+
+        const result = await createIssue(payload);
         if (result && "ok" in result && result.ok === false) {
           setErrorMsg(result.error || "Failed to create issue.");
           return;
@@ -58,6 +71,17 @@ export function IssueCreateForm({ isTeam }: { isTeam: boolean }) {
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
         <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Issue title" />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Optional custom description shown on the public issue page"
+          rows={5}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">

@@ -13,10 +13,6 @@ import {
 
 export const revalidate = 300;
 
-const arMonths = [
-  "محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة",
-  "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة",
-];
 
 async function loadHomeData() {
   try {
@@ -61,21 +57,12 @@ function HomeFallback() {
 export default async function Home() {
   const data = await loadHomeData();
   if (!data || !data.latestIssue || !data.featuredArticle) return <HomeFallback />;
-  const { latestIssue, featuredArticle, recentArticles, latestQueries, featuredTopics, allIssues, issueArticles } = data;
+  const { latestIssue, featuredArticle, latestQueries, featuredTopics, allIssues } = data;
 
   const year = latestIssue.year;
   const vol = latestIssue.volume;
   const issueNum = latestIssue.issueNumber;
   const monthName = getMonthName(latestIssue.month).toUpperCase();
-  const arMonth = arMonths[Math.max(0, Math.min(11, latestIssue.month - 1))];
-
-  // "In this issue" must list only articles tied to the current issue.
-  // Fall back to the featured + recent feed only when the issue has no
-  // bound articles yet (e.g., brand-new issue).
-  const tocArticles = (issueArticles.length > 0
-    ? issueArticles
-    : [featuredArticle, ...recentArticles]
-  ).slice(0, 5);
 
   const totalArticles = allIssues.reduce((acc, i) => acc + (i.articleCount ?? 0), 0) || 2017;
   const totalIssues = allIssues.length || 408;
@@ -130,7 +117,7 @@ export default async function Home() {
                 >
                   Editorial
                 </span>
-                <span className="mr-eyebrow">From this month's issue</span>
+                <span className="mr-eyebrow">From this month&apos;s issue</span>
               </div>
 
               <h1 className="font-serif text-[2.5rem] lg:text-[3.2rem] font-semibold leading-[1.05] tracking-tight text-balance mb-4">
@@ -196,57 +183,48 @@ export default async function Home() {
               <span className="mr-corner bl" />
               <span className="mr-corner br" />
 
-              <div className="mr-eyebrow text-center mb-3">This issue</div>
-
-              <div className="text-center mb-4">
-                <div
-                  className="font-serif font-semibold leading-[0.9] tracking-[-0.04em]"
-                  style={{ fontSize: 96, color: "var(--mr-clay-700)" }}
-                >
-                  {issueNum}
-                </div>
-                <div
-                  className="font-arabic mt-1"
-                  style={{ fontSize: 18, color: "var(--mr-green-800)" }}
-                >
-                  {arMonth} {year}
-                </div>
-              </div>
-
-              <div className="mr-ornament">
-                <span className="mr-diamond" />
-                <span className="mr-star" style={{ width: 12, height: 12 }} />
-                <span className="mr-diamond" />
-              </div>
-
-              <div className="mr-eyebrow text-center mt-3 mb-2.5">In this issue</div>
-              <div className="font-serif text-[13px] leading-[1.7]">
-                {tocArticles.map((a, i) => (
-                  <Link
-                    key={a.id}
-                    href={`/articles/${a.slug}`}
-                    className="mr-toc-row flex gap-2.5 py-1.5"
-                    style={{
-                      borderBottom:
-                        i < tocArticles.length - 1 ? "1px dotted var(--border)" : "none",
-                    }}
+              <div className="space-y-7">
+                <div>
+                  <div
+                    className="mr-eyebrow text-center text-[12px] mb-3"
+                    style={{ color: "var(--mr-green-800)" }}
                   >
-                    <span
-                      className="font-mono text-[11px] flex-shrink-0 pt-[3px]"
-                      style={{ color: "var(--mr-saffron-700)" }}
-                    >
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <div className="flex-1">
-                      <div className="mr-toc-title text-foreground">
-                        {a.title}
-                      </div>
-                      <div className="font-sans text-[11px] text-muted-foreground">
-                        {a.writer.name}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+                    Our Prayer
+                  </div>
+                  <div className="font-serif text-[14px] leading-[1.55] text-center text-foreground">
+                    <p>[Lord!] Set us firm on the straight path.</p>
+                    <p>The path of those you have blessed,</p>
+                    <p>not of those who have earned your wrath,</p>
+                    <p>nor of those who have gone astray.</p>
+                    <p className="mt-3 text-[13px] text-muted-foreground">
+                      (The Qur&apos;an, 1:4-6)
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mr-ornament">
+                  <span className="mr-diamond" />
+                  <span className="mr-star" style={{ width: 12, height: 12 }} />
+                  <span className="mr-diamond" />
+                </div>
+
+                <div>
+                  <div
+                    className="mr-eyebrow text-center text-[12px] mb-3"
+                    style={{ color: "var(--mr-green-800)" }}
+                  >
+                    Our Motto
+                  </div>
+                  <div className="font-serif text-[14px] leading-[1.55] text-center text-foreground">
+                    <p>Stand upright, speak thy thoughts, declare</p>
+                    <p>The truth thou hast, that all may share,</p>
+                    <p>Be bold, proclaim it everywhere:</p>
+                    <p>They only live who dare.</p>
+                    <p className="mt-3 text-[13px] text-muted-foreground">
+                      (Lewis Morris)
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -410,7 +388,7 @@ export default async function Home() {
                     {q.topic?.name}
                   </span>
                 </div>
-                <p className="font-serif text-[15px] italic leading-snug">"{q.title}"</p>
+                <p className="font-serif text-[15px] italic leading-snug">&quot;{q.title}&quot;</p>
                 <div className="text-[12px] text-muted-foreground mt-auto">
                   Answered by <span className="text-foreground">{q.writer.name}</span>
                 </div>

@@ -82,15 +82,15 @@ export default async function AdminArticlesPage({
       </div>
 
       <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <Table>
+        <Table className="w-auto min-w-full table-auto">
           <TableHeader>
             <TableRow>
               <TableHead className="w-14">ID</TableHead>
-              <Suspense><SortableHead column="title">Title</SortableHead></Suspense>
-              <Suspense><SortableHead column="writer">Writer</SortableHead></Suspense>
-              <Suspense><SortableHead column="topic">Topic</SortableHead></Suspense>
-              <TableHead>Issue</TableHead>
-              <Suspense><SortableHead column="date">Date</SortableHead></Suspense>
+              <Suspense><SortableHead column="title" className="w-[36ch]">Title</SortableHead></Suspense>
+              <Suspense><SortableHead column="writer" className="w-[18ch]">Writer</SortableHead></Suspense>
+              <Suspense><SortableHead column="topic" className="w-[18ch]">Topic</SortableHead></Suspense>
+              <TableHead className="w-[28ch]">Issue</TableHead>
+              <Suspense><SortableHead column="date" className="w-[12ch]">Date</SortableHead></Suspense>
               <Suspense><SortableHead column="status" className="w-20">Status</SortableHead></Suspense>
               <TableHead className="w-28">Actions</TableHead>
             </TableRow>
@@ -119,19 +119,24 @@ export default async function AdminArticlesPage({
                 <TableCell>
                   <Link
                     href={`/admin/articles/${article.id}/edit`}
-                    className="text-sm font-medium hover:text-primary transition-colors line-clamp-1"
+                    className="block max-w-[36ch] truncate text-sm font-medium transition-colors hover:text-primary"
+                    title={article.title}
                   >
                     {article.title}
                   </Link>
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">{article.writer.name}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{article.topic.title}</TableCell>
+                <TableCell className="max-w-[18ch] truncate text-sm text-muted-foreground" title={article.writer.name}>
+                  {article.writer.name}
+                </TableCell>
+                <TableCell className="max-w-[18ch] truncate text-sm text-muted-foreground" title={article.topic.title}>
+                  {article.topic.title}
+                </TableCell>
                 <TableCell className="text-xs">
                   {issue ? (
-                    <span className="text-muted-foreground">
-                      {issue.title}
+                    <span className="flex max-w-[28ch] items-center gap-1 text-muted-foreground">
+                      <span className="truncate" title={issue.title}>{issue.title}</span>
                       {issueRole && (
-                        <span className="ml-1 inline-block rounded bg-primary/10 px-1 py-0.5 text-[10px] font-medium uppercase text-primary">
+                        <span className="inline-block shrink-0 rounded bg-primary/10 px-1 py-0.5 text-[10px] font-medium uppercase text-primary">
                           {issueRole}
                         </span>
                       )}

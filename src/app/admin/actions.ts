@@ -148,6 +148,11 @@ function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
+function normalizeOptionalText(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
 async function findAvailableWriterSlug(base: string): Promise<string> {
   const safeBase = base || "writer";
   let candidate = safeBase;
@@ -165,6 +170,26 @@ function revalidateArticle(slug: string | null, issueId: number | null) {
   revalidatePath("/issues");
   if (slug) revalidatePath(`/articles/${slug}`);
   if (issueId) revalidatePath(`/issues/${issueId}`);
+}
+
+function revalidateIssuePages(
+  current: { slug: string | null; isSpecial: boolean } | null,
+  next?: { slug: string | null; isSpecial: boolean },
+) {
+  revalidatePath("/admin/issues");
+  revalidatePath("/issues");
+  revalidatePath("/");
+
+  const slugs = new Set<string>();
+  if (current?.slug) slugs.add(current.slug);
+  if (next?.slug) slugs.add(next.slug);
+  for (const slug of slugs) {
+    revalidatePath(`/issues/${slug}`);
+  }
+
+  if (current?.isSpecial || next?.isSpecial) {
+    revalidatePath("/issues/special");
+  }
 }
 
 // ─── Article Actions ─────────────────────────────────────────
@@ -501,6 +526,7 @@ export async function toggleQueryDisplay(id: number): Promise<MutationResult> {
 
 export async function createIssue(data: {
   title: string;
+  description?: string | null;
   slug: string;
   volumeNumber?: string;
   issueNumber?: string;
@@ -516,6 +542,7 @@ export async function createIssue(data: {
       await prisma.issue.create({
         data: {
           title: data.title,
+          description: normalizeOptionalText(data.description),
           slug: data.slug,
           volumeNumber: data.volumeNumber,
           issueNumber: data.issueNumber,
@@ -524,8 +551,10 @@ export async function createIssue(data: {
           isSpecial: data.isSpecial ?? false,
         },
       });
-      revalidatePath("/admin/issues");
-      revalidatePath("/");
+      revalidateIssuePages(null, {
+        slug: data.slug,
+        isSpecial: data.isSpecial ?? false,
+      });
       return { ok: true, applied: true };
     } catch (err) {
       return fail(err, { entityType: "issue", action: "CREATE" });
@@ -537,6 +566,7 @@ export async function createIssue(data: {
 
 export async function updateIssue(id: number, data: {
   title?: string;
+  description?: string | null;
   volumeNumber?: string;
   issueNumber?: string;
   issueDate?: string;
@@ -548,11 +578,22 @@ export async function updateIssue(id: number, data: {
 
   if (canManageContent(session.user.role)) {
     try {
+      const existing = await prisma.issue.findUnique({
+        where: { id },
+        select: { slug: true, isSpecial: true },
+      });
+      if (!existing) return { ok: false, error: "Not found" };
+
       const updateData: Record<string, unknown> = { ...data };
       if (data.issueDate) updateData.issueDate = new Date(data.issueDate);
+      if ("description" in data) {
+        updateData.description = normalizeOptionalText(data.description);
+      }
       await prisma.issue.update({ where: { id }, data: updateData });
-      revalidatePath("/admin/issues");
-      revalidatePath("/");
+      revalidateIssuePages(existing, {
+        slug: existing.slug,
+        isSpecial: data.isSpecial ?? existing.isSpecial,
+      });
       return { ok: true, applied: true };
     } catch (err) {
       return fail(err, { entityType: "issue", entityId: id, action: "UPDATE" });
@@ -568,13 +609,18 @@ export async function deleteIssue(id: number): Promise<MutationResult> {
 
   if (canManageContent(session.user.role)) {
     try {
+      const existing = await prisma.issue.findUnique({
+        where: { id },
+        select: { slug: true, isSpecial: true },
+      });
+      if (!existing) return { ok: false, error: "Not found" };
+
       await prisma.$transaction([
         prisma.articleIssueLink.deleteMany({ where: { issueId: id } }),
         prisma.queryIssueLink.deleteMany({ where: { issueId: id } }),
         prisma.issue.delete({ where: { id } }),
       ]);
-      revalidatePath("/admin/issues");
-      revalidatePath("/");
+      revalidateIssuePages(existing);
       return { ok: true, applied: true };
     } catch (err) {
       return fail(err, { entityType: "issue", entityId: id, action: "DELETE" });
@@ -589,13 +635,15 @@ export async function toggleIssueDisplay(id: number): Promise<MutationResult> {
   if (!canEditContent(session.user.role)) throw new Error("Forbidden");
 
   try {
-    const issue = await prisma.issue.findUnique({ where: { id }, select: { display: true } });
+    const issue = await prisma.issue.findUnique({
+      where: { id },
+      select: { display: true, slug: true, isSpecial: true },
+    });
     if (!issue) return { ok: false, error: "Not found" };
 
     if (canManageContent(session.user.role)) {
       await prisma.issue.update({ where: { id }, data: { display: !issue.display } });
-      revalidatePath("/admin/issues");
-      revalidatePath("/");
+      revalidateIssuePages(issue);
       return { ok: true, applied: true };
     }
 
@@ -1069,6 +1117,7 @@ export async function approveChangeRequest(requestId: number): Promise<MutationR
           await prisma.issue.create({
             data: {
               title: data.title as string,
+              description: normalizeOptionalText(data.description as string | undefined),
               slug: data.slug as string,
               volumeNumber: data.volumeNumber as string | undefined,
               issueNumber: data.issueNumber as string | undefined,
@@ -1077,19 +1126,39 @@ export async function approveChangeRequest(requestId: number): Promise<MutationR
               isSpecial: (data.isSpecial as boolean | undefined) ?? false,
             },
           });
+          revalidateIssuePages(null, {
+            slug: data.slug as string,
+            isSpecial: (data.isSpecial as boolean | undefined) ?? false,
+          });
         } else if (cr.action === "UPDATE" && cr.entityId) {
+          const existing = await prisma.issue.findUnique({
+            where: { id: cr.entityId },
+            select: { slug: true, isSpecial: true },
+          });
+          if (!existing) return { ok: false, error: "Issue not found." };
           const updateData: Record<string, unknown> = { ...data };
           if (data.issueDate) updateData.issueDate = new Date(data.issueDate as string);
+          if ("description" in data) {
+            updateData.description = normalizeOptionalText(data.description as string | undefined);
+          }
           await prisma.issue.update({ where: { id: cr.entityId }, data: updateData });
+          revalidateIssuePages(existing, {
+            slug: existing.slug,
+            isSpecial: (data.isSpecial as boolean | undefined) ?? existing.isSpecial,
+          });
         } else if (cr.action === "DELETE" && cr.entityId) {
+          const existing = await prisma.issue.findUnique({
+            where: { id: cr.entityId },
+            select: { slug: true, isSpecial: true },
+          });
+          if (!existing) return { ok: false, error: "Issue not found." };
           await prisma.$transaction([
             prisma.articleIssueLink.deleteMany({ where: { issueId: cr.entityId } }),
             prisma.queryIssueLink.deleteMany({ where: { issueId: cr.entityId } }),
             prisma.issue.delete({ where: { id: cr.entityId } }),
           ]);
+          revalidateIssuePages(existing);
         }
-        revalidatePath("/admin/issues");
-        revalidatePath("/");
         break;
 
       case "writer":

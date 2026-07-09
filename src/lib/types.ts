@@ -23,6 +23,7 @@ export interface Issue {
   volume: number;
   issueNumber: number;
   title: string;
+  description: string | null;
   isSpecial: boolean;
   articleCount: number;
 }
