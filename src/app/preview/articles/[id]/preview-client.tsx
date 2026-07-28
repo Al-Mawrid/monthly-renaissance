@@ -108,7 +108,7 @@ export function ArticlePreviewClient({ id }: { id: string }) {
           color: "#fff",
         }}
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-2 flex items-center gap-2 flex-wrap">
+        <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-2 flex items-center gap-2 flex-wrap">
           <span className="font-semibold tracking-wide uppercase">
             Live preview
           </span>
@@ -119,7 +119,7 @@ export function ArticlePreviewClient({ id }: { id: string }) {
         </div>
       </div>
 
-      <article className="mx-auto max-w-[760px] px-4 sm:px-6 py-12 w-full">
+      <article className="mx-auto max-w-[760px] px-2 sm:px-3 py-12 w-full">
         <div className="mr-eyebrow mb-3.5" style={{ color: "var(--mr-clay-700)" }}>
           — {payload.topicName || "Topic"} —
         </div>
@@ -178,7 +178,7 @@ export function ArticlePreviewClient({ id }: { id: string }) {
         <hr className="mr-rule-double my-7" />
 
         <div
-          className="article-content mr-dropcap"
+          className="article-content"
           dangerouslySetInnerHTML={{ __html: payload.bodyHtml }}
         />
       </article>

@@ -13,7 +13,7 @@ export default async function EBooksPage() {
   return (
     <div>
       <div className="border-b" style={{ borderColor: "var(--foreground)" }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-14">
+        <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-14">
           <div className="flex items-end justify-between flex-wrap gap-6">
             <div>
               <div className="mr-eyebrow mb-2.5" style={{ color: "var(--mr-saffron-700)" }}>
@@ -36,7 +36,7 @@ export default async function EBooksPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-12">
+      <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-12">
         <div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
           style={{ gap: 1, background: "var(--border)", border: "1px solid var(--border)" }}

@@ -156,18 +156,6 @@
 }
 .mr-catalog .dot { opacity: 0.4; margin: 0 6px; }
 
-/* Drop cap — clay rubric */
-.mr-dropcap::first-letter {
-  font-family: var(--font-serif);
-  font-weight: 600;
-  float: left;
-  font-size: 4.4em;
-  line-height: 0.9;
-  padding: 0.08em 0.08em 0 0;
-  margin-right: 0.08em;
-  color: var(--mr-clay-700);
-  font-style: normal;
-}
 
 /* Double rule — journal convention */
 .mr-rule-double {
@@ -238,8 +226,6 @@
   hyphens: auto;
 }
 .article-content p + p { text-indent: 1.5em; margin-top: -0.2em; }
-/* Don't justify the drop-cap paragraph (or single-line ones) — looks sparse */
-.article-content.mr-dropcap > p:first-of-type { text-align: left; }
 
 /* Block alignment from the editor (class-based, see editor/extensions.ts).
    Two classes beat the single-class `.article-content p { text-align: justify }`
@@ -278,11 +264,29 @@
   );
   flex-shrink: 0;
 }
+.article-content h2.align-center {
+  display: block;
+  padding-left: 0;
+  text-align: center;
+}
+.article-content h2.align-center::before { display: none; }
+.article-content > h2:first-child:not(.align-center) {
+  display: block;
+  color: var(--mr-clay-700);
+  padding-left: 0;
+  text-align: left;
+}
+.article-content > h2:first-child:not(.align-center)::before { display: none; }
 
 .article-content h3 {
   font-size: 1.25rem;
   margin-top: 2rem;
   margin-bottom: 0.75rem;
+}
+.article-content h3.align-left {
+  padding-left: 0;
+  text-align: left;
+  text-indent: 0;
 }
 .article-content h4 {
   font-size: 1.1rem;
@@ -314,6 +318,10 @@
 }
 
 .article-content blockquote.arabic-quote,
+.article-content .ArabicQuote,
+.article-content .ArabicParagraph,
+.article-content .TextArabic,
+.article-content .FootNoteArabicQuote,
 .article-content [dir="rtl"],
 .article-content [lang="ar"],
 .article-content .ArabicInLineText,
@@ -324,7 +332,12 @@
   font-style: normal;
   font-size: 1.6em;
   line-height: 2.1;
-  text-align: right;
+  /* Legacy article HTML can carry an inline text-align declaration. Arabic
+     blocks should follow the natural right edge of the script. */
+  text-align: right !important;
+  /* Quranic/Arabic blocks should start flush with their right edge, even when
+     legacy HTML carries a first-line text-indent declaration. */
+  text-indent: 0 !important;
   direction: rtl;
   unicode-bidi: isolate;
   background: var(--mr-cream);
@@ -346,6 +359,16 @@
   padding: 0;
   margin: 0;
   border: none;
+}
+
+/* Verse markers are generated from legacy Arabic blocks and intentionally sit
+   slightly below the size of the surrounding Quranic text. */
+.article-content .ArabicVerseNumber {
+  font-size: 0.82em;
+}
+
+.article-content .ArabicBismillah {
+  text-align: center !important;
 }
 
 /* "Within text" Arabic: blends into the running text. The script font (Noor-e-Huda)
@@ -382,7 +405,7 @@
   position: relative;
   list-style: none;
   margin: 0.5rem 0;
-  padding: 0.75rem 0.9rem 0.75rem 2.4rem;
+  padding: 0.75rem 0.9rem 0.75rem 0.9rem;
   background: var(--mr-saffron-50);
   border: 1px solid var(--mr-saffron-300);
   border-left: 3px solid var(--mr-clay-700);
@@ -477,7 +500,7 @@
 .article-content .FootNoteLink a,
 .article-content a.FootNoteLink {
   font-family: var(--font-mono);
-  font-size: 0.72em;
+  font-size: 0.52em;
   vertical-align: super;
   line-height: 0;
 }
@@ -486,7 +509,8 @@
 .article-content a.FootNoteLink {
   color: var(--mr-clay-700);
   font-weight: 700;
-  text-decoration: none;
+  text-decoration: underline;
+  text-underline-offset: 1px;
   padding: 1px 4px;
   margin: 0 1px;
   border-radius: 3px;
@@ -500,7 +524,7 @@
   background: var(--mr-clay-100);
   color: var(--mr-clay-700);
   border-color: var(--mr-clay-500);
-  text-decoration: none;
+  text-decoration: underline;
 }
 
 .article-content em { font-style: italic; }

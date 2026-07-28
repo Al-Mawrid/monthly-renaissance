@@ -91,7 +91,7 @@ export default async function Home() {
         className="border-b"
         style={{ background: "var(--card)", borderColor: "var(--border)" }}
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-2.5 flex items-center justify-between flex-wrap gap-2">
+        <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-2.5 flex items-center justify-between flex-wrap gap-2">
           <div className="mr-catalog">
             VOL. {vol}<span className="dot">·</span>№ {issueNum}<span className="dot">·</span>{monthName} {year}
           </div>
@@ -107,7 +107,7 @@ export default async function Home() {
         className="border-b"
         style={{ borderColor: "var(--foreground)" }}
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-14">
+        <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-14">
           <div className="grid lg:grid-cols-[1.4fr_1fr] gap-10 lg:gap-16 items-center">
             <div>
               <div className="flex items-center gap-2.5 mb-4">
@@ -233,7 +233,7 @@ export default async function Home() {
 
       {/* Archive depth strip */}
       <section className="border-b" style={{ borderColor: "var(--border)" }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-12">
+        <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-12">
           <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
             <div>
               <div
@@ -315,7 +315,7 @@ export default async function Home() {
 
       {/* Browse by topic */}
       <section className="border-b" style={{ borderColor: "var(--border)" }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-12">
+        <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-12">
           <div className="flex items-baseline justify-between mb-6 flex-wrap gap-3">
             <h2 className="font-serif text-2xl sm:text-3xl font-semibold">Browse by topic</h2>
             <div className="mr-eyebrow">{featuredTopics.length}+ disciplines</div>
@@ -353,7 +353,7 @@ export default async function Home() {
         className="border-b"
         style={{ background: "var(--mr-cream)", borderColor: "var(--border)" }}
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-12">
+        <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-12">
           <div className="flex items-baseline justify-between mb-6 flex-wrap gap-3">
             <div>
               <div
@@ -400,7 +400,7 @@ export default async function Home() {
 
       {/* Archive CTA — dark mihrab */}
       <section style={{ background: "var(--mr-green-800)", color: "var(--mr-ivory)" }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-16">
+        <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-16">
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
             <div>
               <div

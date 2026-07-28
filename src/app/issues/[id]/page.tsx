@@ -242,7 +242,7 @@ export default async function IssuePage({
       </section>
 
       {/* TOC proper */}
-      <section id="contents" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-10">
+      <section id="contents" className="mx-auto max-w-7xl px-2 py-12 sm:px-3 lg:px-5">
         <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
           <h2 className="font-serif text-2xl font-semibold sm:text-3xl">Contents</h2>
           <div className="mr-catalog">

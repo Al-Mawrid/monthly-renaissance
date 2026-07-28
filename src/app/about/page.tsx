@@ -31,7 +31,7 @@ export default function AboutPage() {
       </div>
 
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-10 py-12">
-        <div className="article-content mr-dropcap">
+        <div className="article-content">
           <p>
             <strong>Monthly Renaissance</strong> is a journal of Islamic research and information published
             by the Al-Mawrid Institute of Islamic Sciences. Since its founding in March 1991, it has served

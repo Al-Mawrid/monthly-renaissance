@@ -14,7 +14,7 @@ export default async function SpecialIssuesPage() {
   return (
     <div>
       <div className="border-b" style={{ borderColor: "var(--foreground)" }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-14">
+        <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-14">
           <div className="flex items-end justify-between flex-wrap gap-6">
             <div>
               <div
@@ -43,7 +43,7 @@ export default async function SpecialIssuesPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-12">
+      <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-12">
         {issues.length === 0 ? (
           <p className="text-[14px] text-muted-foreground italic">No special issues catalogued yet.</p>
         ) : (

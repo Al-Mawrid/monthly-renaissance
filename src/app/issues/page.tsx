@@ -19,7 +19,7 @@ export default async function IssuesPage() {
     <div>
       {/* Page header */}
       <div className="border-b" style={{ borderColor: "var(--foreground)" }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-14">
+        <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-14">
           <div className="flex items-end justify-between flex-wrap gap-6">
             <div>
               <div
@@ -50,7 +50,7 @@ export default async function IssuesPage() {
         className="border-b"
         style={{ background: "var(--card)", borderColor: "var(--border)" }}
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-3.5 flex gap-3 items-center flex-wrap">
+        <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-3.5 flex gap-3 items-center flex-wrap">
           <input
             placeholder="Search by volume, date, or title…"
             className="flex-1 max-w-md px-3 py-2 text-[13px] bg-background border rounded-sm outline-none focus:border-[var(--mr-green-700)]"
@@ -60,7 +60,7 @@ export default async function IssuesPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-10">
+      <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-[140px_1fr] gap-8">
           {/* Year rail */}
           <aside className="hidden lg:block">

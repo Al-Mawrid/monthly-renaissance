@@ -92,7 +92,7 @@ export default async function ArticlePage({
         className="border-b"
         style={{ borderColor: "var(--border)" }}
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-3.5 flex items-center gap-2.5 flex-wrap text-[12px] text-muted-foreground">
+        <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-3.5 flex items-center gap-2.5 flex-wrap text-[12px] text-muted-foreground">
           <Link href="/issues" className="text-foreground hover:text-[var(--mr-green-700)]">Archive</Link>
           {issue && (
             <>
@@ -114,7 +114,7 @@ export default async function ArticlePage({
       </div>
 
       {/* Main 3-column grid */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5">
         <div className="grid lg:grid-cols-[200px_1fr_240px] gap-0">
           {/* Left rail — in-issue nav */}
           <aside
@@ -152,7 +152,7 @@ export default async function ArticlePage({
           </aside>
 
           {/* Center column */}
-          <article className="py-12 lg:px-16 max-w-[760px] mx-auto w-full">
+          <article className="py-12 lg:px-8 max-w-[760px] mx-auto w-full">
             <div
               className="mr-eyebrow mb-3.5"
               style={{ color: "var(--mr-clay-700)" }}
@@ -218,7 +218,7 @@ export default async function ArticlePage({
             <hr className="mr-rule-double my-7" />
 
             <div
-              className="article-content mr-dropcap"
+              className="article-content"
               dangerouslySetInnerHTML={{ __html: article.bodyHtml }}
             />
             <FootnoteFocus />
