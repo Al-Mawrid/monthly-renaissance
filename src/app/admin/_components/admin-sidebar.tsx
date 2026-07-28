@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
@@ -20,6 +19,7 @@ import {
   ArrowLeft,
   type LucideIcon,
 } from "lucide-react";
+import { PendingLink } from "@/components/ui/pending-link";
 
 type NavItem = { name: string; href: string; icon: LucideIcon };
 
@@ -72,8 +72,9 @@ export function AdminSidebar({
   function NavLink({ item }: { item: NavItem }) {
     const active = isActive(item.href);
     return (
-      <Link
+      <PendingLink
         href={item.href}
+        icon={<item.icon aria-hidden="true" className="h-4 w-4 shrink-0" />}
         title={collapsed ? item.name : undefined}
         aria-current={active ? "page" : undefined}
         className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
@@ -84,9 +85,8 @@ export function AdminSidebar({
             : "text-foreground/70 hover:bg-muted hover:text-foreground"
         }`}
       >
-        <item.icon className="h-4 w-4 shrink-0" />
         {!collapsed && item.name}
-      </Link>
+      </PendingLink>
     );
   }
 
@@ -182,16 +182,16 @@ export function AdminSidebar({
             </div>
           )}
         </div>
-        <Link
+        <PendingLink
           href="/"
+          icon={<ArrowLeft aria-hidden="true" className="h-4 w-4 shrink-0" />}
           title={collapsed ? "Back to site" : undefined}
           className={`mt-3 flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors ${
             collapsed ? "justify-center" : ""
           }`}
         >
-          <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
           {!collapsed && "Back to site"}
-        </Link>
+        </PendingLink>
       </div>
     </aside>
   );

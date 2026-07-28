@@ -9,6 +9,7 @@ import { bookOrderBy, parseSort } from "../sort-utils";
 import { Button } from "@/components/ui/button";
 import { Pencil, Plus } from "lucide-react";
 import Link from "next/link";
+import { PendingLink } from "@/components/ui/pending-link";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -77,11 +78,13 @@ export default async function AdminBooksPage({
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-0.5">
-                    <Link href={`/admin/books/${b.id}/edit`}>
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                    </Link>
+                    <PendingLink
+                      href={`/admin/books/${b.id}/edit`}
+                      icon={<Pencil aria-hidden="true" className="h-3.5 w-3.5" />}
+                      iconClassName="h-3.5 w-3.5"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md p-0 text-sm transition-all hover:bg-muted hover:text-foreground"
+                      aria-label="Edit book"
+                    />
                     <ToggleDisplayButton id={b.id} type="book" />
                     <DeleteButton id={b.id} type="book" title={b.title} isTeam={!isAdmin} />
                   </div>

@@ -9,6 +9,7 @@ import { issueOrderBy, parseSort } from "../sort-utils";
 import { Button } from "@/components/ui/button";
 import { Pencil, Plus, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { PendingLink } from "@/components/ui/pending-link";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -94,11 +95,13 @@ export default async function AdminIssuesPage({
                         <ExternalLink className="h-3.5 w-3.5" />
                       </Button>
                     </a>
-                    <Link href={`/admin/issues/${issue.id}/edit`}>
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                    </Link>
+                    <PendingLink
+                      href={`/admin/issues/${issue.id}/edit`}
+                      icon={<Pencil aria-hidden="true" className="h-3.5 w-3.5" />}
+                      iconClassName="h-3.5 w-3.5"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md p-0 text-sm transition-all hover:bg-muted hover:text-foreground"
+                      aria-label="Edit issue"
+                    />
                     <ToggleDisplayButton id={issue.id} type="issue" />
                     <DeleteButton id={issue.id} type="issue" title={issue.title} isTeam={!isAdmin} />
                   </div>

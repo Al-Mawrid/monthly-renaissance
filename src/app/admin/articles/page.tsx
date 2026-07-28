@@ -9,6 +9,7 @@ import { SortableHead } from "../sortable-head";
 import { articleOrderBy, parseSort } from "../sort-utils";
 import { Button } from "@/components/ui/button";
 import { PaginationNav } from "@/components/ui/pagination-nav";
+import { PendingLink } from "@/components/ui/pending-link";
 import { Plus, Pencil, ExternalLink } from "lucide-react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -160,11 +161,13 @@ export default async function AdminArticlesPage({
                         <ExternalLink className="h-3.5 w-3.5" />
                       </Button>
                     </a>
-                    <Link href={`/admin/articles/${article.id}/edit`}>
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                    </Link>
+                    <PendingLink
+                      href={`/admin/articles/${article.id}/edit`}
+                      icon={<Pencil aria-hidden="true" className="h-3.5 w-3.5" />}
+                      iconClassName="h-3.5 w-3.5"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md p-0 text-sm transition-all hover:bg-muted hover:text-foreground"
+                      aria-label="Edit article"
+                    />
                     <ToggleDisplayButton id={article.id} type="article" />
                     <DeleteButton id={article.id} type="article" title={article.title} isTeam={!isAdmin} />
                   </div>

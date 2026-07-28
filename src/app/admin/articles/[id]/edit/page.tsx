@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { canManageContent } from "@/lib/permissions";
 import { buttonVariants } from "@/lib/variants";
 import { cn } from "@/lib/utils";
+import { PendingLink } from "@/components/ui/pending-link";
 import { ArticleEditForm } from "./form";
 
 export const dynamic = "force-dynamic";
@@ -56,13 +56,14 @@ export default async function EditArticlePage({
 
   return (
     <div>
-      <Link
+      <PendingLink
         href="/admin/articles"
+        icon={<ArrowLeft aria-hidden="true" className="mr-1.5 h-3.5 w-3.5" />}
+        iconClassName="mr-1.5 h-3.5 w-3.5"
         className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-4 -ml-2 text-muted-foreground")}
       >
-        <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
         Back to Articles
-      </Link>
+      </PendingLink>
 
       <h1 className="text-2xl font-bold tracking-tight mb-6">
         {isAdmin ? "Edit Article" : "Request Article Edit"}

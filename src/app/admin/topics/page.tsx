@@ -1,13 +1,12 @@
 import { Suspense } from "react";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { canManageContent } from "@/lib/permissions";
 import { ToggleDisplayButton } from "../articles/toggle-button";
 import { SortableHead } from "../sortable-head";
 import { topicOrderBy, parseSort } from "../sort-utils";
 import { Pencil, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { PendingLink } from "@/components/ui/pending-link";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -21,8 +20,7 @@ export default async function AdminTopicsPage({
 }) {
   const params = await searchParams;
   const { sort, order } = parseSort(params);
-  const session = await auth();
-  const isAdmin = canManageContent(session!.user.role);
+  await auth();
 
   const topics = await prisma.topic.findMany({
     orderBy: topicOrderBy(sort, order),
@@ -69,11 +67,13 @@ export default async function AdminTopicsPage({
                         <ExternalLink className="h-3.5 w-3.5" />
                       </Button>
                     </a>
-                    <Link href={`/admin/topics/${t.id}/edit`}>
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                    </Link>
+                    <PendingLink
+                      href={`/admin/topics/${t.id}/edit`}
+                      icon={<Pencil aria-hidden="true" className="h-3.5 w-3.5" />}
+                      iconClassName="h-3.5 w-3.5"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md p-0 text-sm transition-all hover:bg-muted hover:text-foreground"
+                      aria-label="Edit topic"
+                    />
                     <ToggleDisplayButton id={t.id} type="topic" />
                   </div>
                 </TableCell>
