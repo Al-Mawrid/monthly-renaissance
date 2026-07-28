@@ -6,7 +6,7 @@ import { createBook } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, FileText, X } from "lucide-react";
+import { Upload, FileText, Loader2, X } from "lucide-react";
 import { MutationError, MutationRequested } from "@/app/admin/_components/mutation-result";
 import { WriterSelect, type Writer } from "@/app/admin/_components/writer-select";
 
@@ -131,7 +131,11 @@ export function BookCreateForm({
             className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border px-4 py-8 cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors"
             onClick={() => fileInputRef.current?.click()}
           >
-            <Upload className={`h-8 w-8 ${uploading ? "animate-pulse text-primary" : "text-muted-foreground"}`} />
+            {uploading ? (
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            ) : (
+              <Upload className="h-8 w-8 text-muted-foreground" />
+            )}
             <p className="text-sm text-muted-foreground">
               {uploading ? "Uploading..." : "Click to upload PDF, EPUB, MOBI, or DOCX"}
             </p>

@@ -6,7 +6,7 @@ import { updateBook } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, FileText } from "lucide-react";
+import { Upload, FileText, Loader2 } from "lucide-react";
 import { MutationError, MutationRequested } from "@/app/admin/_components/mutation-result";
 import { WriterSelect, type Writer } from "@/app/admin/_components/writer-select";
 
@@ -128,7 +128,11 @@ export function BookEditForm({
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
           >
-            <Upload className="h-3.5 w-3.5 mr-1.5" />
+            {uploading ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Upload className="mr-1.5 h-3.5 w-3.5" />
+            )}
             {uploading ? "Uploading..." : "Replace"}
           </Button>
         </div>
