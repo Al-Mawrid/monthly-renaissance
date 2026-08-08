@@ -3,11 +3,9 @@ import { ArrowRight } from "lucide-react";
 import {
   getLatestIssue,
   getFeaturedArticle,
-  getRecentArticles,
   getLatestQueries,
   getFeaturedTopics,
   getAllIssues,
-  getArticlesForIssue,
   getMonthName,
 } from "@/lib/queries";
 
@@ -15,34 +13,22 @@ export const revalidate = 300;
 
 
 async function loadHomeData() {
-  try {
-    const [latestIssue, featuredArticle, recentArticles, latestQueries, featuredTopics, allIssues] =
-      await Promise.all([
-        getLatestIssue(),
-        getFeaturedArticle(),
-        getRecentArticles(5),
-        getLatestQueries(3),
-        getFeaturedTopics(6),
-        getAllIssues(),
-      ]);
-    // The "In this issue" TOC must strictly reflect articles bound to the
-    // current issue — not the global recent-articles feed.
-    const issueArticles = latestIssue
-      ? await getArticlesForIssue(latestIssue.id)
-      : [];
-    return {
-      latestIssue,
-      featuredArticle,
-      recentArticles,
-      latestQueries,
-      featuredTopics,
-      allIssues,
-      issueArticles,
-    };
-  } catch (err) {
-    console.error("[home] data fetch failed:", err);
-    return null;
-  }
+  const [latestIssue, featuredArticle, latestQueries, featuredTopics, allIssues] =
+    await Promise.all([
+      getLatestIssue(),
+      getFeaturedArticle(),
+      getLatestQueries(3),
+      getFeaturedTopics(6),
+      getAllIssues(),
+    ]);
+
+  return {
+    latestIssue,
+    featuredArticle,
+    latestQueries,
+    featuredTopics,
+    allIssues,
+  };
 }
 
 function HomeFallback() {
@@ -56,7 +42,7 @@ function HomeFallback() {
 
 export default async function Home() {
   const data = await loadHomeData();
-  if (!data || !data.latestIssue || !data.featuredArticle) return <HomeFallback />;
+  if (!data.latestIssue || !data.featuredArticle) return <HomeFallback />;
   const { latestIssue, featuredArticle, latestQueries, featuredTopics, allIssues } = data;
 
   const year = latestIssue.year;

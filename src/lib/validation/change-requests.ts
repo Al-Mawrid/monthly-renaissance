@@ -170,9 +170,9 @@ export function parseChangeRequestPayload(
     const first = result.error.issues[0];
     const path = first?.path?.join(".") || "(root)";
     const msg = first?.message || "invalid";
-    const extras = result.error.issues
-      .filter((i) => i.code === "unrecognized_keys")
-      .flatMap((i) => (i as any).keys as string[]);
+    const extras = result.error.issues.flatMap((issue) =>
+      issue.code === "unrecognized_keys" ? issue.keys : [],
+    );
     const extrasNote = extras.length ? ` (unexpected: ${extras.join(", ")})` : "";
     return { ok: false, error: `${path}: ${msg}${extrasNote}` };
   }

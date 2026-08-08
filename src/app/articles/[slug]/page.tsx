@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import {
   getArticleBySlug,
   getRelatedArticles,
@@ -17,13 +18,15 @@ import { SITE_URL, SITE_NAME } from "@/lib/site-meta";
 // revalidatePath. Time-based revalidate is just a backstop (plan I2).
 export const revalidate = 3600;
 
+const getCachedArticleBySlug = cache(getArticleBySlug);
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const article = await getArticleBySlug(slug).catch(() => null);
+  const article = await getCachedArticleBySlug(slug).catch(() => null);
   if (!article) return { title: SITE_NAME };
 
   const title = `${article.title} | ${SITE_NAME}`;
@@ -67,7 +70,7 @@ export default async function ArticlePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const article = await getArticleBySlug(slug);
+  const article = await getCachedArticleBySlug(slug);
   if (!article) notFound();
 
   const issue = article.issue;

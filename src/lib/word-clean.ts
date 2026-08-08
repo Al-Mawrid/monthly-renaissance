@@ -64,7 +64,7 @@ function walk(node: HTMLElement): void {
 export function cleanWordHtml(html: string | null | undefined): string {
   if (!html) return "";
 
-  let pre = html
+  const pre = html
     .replace(CONDITIONAL_COMMENT, "")
     .replace(PLAIN_COMMENT, "");
 

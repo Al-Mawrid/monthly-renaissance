@@ -39,7 +39,7 @@ export default function AboutPage() {
           </p>
           <p>
             The journal presents Islam as understood through a direct study of its primary sources — the
-            Qur'an and the Sunnah — employing a methodology rooted in classical Arabic linguistics,
+            Qur&apos;an and the Sunnah — employing a methodology rooted in classical Arabic linguistics,
             established principles of interpretation, and coherent rational analysis.
           </p>
           <p>
@@ -84,7 +84,7 @@ export default function AboutPage() {
             scholarly rigor while maintaining readability for a general audience.
           </p>
           <p>
-            The journal covers a wide range of topics — Qur'anic exegesis, Hadith studies, Islamic
+            The journal covers a wide range of topics — Qur&apos;anic exegesis, Hadith studies, Islamic
             jurisprudence, ethics, history, interfaith dialogue, and contemporary issues facing Muslim
             communities globally.
           </p>

@@ -29,7 +29,7 @@ type RoleInIssue = "regular" | "editorial" | "intro";
 async function requireAuth() {
   const session = await auth();
   if (!session) throw new Error("Not authenticated");
-  if ((session.user as any)?.isActive === false) throw new Error("Account is inactive");
+  if (session.user.isActive === false) throw new Error("Account is inactive");
   if (!session.user?.role) throw new Error("Account is inactive");
   return session;
 }

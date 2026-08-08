@@ -89,6 +89,8 @@ export default async function AdminWritersPage({
                       {w.user ? (
                         <span className="flex items-center gap-1.5">
                           {w.user.image ? (
+                            // OAuth avatar URLs are already optimized by their identity provider.
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img src={w.user.image} alt="" referrerPolicy="no-referrer" className="h-5 w-5 rounded-full object-cover" />
                           ) : null}
                           {w.user.name ?? w.user.email}

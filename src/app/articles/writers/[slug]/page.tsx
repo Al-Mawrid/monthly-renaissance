@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Clock } from "lucide-react";
@@ -15,13 +16,15 @@ import { SITE_URL, SITE_NAME } from "@/lib/site-meta";
 
 export const revalidate = 3600;
 
+const getCachedWriterBySlug = cache(getWriterBySlug);
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const writer = await getWriterBySlug(slug).catch(() => null);
+  const writer = await getCachedWriterBySlug(slug).catch(() => null);
   if (!writer) return { title: SITE_NAME };
 
   const title = `${writer.name} | ${SITE_NAME}`;
@@ -60,7 +63,7 @@ export default async function WriterPage({
   const { page: pageParam } = await searchParams;
   const page = Math.max(1, parseInt(pageParam || "1", 10) || 1);
 
-  const writer = await getWriterBySlug(slug);
+  const writer = await getCachedWriterBySlug(slug);
   if (!writer) notFound();
 
   const { articles: writerArticles, total } = await getArticlesByWriterPaged(slug, page, PER_PAGE);

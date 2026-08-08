@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { User, ArrowRight } from "lucide-react";
 import { getAllWriters } from "@/lib/queries";
 
 export const metadata = {

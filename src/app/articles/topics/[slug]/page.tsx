@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, User, Clock } from "lucide-react";
@@ -14,13 +15,15 @@ import { SITE_URL, SITE_NAME } from "@/lib/site-meta";
 
 export const revalidate = 3600;
 
+const getCachedTopicBySlug = cache(getTopicBySlug);
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const topic = await getTopicBySlug(slug).catch(() => null);
+  const topic = await getCachedTopicBySlug(slug).catch(() => null);
   if (!topic) return { title: SITE_NAME };
 
   const title = `${topic.name} | ${SITE_NAME}`;
@@ -59,7 +62,7 @@ export default async function TopicPage({
   const { page: pageParam } = await searchParams;
   const page = Math.max(1, parseInt(pageParam || "1", 10) || 1);
 
-  const topic = await getTopicBySlug(slug);
+  const topic = await getCachedTopicBySlug(slug);
   if (!topic) notFound();
 
   const { articles: topicArticles, total } = await getArticlesByTopicPaged(slug, page, PER_PAGE);

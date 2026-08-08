@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- legacy export files have heterogeneous, untyped MSSQL rows */
+
 import { PrismaClient } from "@prisma/client";
 import { readFileSync } from "fs";
 import { join } from "path";
@@ -72,13 +74,6 @@ function cleanHtml(html: string | null): string {
   // Remove excessive whitespace but keep structure
   cleaned = cleaned.replace(/\n\s*\n\s*\n/g, "\n\n");
   return cleaned.trim();
-}
-
-// Calculate reading time from HTML content
-function readingTime(html: string): number {
-  const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  const words = text.split(" ").filter(Boolean).length;
-  return Math.max(1, Math.ceil(words / 200));
 }
 
 async function main() {

@@ -2,9 +2,6 @@
 
 import { useState } from "react";
 
-type Primitive = string | number | boolean | null;
-type DiffValue = Primitive | Primitive[] | Record<string, Primitive>;
-
 const LONG_HTML_FIELDS = new Set([
   "bodyHtml",
   "questionHtml",

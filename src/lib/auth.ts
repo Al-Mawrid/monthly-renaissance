@@ -4,7 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./db";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma) as any,
+  adapter: PrismaAdapter(prisma),
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
@@ -32,11 +32,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       session.user.id = user.id;
 
       if (!dbUser || dbUser.isActive === false) {
-        (session.user as any).role = null;
-        (session.user as any).isActive = false;
+        session.user.role = null;
+        session.user.isActive = false;
       } else {
         session.user.role = dbUser.role;
-        (session.user as any).isActive = true;
+        session.user.isActive = true;
       }
 
       return session;

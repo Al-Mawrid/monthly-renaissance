@@ -9,9 +9,17 @@ const DB_UNAVAILABLE = process.env.NODE_ENV === "development";
 async function withFallback<T>(query: () => Promise<T>, fallback: T): Promise<T> {
   try {
     return await query();
-  } catch (err: any) {
-    const isConnRefused = err?.code === "ECONNREFUSED" || err?.message?.includes("ECONNREFUSED");
-    const isMissingEnv = err?.constructor?.name === "PrismaClientInitializationError" || err?.message?.includes("Environment variable not found");
+  } catch (err: unknown) {
+    const errorCode =
+      typeof err === "object" && err !== null && "code" in err
+        ? (err as { code?: unknown }).code
+        : undefined;
+    const errorMessage = err instanceof Error ? err.message : "";
+    const isConnRefused =
+      errorCode === "ECONNREFUSED" || errorMessage.includes("ECONNREFUSED");
+    const isMissingEnv =
+      (err instanceof Error && err.constructor.name === "PrismaClientInitializationError") ||
+      errorMessage.includes("Environment variable not found");
     if (DB_UNAVAILABLE && (isConnRefused || isMissingEnv)) {
       console.warn("[DB fallback] Database unavailable — using sample data");
       return fallback;
@@ -227,7 +235,7 @@ export async function getFeaturedArticle(): Promise<Article | null> {
       orderBy: { dateAdded: "desc" },
       include: articleInclude,
     });
-    return article ? mapArticle(article as any) : null;
+    return article ? mapArticle(article as PrismaArticle) : null;
   }, sample.featuredArticle);
 }
 
@@ -239,7 +247,9 @@ export async function getRecentArticles(limit: number): Promise<Article[]> {
       take: limit + 1, // +1 to skip featured
       include: articleInclude,
     });
-    return articles.slice(1, limit + 1).map((a) => mapArticle(a as any));
+    return articles.slice(1, limit + 1).map((article) =>
+      mapArticle(article as PrismaArticle),
+    );
   }, sample.recentArticles.slice(0, limit));
 }
 
@@ -251,7 +261,7 @@ export async function getLatestQueries(limit: number): Promise<Article[]> {
       take: limit,
       include: queryInclude,
     });
-    return queries.map((q) => mapQuery(q as any));
+    return queries.map((query) => mapQuery(query as PrismaQuery));
   }, sample.latestQueries.slice(0, limit));
 }
 
@@ -342,7 +352,7 @@ export async function getArticlesForIssue(issueSlug: string): Promise<Article[]>
 
     const seen = new Set<number>();
     const ordered: Article[] = [];
-    const push = (raw: any) => {
+    const push = (raw: PrismaArticle) => {
       if (seen.has(raw.id)) return;
       seen.add(raw.id);
       ordered.push(mapArticle(raw));
@@ -363,7 +373,7 @@ export async function getEditorialForIssue(issueSlug: string): Promise<Article |
       include: articleInclude,
       orderBy: { dateAdded: "desc" },
     });
-    return article ? mapArticle(article as any) : null;
+    return article ? mapArticle(article as PrismaArticle) : null;
   }, null);
 }
 
@@ -377,7 +387,7 @@ export async function getQueriesForIssue(issueSlug: string): Promise<Article[]> 
     });
     return links
       .filter((l) => l.query.display)
-      .map((l) => mapQuery(l.query as any));
+      .map((link) => mapQuery(link.query as PrismaQuery));
   }, sample.latestQueries);
 }
 
@@ -390,7 +400,7 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
       include: articleInclude,
     });
     if (article) {
-      const a = article as any;
+      const a = article as PrismaArticle;
       const fallbackIssueId: number | null =
         a.introIssueId ?? a.editorialIssueId ?? null;
       let contextIssue: PrismaIssue | null = null;
@@ -408,7 +418,7 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
       where: { slug, display: true },
       include: queryInclude,
     });
-    return query ? mapQuery(query as any) : null;
+    return query ? mapQuery(query as PrismaQuery) : null;
   }, sample.getArticle(slug));
 }
 
@@ -422,7 +432,7 @@ export async function getRelatedArticles(topicSlug: string, excludeSlug: string,
       take: limit,
       include: articleInclude,
     });
-    return articles.map((a) => mapArticle(a as any));
+    return articles.map((article) => mapArticle(article as PrismaArticle));
   }, sample.recentArticles.filter((a) => a.slug !== excludeSlug).slice(0, limit));
 }
 
@@ -473,7 +483,7 @@ export async function getArticlesByWriter(writerSlug: string): Promise<Article[]
       orderBy: { dateAdded: "desc" },
       include: articleInclude,
     });
-    return articles.map((a) => mapArticle(a as any));
+    return articles.map((article) => mapArticle(article as PrismaArticle));
   }, sample.recentArticles);
 }
 
@@ -497,7 +507,10 @@ export async function getArticlesByWriterPaged(
       }),
       prisma.article.count({ where }),
     ]);
-    return { articles: articles.map((a) => mapArticle(a as any)), total };
+    return {
+      articles: articles.map((article) => mapArticle(article as PrismaArticle)),
+      total,
+    };
   }, {
     articles: sample.recentArticles.slice((safePage - 1) * perPage, safePage * perPage),
     total: sample.recentArticles.length,
@@ -543,7 +556,7 @@ export async function getArticlesByTopic(topicSlug: string): Promise<Article[]> 
       orderBy: { dateAdded: "desc" },
       include: articleInclude,
     });
-    return articles.map((a) => mapArticle(a as any));
+    return articles.map((article) => mapArticle(article as PrismaArticle));
   }, sample.recentArticles);
 }
 
@@ -567,7 +580,10 @@ export async function getArticlesByTopicPaged(
       }),
       prisma.article.count({ where }),
     ]);
-    return { articles: articles.map((a) => mapArticle(a as any)), total };
+    return {
+      articles: articles.map((article) => mapArticle(article as PrismaArticle)),
+      total,
+    };
   }, {
     articles: sample.recentArticles.slice((safePage - 1) * perPage, safePage * perPage),
     total: sample.recentArticles.length,
@@ -620,7 +636,7 @@ export async function getQueriesByWriter(writerSlug: string): Promise<Article[]>
       orderBy: { dateAdded: "desc" },
       include: queryInclude,
     });
-    return queries.map((q) => mapQuery(q as any));
+    return queries.map((query) => mapQuery(query as PrismaQuery));
   }, sample.latestQueries);
 }
 
@@ -633,7 +649,7 @@ export async function getQueriesByTopic(topicSlug: string): Promise<Article[]> {
       orderBy: { dateAdded: "desc" },
       include: queryInclude,
     });
-    return queries.map((q) => mapQuery(q as any));
+    return queries.map((query) => mapQuery(query as PrismaQuery));
   }, sample.latestQueries);
 }
 

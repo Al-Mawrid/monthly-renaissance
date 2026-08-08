@@ -25,6 +25,7 @@ Prerequisites: Node 20+, a local MySQL server.
 
 2. Copy `.env.example` to `.env` and fill in:
    - `DATABASE_URL` — MySQL connection string
+   - `DATABASE_CONNECTION_LIMIT` — optional per-process Prisma pool cap (defaults to `1` for shared hosting)
    - `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` — Auth.js + Google OAuth credentials
    - `UPLOAD_DIR` — absolute path to a directory outside the repo for uploaded files
 
@@ -87,6 +88,7 @@ Signing in with Google creates a `MEMBER` user. An `ADMIN` promotes users at `/a
 The site deploys through Hostinger's git pipeline to shared hosting (Passenger + Node 22). Things to know:
 
 - Environment variables are managed in hPanel; the server's `.env` is regenerated from hPanel on every deploy, so direct edits to it do not survive.
+- Prisma reuses one client per Passenger process and defaults to one database connection per process. Set `DATABASE_CONNECTION_LIMIT` in hPanel only if the database plan can sustain a larger pool.
 - `public/` is wiped on every deploy. Uploaded files live outside the app in the directory pointed to by `UPLOAD_DIR` and are served through the app, never from `public/`.
 - Schema changes are applied on the server with `prisma db push` after the code deploys, followed by `touch tmp/restart.txt` to restart Passenger. Take a database backup first; `db push` has no migration history.
 

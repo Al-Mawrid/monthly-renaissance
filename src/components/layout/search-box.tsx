@@ -25,6 +25,7 @@ export function SearchBox({ onClose }: Props) {
   const [value, setValue] = useState("");
   const [results, setResults] = useState<SearchResults>(EMPTY);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -32,38 +33,57 @@ export function SearchBox({ onClose }: Props) {
   // Caches results by normalized query to avoid duplicate round-trips.
   useEffect(() => {
     const q = value.trim();
-    if (q.length < MIN_CHARS) {
+    if (q.length < MIN_CHARS || cache.has(q)) return;
+    const timer = setTimeout(() => {
+      abortRef.current?.abort();
+      const ac = new AbortController();
+      abortRef.current = ac;
+      fetch(`/api/search?q=${encodeURIComponent(q)}&limit=${DROPDOWN_LIMIT}`, {
+        signal: ac.signal,
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error(`Search failed (${response.status})`);
+          return response.json() as Promise<SearchResults>;
+        })
+        .then((data) => {
+          cache.set(q, data);
+          setResults(data);
+          setLoading(false);
+          setError(null);
+        })
+        .catch((err) => {
+          if (err instanceof Error && err.name === "AbortError") return;
+          setLoading(false);
+          setError("Search is temporarily unavailable. Please try again.");
+        });
+    }, DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [value]);
+
+  function handleValueChange(nextValue: string) {
+    const nextQuery = nextValue.trim();
+    setValue(nextValue);
+    setError(null);
+    abortRef.current?.abort();
+
+    if (nextQuery.length < MIN_CHARS) {
       setResults(EMPTY);
       setLoading(false);
-      abortRef.current?.abort();
       return;
     }
-    const cached = cache.get(q);
+
+    const cached = cache.get(nextQuery);
     if (cached) {
       setResults(cached);
       setLoading(false);
       return;
     }
-    const timer = setTimeout(() => {
-      abortRef.current?.abort();
-      const ac = new AbortController();
-      abortRef.current = ac;
-      setLoading(true);
-      fetch(`/api/search?q=${encodeURIComponent(q)}&limit=${DROPDOWN_LIMIT}`, {
-        signal: ac.signal,
-      })
-        .then((r) => r.json() as Promise<SearchResults>)
-        .then((data) => {
-          cache.set(q, data);
-          setResults(data);
-          setLoading(false);
-        })
-        .catch((err) => {
-          if (err?.name !== "AbortError") setLoading(false);
-        });
-    }, DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [value]);
+
+    setResults(EMPTY);
+    setLoading(true);
+  }
+
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   // Click outside + Esc to close.
   useEffect(() => {
@@ -111,12 +131,14 @@ export function SearchBox({ onClose }: Props) {
             name="q"
             type="search"
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => handleValueChange(e.target.value)}
             placeholder="Search articles, issues, queries, writers…"
             className="w-full pl-4 pr-10 py-2.5 text-sm bg-background border rounded-sm outline-none focus:border-[var(--mr-green-700)] [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
             style={{ borderColor: "var(--border)" }}
             aria-autocomplete="list"
+            aria-controls="site-search-results"
             aria-expanded={showDropdown}
+            role="combobox"
           />
           {value && (
             <button
@@ -134,11 +156,16 @@ export function SearchBox({ onClose }: Props) {
 
       {showDropdown && (
         <div
+          id="site-search-results"
           className="absolute left-0 right-0 mt-1 max-h-[70vh] overflow-y-auto rounded-sm shadow-lg z-50"
           style={{ background: "var(--card)", border: "1px solid var(--border)" }}
           role="listbox"
         >
-          {loading && !hasAny ? (
+          {error ? (
+            <div className="px-4 py-5 text-sm text-destructive" role="status">
+              {error}
+            </div>
+          ) : loading && !hasAny ? (
             <div className="px-4 py-5 text-sm text-muted-foreground">Searching…</div>
           ) : !hasAny ? (
             <div className="px-4 py-5 text-sm text-muted-foreground">

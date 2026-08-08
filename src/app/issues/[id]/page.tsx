@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import {
   getIssueBySlug,
   getArticlesForIssue,
@@ -14,13 +15,15 @@ import { SITE_URL, SITE_NAME, ISSN } from "@/lib/site-meta";
 // revalidatePath. Time-based revalidate is just a backstop (plan I2).
 export const revalidate = 3600;
 
+const getCachedIssueBySlug = cache(getIssueBySlug);
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const issue = await getIssueBySlug(id).catch(() => null);
+  const issue = await getCachedIssueBySlug(id).catch(() => null);
   if (!issue) return { title: SITE_NAME };
 
   const monthName = getMonthName(issue.month);
@@ -53,7 +56,7 @@ export default async function IssuePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const issue = await getIssueBySlug(id);
+  const issue = await getCachedIssueBySlug(id);
   if (!issue) notFound();
 
   const [issueArticles, issueQueries, editorial] = await Promise.all([

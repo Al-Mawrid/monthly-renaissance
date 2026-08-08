@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition, useState, useEffect } from "react";
+import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,10 +21,6 @@ export function PaginationNav({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [pendingDir, setPendingDir] = useState<"prev" | "next" | null>(null);
-
-  useEffect(() => {
-    if (!isPending) setPendingDir(null);
-  }, [isPending]);
 
   function navigate(href: string, dir: "prev" | "next") {
     setPendingDir(dir);

@@ -3,7 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
-import { LogOut, Settings, Shield, User } from "lucide-react";
+import { LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function UserMenu() {
@@ -49,6 +49,8 @@ export function UserMenu() {
         className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
       >
         {session.user.image ? (
+          // OAuth avatar URLs are already optimized by their identity provider.
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={session.user.image}
             alt=""

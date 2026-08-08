@@ -79,6 +79,8 @@ export default async function ChangeRequestsPage() {
                     </span>
                     <span className="flex items-center gap-1.5 text-muted-foreground">
                       {cr.requestedBy.image ? (
+                        // OAuth avatar URLs are already optimized by their identity provider.
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={cr.requestedBy.image}
                           alt=""

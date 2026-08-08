@@ -21,6 +21,22 @@ const EDGE_PAD = 12;
 const STORAGE_KEY = "mr-reading-fab-pos";
 const DRAG_THRESHOLD = 6;
 
+function getTopSafeArea() {
+  const header = document.querySelector("header");
+  const height = header?.getBoundingClientRect().height ?? 0;
+  return height + EDGE_PAD;
+}
+
+function clampToViewport(x: number, y: number) {
+  const minY = getTopSafeArea();
+  const maxX = window.innerWidth - FAB_SIZE - EDGE_PAD;
+  const maxY = window.innerHeight - FAB_SIZE - EDGE_PAD;
+  return {
+    x: Math.max(EDGE_PAD, Math.min(x, maxX)),
+    y: Math.max(minY, Math.min(y, maxY)),
+  };
+}
+
 export function ReadingToolsFab({ citation, feedbackContext }: Props) {
   const { open: openFeedback } = useFeedback();
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -41,29 +57,28 @@ export function ReadingToolsFab({ citation, feedbackContext }: Props) {
     samples: Array<{ t: number; x: number; y: number }>;
   } | null>(null);
 
-  function getTopSafeArea() {
-    const header = document.querySelector("header");
-    const h = header?.getBoundingClientRect().height ?? 0;
-    return h + EDGE_PAD;
-  }
-
   useEffect(() => {
     const saved = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (typeof parsed?.x === "number" && typeof parsed?.y === "number") {
-          setPos(clampToViewport(parsed.x, parsed.y));
-          return;
+          const frame = requestAnimationFrame(() => {
+            setPos(clampToViewport(parsed.x, parsed.y));
+          });
+          return () => cancelAnimationFrame(frame);
         }
       } catch {
         // fall through
       }
     }
-    setPos({
-      x: window.innerWidth - FAB_SIZE - EDGE_PAD,
-      y: window.innerHeight - FAB_SIZE - EDGE_PAD - 80,
+    const frame = requestAnimationFrame(() => {
+      setPos({
+        x: window.innerWidth - FAB_SIZE - EDGE_PAD,
+        y: window.innerHeight - FAB_SIZE - EDGE_PAD - 80,
+      });
     });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
@@ -74,11 +89,6 @@ export function ReadingToolsFab({ citation, feedbackContext }: Props) {
       clearTimeout(hideT);
     };
   }, []);
-
-  // hide hint as soon as the user interacts
-  useEffect(() => {
-    if (open || dragging) setShowHint(false);
-  }, [open, dragging]);
 
   useEffect(() => {
     const onResize = () => {
@@ -100,16 +110,6 @@ export function ReadingToolsFab({ citation, feedbackContext }: Props) {
       document.body.classList.remove("mr-reading");
     };
   }, [readingMode]);
-
-  function clampToViewport(x: number, y: number) {
-    const minY = getTopSafeArea();
-    const maxX = window.innerWidth - FAB_SIZE - EDGE_PAD;
-    const maxY = window.innerHeight - FAB_SIZE - EDGE_PAD;
-    return {
-      x: Math.max(EDGE_PAD, Math.min(x, maxX)),
-      y: Math.max(minY, Math.min(y, maxY)),
-    };
-  }
 
   function snapToCorner(x: number, y: number, vx = 0, vy = 0) {
     const minY = getTopSafeArea();
@@ -142,6 +142,7 @@ export function ReadingToolsFab({ citation, feedbackContext }: Props) {
 
   const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
     if (!pos) return;
+    setShowHint(false);
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     dragState.current = {
       startX: e.clientX,
@@ -195,6 +196,7 @@ export function ReadingToolsFab({ citation, feedbackContext }: Props) {
         return snapped;
       });
     } else {
+      setShowHint(false);
       setOpen((o) => !o);
     }
   };
@@ -275,7 +277,7 @@ export function ReadingToolsFab({ citation, feedbackContext }: Props) {
             [panelOnLeft ? "right" : "left"]: FAB_SIZE + 8,
             top: "50%",
             transform: `translateY(-50%) translateX(${showHint ? "0" : panelOnLeft ? "6px" : "-6px"})`,
-            opacity: showHint ? 1 : 0,
+            opacity: showHint && !open && !dragging ? 1 : 0,
             transition: "opacity 0.3s ease, transform 0.3s ease",
           }}
         >
