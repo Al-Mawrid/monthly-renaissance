@@ -1,6 +1,6 @@
 {
   "name": "monthly-renaissance",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "private": true,
   "scripts": {
     "dev": "node --max-old-space-size=2048 node_modules/next/dist/bin/next dev --webpack",
