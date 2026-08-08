@@ -1,10 +1,13 @@
 import NextAuth from "next-auth";
+import type { Adapter } from "next-auth/adapters";
 import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./db";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  // Keep the adapter typed against NextAuth's public contract. This also
+  // avoids package-identity conflicts if npm installs @auth/core twice.
+  adapter: PrismaAdapter(prisma) as Adapter,
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
