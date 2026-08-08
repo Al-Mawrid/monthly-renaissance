@@ -1,26 +1,100 @@
-import { prisma } from "./db";
+import { ensurePrismaConnected, prisma } from "./db";
 import type { Writer, Topic, Issue, Article, EBook } from "./types";
 import { sample } from "./sample-data";
 import { sanitizeArticleHtml } from "./html-sanitize";
+import { logError } from "./log";
 
-const DB_UNAVAILABLE = process.env.NODE_ENV === "development";
+const DB_RETRY_DELAY_MS = 60_000;
+const TRANSIENT_DATABASE_CODES = new Set([
+  "ECONNREFUSED",
+  "ECONNRESET",
+  "ETIMEDOUT",
+  "P1001",
+  "P1002",
+  "P1008",
+  "P1017",
+  "P2024",
+]);
 
-/** Wraps a DB query so it falls back to sample data when the database is unreachable (dev only). */
+const globalForQueries = globalThis as unknown as {
+  publicDatabaseUnavailableUntil?: number;
+  publicDatabaseFallbackLoggedAt?: number;
+};
+
+function errorSignals(err: unknown): { codes: string[]; message: string } {
+  const codes: string[] = [];
+  const messages: string[] = [];
+  const seen = new Set<unknown>();
+  let current = err;
+
+  for (let depth = 0; depth < 4 && current && !seen.has(current); depth += 1) {
+    seen.add(current);
+    if (current instanceof Error) messages.push(current.message);
+    else messages.push(String(current));
+
+    if (typeof current !== "object") break;
+    const value = current as { code?: unknown; cause?: unknown };
+    if (typeof value.code === "string") codes.push(value.code);
+    current = value.cause;
+  }
+
+  return { codes, message: messages.join("\n") };
+}
+
+function isTransientDatabaseError(err: unknown): boolean {
+  const { codes, message } = errorSignals(err);
+  if (codes.some((code) => TRANSIENT_DATABASE_CODES.has(code))) return true;
+  if (err instanceof Error && err.constructor.name === "PrismaClientRustPanicError") {
+    return true;
+  }
+
+  return /(?:ECONNREFUSED|ECONNRESET|ETIMEDOUT|Can't reach database server|Connection pool timeout|Timed out fetching a new connection|max_connections(?:_per_hour)?|ERROR\s+42000\s+\(1226\)|Too many connections|PANIC:\s*timer has gone away)/i.test(
+    message,
+  );
+}
+
+function isDevelopmentConfigurationError(err: unknown): boolean {
+  if (process.env.NODE_ENV !== "development") return false;
+  const { message } = errorSignals(err);
+  return (
+    (err instanceof Error && err.constructor.name === "PrismaClientInitializationError") ||
+    message.includes("Environment variable not found")
+  );
+}
+
+function noteTemporaryDatabaseFailure(err: unknown): void {
+  const now = Date.now();
+  globalForQueries.publicDatabaseUnavailableUntil = now + DB_RETRY_DELAY_MS;
+
+  if (
+    !globalForQueries.publicDatabaseFallbackLoggedAt ||
+    now - globalForQueries.publicDatabaseFallbackLoggedAt >= DB_RETRY_DELAY_MS
+  ) {
+    globalForQueries.publicDatabaseFallbackLoggedAt = now;
+    logError("queries.public-database-fallback", err, {
+      retryAfterMs: DB_RETRY_DELAY_MS,
+    });
+  }
+}
+
+/** Keeps public pages available during short database outages without masking query/schema bugs. */
 async function withFallback<T>(query: () => Promise<T>, fallback: T): Promise<T> {
+  if (
+    globalForQueries.publicDatabaseUnavailableUntil &&
+    Date.now() < globalForQueries.publicDatabaseUnavailableUntil
+  ) {
+    return fallback;
+  }
+
   try {
+    await ensurePrismaConnected();
     return await query();
   } catch (err: unknown) {
-    const errorCode =
-      typeof err === "object" && err !== null && "code" in err
-        ? (err as { code?: unknown }).code
-        : undefined;
-    const errorMessage = err instanceof Error ? err.message : "";
-    const isConnRefused =
-      errorCode === "ECONNREFUSED" || errorMessage.includes("ECONNREFUSED");
-    const isMissingEnv =
-      (err instanceof Error && err.constructor.name === "PrismaClientInitializationError") ||
-      errorMessage.includes("Environment variable not found");
-    if (DB_UNAVAILABLE && (isConnRefused || isMissingEnv)) {
+    if (isTransientDatabaseError(err)) {
+      noteTemporaryDatabaseFailure(err);
+      return fallback;
+    }
+    if (isDevelopmentConfigurationError(err)) {
       console.warn("[DB fallback] Database unavailable — using sample data");
       return fallback;
     }

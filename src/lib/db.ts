@@ -25,6 +25,7 @@ function createPrismaClient() {
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
+  prismaConnectPromise: Promise<void> | undefined;
 };
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
@@ -33,3 +34,19 @@ export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 // Keeping the client on globalThis prevents each bundle from creating its own
 // connection pool inside the same Passenger process.
 globalForPrisma.prisma = prisma;
+
+/**
+ * Serializes the native query engine's cold start. Public pages launch several
+ * independent reads in parallel, and Hostinger/Passenger can otherwise make
+ * them all race Prisma's first lazy connection after a process restart.
+ */
+export function ensurePrismaConnected(): Promise<void> {
+  if (!globalForPrisma.prismaConnectPromise) {
+    globalForPrisma.prismaConnectPromise = prisma.$connect().catch((error) => {
+      globalForPrisma.prismaConnectPromise = undefined;
+      throw error;
+    });
+  }
+
+  return globalForPrisma.prismaConnectPromise;
+}
