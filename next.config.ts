@@ -22,6 +22,35 @@ const nextConfig: NextConfig = {
   // mammoth (used by /api/import-docx for .docx -> HTML) does dynamic fs/jszip
   // requires; let it resolve from node_modules at runtime instead of bundling.
   serverExternalPackages: ["mammoth"],
+  async redirects() {
+    return [
+      {
+        source: "/articles/topics",
+        destination: "/articles?view=topics",
+        permanent: true,
+      },
+      {
+        source: "/articles/writers",
+        destination: "/articles?view=writers",
+        permanent: true,
+      },
+      {
+        source: "/queries/topics",
+        destination: "/queries?view=topics",
+        permanent: true,
+      },
+      {
+        source: "/queries/writers",
+        destination: "/queries?view=writers",
+        permanent: true,
+      },
+      {
+        source: "/issues/special",
+        destination: "/issues?view=special",
+        permanent: true,
+      },
+    ];
+  },
   turbopack: {
     root: path.resolve(__dirname),
   },

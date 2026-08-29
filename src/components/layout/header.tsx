@@ -15,24 +15,9 @@ type NavGroup = { name: string; href: string; children: NavLeaf[] };
 type NavItem = NavLeaf | NavGroup;
 
 const navigation: NavItem[] = [
-  {
-    name: "Articles",
-    href: "/articles/topics",
-    children: [
-      { name: "All Articles", href: "/articles/topics" },
-      { name: "Writers", href: "/articles/writers" },
-      { name: "Topics", href: "/articles/topics" },
-    ],
-  },
-  {
-    name: "Issues",
-    href: "/issues",
-    children: [
-      { name: "All Issues", href: "/issues" },
-      { name: "Special Issues", href: "/issues/special" },
-    ],
-  },
-  { name: "Queries", href: "/queries/topics" },
+  { name: "Articles", href: "/articles" },
+  { name: "Issues", href: "/issues" },
+  { name: "Queries", href: "/queries" },
   { name: "E-Books", href: "/ebooks" },
   { name: "Support", href: "/support" },
 ];

@@ -4,7 +4,7 @@ import {
   parseContentView,
   TopicProfile,
 } from "@/components/content/topic-profile";
-import { SITE_URL, SITE_NAME } from "@/lib/site-meta";
+import { SITE_NAME, SITE_URL } from "@/lib/site-meta";
 
 export const revalidate = 3600;
 
@@ -17,9 +17,9 @@ export async function generateMetadata({
   const topic = await getCachedTopicBySlug(slug).catch(() => null);
   if (!topic) return { title: SITE_NAME };
 
-  const title = `${topic.name} | ${SITE_NAME}`;
-  const description = `Articles and reader queries about ${topic.name} from ${SITE_NAME}`;
-  const canonical = `${SITE_URL}/articles/topics/${topic.slug}`;
+  const title = `${topic.name} Queries | ${SITE_NAME}`;
+  const description = `Reader questions and answers about ${topic.name} from ${SITE_NAME}.`;
+  const canonical = `${SITE_URL}/queries/topics/${topic.slug}`;
 
   return {
     title,
@@ -36,7 +36,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function TopicPage({
+export default async function QueryTopicPage({
   params,
   searchParams,
 }: {
@@ -48,7 +48,7 @@ export default async function TopicPage({
     searchParams,
   ]);
   const page = Math.max(1, parseInt(pageParam || "1", 10) || 1);
-  const view = parseContentView(viewParam, "articles");
+  const view = parseContentView(viewParam, "queries");
 
   return <TopicProfile slug={slug} page={page} view={view} />;
 }

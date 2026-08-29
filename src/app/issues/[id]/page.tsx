@@ -10,6 +10,8 @@ import {
   getMonthName,
 } from "@/lib/queries";
 import { SITE_URL, SITE_NAME, ISSN } from "@/lib/site-meta";
+import { ContentResults } from "@/components/content/content-results";
+import { StickyViewNav } from "@/components/content/sticky-view-nav";
 
 // ISR: issue content changes only via admin mutations, which call
 // revalidatePath. Time-based revalidate is just a backstop (plan I2).
@@ -52,10 +54,14 @@ export async function generateMetadata({
 
 export default async function IssuePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ view?: string }>;
 }) {
   const { id } = await params;
+  const { view: viewParam } = await searchParams;
+  const view = viewParam === "articles" || viewParam === "queries" ? viewParam : "all";
   const issue = await getCachedIssueBySlug(id);
   if (!issue) notFound();
 
@@ -85,6 +91,13 @@ export default async function IssuePage({
     `This issue contains ${issueArticles.length} articles and ${issueQueries.length} queries - ` +
     "scholarly writing, reader questions answered, and a continued record of the journal's ongoing concerns.";
   const issueDescription = issue.description ?? fallbackDescription;
+  const visibleContent =
+    view === "articles"
+      ? issueArticles
+      : view === "queries"
+        ? issueQueries
+        : [...issueArticles, ...issueQueries];
+  const visibleLabel = view === "articles" ? "Articles" : view === "queries" ? "Queries" : "All content";
 
   return (
     <div>
@@ -105,6 +118,31 @@ export default async function IssuePage({
           </span>
         </div>
       </div>
+
+      <StickyViewNav
+        ariaLabel={`Contents of ${gregorianTitle}`}
+        className="px-2 sm:px-3 lg:px-5"
+        items={[
+          {
+            label: "Articles",
+            count: issueArticles.length,
+            href: `/issues/${id}?view=articles#contents`,
+            active: view === "articles",
+          },
+          {
+            label: "Queries",
+            count: issueQueries.length,
+            href: `/issues/${id}?view=queries#contents`,
+            active: view === "queries",
+          },
+          {
+            label: "All",
+            count: issueArticles.length + issueQueries.length,
+            href: `/issues/${id}?view=all#contents`,
+            active: view === "all",
+          },
+        ]}
+      />
 
       {/* Cover */}
       <section className="border-b" style={{ borderColor: "var(--foreground)" }}>
@@ -253,87 +291,15 @@ export default async function IssuePage({
           </div>
         </div>
 
-        <div className="grid gap-10 lg:grid-cols-[1.6fr_1fr]">
-          <div>
-            <div
-              className="mr-eyebrow mb-3.5"
-              style={{ color: "var(--mr-saffron-700)" }}
-            >
-              - Articles -
-            </div>
-            {issueArticles.map((a, i) => (
-              <Link
-                key={a.id}
-                href={`/articles/${a.slug}`}
-                className="mr-toc-row--cream grid cursor-pointer border-b py-4"
-                style={{
-                  gridTemplateColumns: "40px 1fr 60px",
-                  gap: 14,
-                  alignItems: "baseline",
-                  borderColor: "var(--border)",
-                }}
-              >
-                <div
-                  className="font-serif font-semibold leading-none"
-                  style={{ fontSize: 26, color: "var(--mr-saffron-700)" }}
-                >
-                  {String(i + 1).padStart(2, "0")}
-                </div>
-                <div>
-                  <div className="mr-toc-title font-serif text-[18px] font-semibold">
-                    {a.title}
-                  </div>
-                  <div className="mt-1 text-[12px] text-muted-foreground">
-                    {a.writer.name} · {a.topic.name}
-                  </div>
-                </div>
-                <div className="mr-catalog text-right">{a.readingTime}′</div>
-              </Link>
-            ))}
-            {issueArticles.length === 0 && (
-              <p className="text-[14px] italic text-muted-foreground">No articles yet.</p>
-            )}
-          </div>
-
-          <div>
-            <div
-              className="mr-eyebrow mb-3.5"
-              style={{ color: "var(--mr-clay-700)" }}
-            >
-              - Queries -
-            </div>
-            {issueQueries.map((q, i) => (
-              <Link
-                key={q.id}
-                href={`/articles/${q.slug}`}
-                className="mr-toc-row--cream block cursor-pointer border-b py-3.5"
-                style={{ borderColor: "var(--border)" }}
-              >
-                <div className="mb-1.5 flex items-center gap-2">
-                  <span
-                    className="font-mono text-[10px] font-semibold"
-                    style={{ color: "var(--mr-clay-700)" }}
-                  >
-                    Q.{i + 1}
-                  </span>
-                  <span
-                    className="inline-flex rounded-sm border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
-                    style={{ borderColor: "var(--border)" }}
-                  >
-                    {q.topic.name}
-                  </span>
-                </div>
-                <div className="font-serif text-[14px] italic leading-snug">
-                  &quot;{q.title}&quot;
-                </div>
-                <div className="mt-1 text-[11px] text-muted-foreground">- {q.writer.name}</div>
-              </Link>
-            ))}
-            {issueQueries.length === 0 && (
-              <p className="text-[14px] italic text-muted-foreground">No queries in this issue.</p>
-            )}
-          </div>
+        <div className="mb-4 flex items-baseline justify-between gap-3 border-b border-border pb-3">
+          <h3 className="text-lg font-semibold">{visibleLabel}</h3>
+          <span className="text-sm text-muted-foreground">{visibleContent.length}</span>
         </div>
+        <ContentResults
+          items={visibleContent}
+          showWriter
+          emptyMessage={`No ${view === "all" ? "content" : view} in this issue yet.`}
+        />
       </section>
     </div>
   );

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAllIssues, getMonthName, groupIssuesByYear } from "@/lib/queries";
+import { StickyViewNav } from "@/components/content/sticky-view-nav";
 
 export const metadata = {
   title: "Archives",
@@ -8,12 +9,23 @@ export const metadata = {
 
 export const revalidate = 3600;
 
-export default async function IssuesPage() {
+export default async function IssuesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string; sort?: string }>;
+}) {
+  const { view: viewParam, sort: sortParam } = await searchParams;
+  const view = viewParam === "special" ? "special" : "all";
+  const sort = sortParam === "oldest" ? "oldest" : "newest";
   const issues = await getAllIssues();
-  const grouped = groupIssuesByYear(issues);
-  const years = Object.keys(grouped).map(Number).sort((a, b) => b - a);
-  const totalIssues = issues.length;
-  const latestYear = years[0];
+  const visibleIssues = view === "special" ? issues.filter((issue) => issue.isSpecial) : issues;
+  const grouped = groupIssuesByYear(visibleIssues);
+  const years = Object.keys(grouped)
+    .map(Number)
+    .sort((a, b) => (sort === "newest" ? b - a : a - b));
+  const totalIssues = visibleIssues.length;
+  const latestYear = years.length > 0 ? Math.max(...years) : 0;
+  const earliestYear = years.length > 0 ? Math.min(...years) : 1991;
 
   return (
     <div>
@@ -26,10 +38,12 @@ export default async function IssuesPage() {
                 className="mr-eyebrow mb-2.5"
                 style={{ color: "var(--mr-saffron-700)" }}
               >
-                — The Archive —
+                {view === "special" ? "— Special Issues —" : "— The Archive —"}
               </div>
               <h1 className="font-serif text-4xl sm:text-5xl lg:text-[3.5rem] font-semibold tracking-tight leading-none">
-                Every issue, since {years[years.length - 1] ?? 1991}
+                {view === "special"
+                  ? "Themed editions"
+                  : `Every issue, since ${earliestYear}`}
               </h1>
             </div>
             <div className="text-right">
@@ -39,29 +53,46 @@ export default async function IssuesPage() {
               >
                 {totalIssues}
               </div>
-              <div className="mr-eyebrow mt-1">issues catalogued</div>
+              <div className="mr-eyebrow mt-1">
+                {view === "special" ? "special issues" : "issues catalogued"}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div
-        className="border-b"
-        style={{ background: "var(--card)", borderColor: "var(--border)" }}
-      >
-        <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-3.5 flex gap-3 items-center flex-wrap">
-          <input
-            placeholder="Search by volume, date, or title…"
-            className="flex-1 max-w-md px-3 py-2 text-[13px] bg-background border rounded-sm outline-none focus:border-[var(--mr-green-700)]"
-            style={{ borderColor: "var(--border)" }}
-          />
-          <div className="mr-catalog ml-auto">SORT BY NEWEST</div>
-        </div>
-      </div>
+      <StickyViewNav
+        label="View"
+        ariaLabel="Browse issues"
+        className="px-2 sm:px-3 lg:px-5"
+        items={[
+          {
+            label: "All Issues",
+            href: `/issues?view=all&sort=${sort}`,
+            active: view === "all",
+          },
+          {
+            label: "Special Issues",
+            href: `/issues?view=special&sort=${sort}`,
+            active: view === "special",
+          },
+        ]}
+        sortControl={{
+          value: sort,
+          options: [
+            { value: "newest", label: "Newest first" },
+            { value: "oldest", label: "Oldest first" },
+          ],
+        }}
+      />
 
       <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-[140px_1fr] gap-8">
+        {years.length === 0 ? (
+          <p className="py-12 text-center text-sm italic text-muted-foreground">
+            No {view === "special" ? "special issues" : "issues"} catalogued yet.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-[140px_1fr] gap-8">
           {/* Year rail */}
           <aside className="hidden lg:block">
             <div className="sticky top-[100px]">
@@ -82,7 +113,9 @@ export default async function IssuesPage() {
 
           <div>
             {years.map((year) => {
-              const yearIssues = grouped[year].sort((a, b) => b.month - a.month);
+              const yearIssues = grouped[year].sort((a, b) =>
+                sort === "newest" ? b.month - a.month : a.month - b.month,
+              );
               const volume = yearIssues[0]?.volume;
               const isCurrentYear = year === latestYear;
               return (
@@ -107,7 +140,8 @@ export default async function IssuesPage() {
                     style={{ gap: 1, background: "var(--border)", border: "1px solid var(--border)" }}
                   >
                     {yearIssues.map((issue, i) => {
-                      const isLatest = isCurrentYear && i === 0;
+                      const isLatest =
+                        isCurrentYear && i === (sort === "newest" ? 0 : yearIssues.length - 1);
                       return (
                         <Link
                           key={issue.id}
@@ -153,7 +187,8 @@ export default async function IssuesPage() {
               );
             })}
           </div>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

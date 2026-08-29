@@ -9,12 +9,8 @@ type Entry = MetadataRoute.Sitemap[number];
 const STATIC_ROUTES: Array<{ path: string; priority: number; changeFrequency: Entry["changeFrequency"] }> = [
   { path: "/", priority: 1.0, changeFrequency: "daily" },
   { path: "/articles", priority: 0.9, changeFrequency: "daily" },
+  { path: "/queries", priority: 0.8, changeFrequency: "weekly" },
   { path: "/issues", priority: 0.9, changeFrequency: "weekly" },
-  { path: "/issues/special", priority: 0.6, changeFrequency: "monthly" },
-  { path: "/articles/writers", priority: 0.7, changeFrequency: "weekly" },
-  { path: "/articles/topics", priority: 0.7, changeFrequency: "weekly" },
-  { path: "/queries/writers", priority: 0.6, changeFrequency: "weekly" },
-  { path: "/queries/topics", priority: 0.6, changeFrequency: "weekly" },
   { path: "/ebooks", priority: 0.7, changeFrequency: "weekly" },
   { path: "/search", priority: 0.3, changeFrequency: "monthly" },
   { path: "/about", priority: 0.4, changeFrequency: "yearly" },
@@ -36,7 +32,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let queryEntries: Entry[] = [];
   let issueEntries: Entry[] = [];
   let writerEntries: Entry[] = [];
-  let topicEntries: Entry[] = [];
+  let articleTopicEntries: Entry[] = [];
+  let queryTopicEntries: Entry[] = [];
 
   try {
     const [articles, queries, issues, writers, topics] = await Promise.all([
@@ -58,7 +55,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }),
       prisma.topic.findMany({
         where: { displayInList: true },
-        select: { slug: true },
+        select: {
+          slug: true,
+          _count: {
+            select: {
+              articles: { where: { display: true } },
+              queries: { where: { display: true } },
+            },
+          },
+        },
       }),
     ]);
 
@@ -91,8 +96,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     }));
 
-    topicEntries = topics.map((t) => ({
-      url: `${SITE_URL}/articles/topics/${t.slug}`,
+    articleTopicEntries = topics.filter((topic) => topic._count.articles > 0).map((topic) => ({
+      url: `${SITE_URL}/articles/topics/${topic.slug}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.5,
+    }));
+
+    queryTopicEntries = topics.filter((topic) => topic._count.queries > 0).map((topic) => ({
+      url: `${SITE_URL}/queries/topics/${topic.slug}`,
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.5,
@@ -108,6 +120,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...queryEntries,
     ...issueEntries,
     ...writerEntries,
-    ...topicEntries,
+    ...articleTopicEntries,
+    ...queryTopicEntries,
   ];
 }

@@ -7,16 +7,16 @@ const footerColumns = [
   {
     h: "Read",
     links: [
-      { name: "Articles", href: "/articles/topics" },
+      { name: "Articles", href: "/articles" },
       { name: "Issues", href: "/issues" },
-      { name: "Queries", href: "/queries/topics" },
+      { name: "Queries", href: "/queries" },
     ],
   },
   {
     h: "Browse",
     links: [
-      { name: "Writers", href: "/articles/writers" },
-      { name: "Topics", href: "/articles/topics" },
+      { name: "Writers", href: "/articles?view=writers" },
+      { name: "Topics", href: "/articles?view=topics" },
       { name: "E-Books", href: "/ebooks" },
     ],
   },
