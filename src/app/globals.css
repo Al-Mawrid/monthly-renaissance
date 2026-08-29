@@ -227,6 +227,36 @@
 }
 .article-content p + p { text-indent: 1.5em; margin-top: -0.2em; }
 
+.query-content .query-section {
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+.query-content .query-section + .query-section {
+  margin-top: 1.5rem;
+}
+.query-content .query-answer {
+  border-top: 3px solid var(--mr-green-700);
+}
+.query-content .query-section-label {
+  width: fit-content;
+  margin-bottom: 1rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: var(--mr-green-100);
+  color: var(--mr-green-800);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+.query-content .query-section > :last-child,
+.query-content .query-section > :last-child > :last-child {
+  margin-bottom: 0;
+}
+
 /* Block alignment from the editor (class-based, see editor/extensions.ts).
    Two classes beat the single-class `.article-content p { text-align: justify }`
    default on specificity, so an explicit choice always wins. */

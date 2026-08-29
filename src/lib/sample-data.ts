@@ -517,24 +517,41 @@ const sampleEbooks: EBook[] = [
   },
 ];
 
+function withQueryCount(writer: Writer): Writer {
+  return {
+    ...writer,
+    queryCount: sampleQueries.filter((query) => query.writer.slug === writer.slug).length,
+  };
+}
+
 export const sample = {
   latestIssue: sampleIssue,
   featuredArticle: sampleArticles[0],
   recentArticles: sampleArticles.slice(1, 5),
   latestQueries: sampleQueries,
-  featuredWriters: sampleWriters,
+  featuredWriters: sampleWriters.map(withQueryCount),
   featuredTopics: sampleTopics.slice(0, 6),
   allIssues: [sampleIssue, sampleIssue2, sampleIssue3],
   allArticleSlugs: sampleArticles.map((a) => a.slug),
   allIssueSlugs: [sampleIssue.id, sampleIssue2.id, sampleIssue3.id],
-  allWriters: sampleWriters,
+  allWriters: sampleWriters.map(withQueryCount),
   allWriterSlugs: sampleWriters.map((w) => w.slug),
   allTopics: sampleTopics,
   allTopicSlugs: sampleTopics.map((t) => t.slug),
   allEbooks: sampleEbooks,
-  queryWriters: [sampleWriters[0], sampleWriters[1]],
-  queryTopics: sampleTopics.slice(6).map((t) => ({ ...t, type: "query" as const })),
+  queryWriters: sampleWriters
+    .filter((writer) => sampleQueries.some((query) => query.writer.slug === writer.slug))
+    .map(withQueryCount),
+  queryTopics: sampleTopics
+    .filter((topic) => sampleQueries.some((query) => query.topic.slug === topic.slug))
+    .map((topic) => ({
+      ...topic,
+      queryCount: sampleQueries.filter((query) => query.topic.slug === topic.slug).length,
+      type: "query" as const,
+    })),
   getArticle: (slug: string) => sampleArticles.find((a) => a.slug === slug) ?? sampleArticles[0],
-  getWriter: (slug: string) => sampleWriters.find((w) => w.slug === slug) ?? sampleWriters[0],
+  getWriter: (slug: string) => withQueryCount(
+    sampleWriters.find((writer) => writer.slug === slug) ?? sampleWriters[0],
+  ),
   getTopic: (slug: string) => sampleTopics.find((t) => t.slug === slug) ?? sampleTopics[0],
 };

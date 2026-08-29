@@ -1,4 +1,5 @@
 import { ensurePrismaConnected, prisma } from "./db";
+import { HTMLElement, NodeType, parse } from "node-html-parser";
 import type { Writer, Topic, Issue, Article, EBook } from "./types";
 import { sample } from "./sample-data";
 import { sanitizeArticleHtml } from "./html-sanitize";
@@ -156,6 +157,74 @@ function sanitizeHtml(html: string): string {
   return sanitizeArticleHtml(html);
 }
 
+/**
+ * Older query imports included their field label inside the rich text. The
+ * query page now supplies that label as UI, so remove it from the first text
+ * node while preserving the surrounding paragraph and its formatting.
+ */
+function stripLeadingQueryLabel(html: string, label: "Question" | "Answer"): string {
+  const root = parse(html);
+  const labelPattern = new RegExp(
+    `^(?:\\s|\\u00a0|&nbsp;)*${label}(?:\\s|\\u00a0|&nbsp;)*:(?:\\s|\\u00a0|&nbsp;)*`,
+    "i",
+  );
+  const labelOnlyPattern = new RegExp(
+    `^(?:\\s|\\u00a0|&nbsp;)*${label}(?:\\s|\\u00a0|&nbsp;)*$`,
+    "i",
+  );
+  const colonPattern = /^(?:\s|\u00a0|&nbsp;)*:(?:\s|\u00a0|&nbsp;)*/;
+
+  let finished = false;
+  let awaitingColon = false;
+
+  const stripFromFirstTextNode = (element: HTMLElement): void => {
+    for (const child of element.childNodes) {
+      if (finished) return;
+
+      if (child.nodeType === NodeType.ELEMENT_NODE) {
+        stripFromFirstTextNode(child as HTMLElement);
+        continue;
+      }
+
+      if (child.nodeType !== NodeType.TEXT_NODE) continue;
+
+      const text = child.rawText;
+      if (!text.replace(/(?:\s|\u00a0|&nbsp;)/g, "")) continue;
+
+      if (awaitingColon) {
+        child.rawText = text.replace(colonPattern, "");
+        finished = true;
+        continue;
+      }
+
+      if (labelPattern.test(text)) {
+        child.rawText = text.replace(labelPattern, "");
+        finished = true;
+        continue;
+      }
+
+      if (labelOnlyPattern.test(text)) {
+        child.rawText = "";
+        awaitingColon = true;
+        continue;
+      }
+
+      finished = true;
+    }
+  };
+
+  stripFromFirstTextNode(root);
+
+  // Avoid leaving an empty bold wrapper behind when the label occupied it.
+  for (const element of root.querySelectorAll("strong, b")) {
+    if (!element.text.trim() && !element.querySelector("img, audio, video")) {
+      element.remove();
+    }
+  }
+
+  return root.innerHTML;
+}
+
 // ─── Mappers (Prisma → Interface) ────────────────────────────
 
 type PrismaWriter = {
@@ -171,6 +240,7 @@ function mapWriter(w: PrismaWriter): Writer {
     slug: w.slug,
     bio: "", // writers in the original DB have no bio field
     articleCount: w._count?.articles ?? 0,
+    queryCount: w._count?.queries ?? 0,
   };
 }
 
@@ -186,7 +256,8 @@ function mapTopic(t: PrismaTopic, type?: "article" | "query"): Topic {
     name: t.title,
     slug: t.slug,
     description: "",
-    articleCount: (t._count?.articles ?? 0) + (t._count?.queries ?? 0),
+    articleCount: t._count?.articles ?? 0,
+    queryCount: t._count?.queries ?? 0,
     type: type ?? "article",
   };
 }
@@ -253,13 +324,19 @@ type PrismaQuery = {
 
 function mapQuery(q: PrismaQuery): Article {
   const issue = q.issueLinks[0]?.issue;
-  const body = [q.questionHtml, q.answerHtml].filter(Boolean).join("\n");
+  const questionHtml = stripLeadingQueryLabel(sanitizeHtml(q.questionHtml), "Question");
+  const answerHtml = q.answerHtml
+    ? stripLeadingQueryLabel(sanitizeHtml(q.answerHtml), "Answer")
+    : "";
+  const body = [questionHtml, answerHtml].filter(Boolean).join("\n");
   return {
     id: `q${q.id}`,
     title: q.title,
     slug: q.slug,
-    excerpt: excerpt(q.questionHtml),
-    bodyHtml: sanitizeHtml(body),
+    excerpt: excerpt(questionHtml),
+    bodyHtml: body,
+    questionHtml,
+    answerHtml,
     writer: mapWriter(q.writer),
     topic: mapTopic(q.topic, "query"),
     issue: issue ? mapIssue(issue) : null,
@@ -345,7 +422,14 @@ export async function getFeaturedWriters(limit: number): Promise<Writer[]> {
       where: { displayOnSite: true },
       orderBy: { name: "asc" },
       take: limit,
-      include: { _count: { select: { articles: true } } },
+      include: {
+        _count: {
+          select: {
+            articles: { where: { display: true } },
+            queries: { where: { display: true } },
+          },
+        },
+      },
     });
     return writers.map(mapWriter);
   }, sample.featuredWriters.slice(0, limit));
@@ -357,7 +441,14 @@ export async function getFeaturedTopics(limit: number): Promise<Topic[]> {
       where: { displayInList: true },
       orderBy: { ranking: "asc" },
       take: limit,
-      include: { _count: { select: { articles: true, queries: true } } },
+      include: {
+        _count: {
+          select: {
+            articles: { where: { display: true } },
+            queries: { where: { display: true } },
+          },
+        },
+      },
     });
     return topics.map((t) => mapTopic(t));
   }, sample.featuredTopics.slice(0, limit));
@@ -532,7 +623,14 @@ export async function getAllWriters(): Promise<Writer[]> {
     const writers = await prisma.writer.findMany({
       where: { displayOnSite: true },
       orderBy: { name: "asc" },
-      include: { _count: { select: { articles: true } } },
+      include: {
+        _count: {
+          select: {
+            articles: { where: { display: true } },
+            queries: { where: { display: true } },
+          },
+        },
+      },
     });
     return writers.map(mapWriter);
   }, sample.allWriters);
@@ -542,7 +640,14 @@ export async function getWriterBySlug(slug: string): Promise<Writer | null> {
   return withFallback(async () => {
     const writer = await prisma.writer.findUnique({
       where: { slug },
-      include: { _count: { select: { articles: true } } },
+      include: {
+        _count: {
+          select: {
+            articles: { where: { display: true } },
+            queries: { where: { display: true } },
+          },
+        },
+      },
     });
     return writer ? mapWriter(writer) : null;
   }, sample.getWriter(slug));
@@ -591,6 +696,60 @@ export async function getArticlesByWriterPaged(
   });
 }
 
+export async function getContentByWriterPaged(
+  writerSlug: string,
+  page: number,
+  perPage: number,
+): Promise<{ items: Article[]; total: number }> {
+  const safePage = Math.max(1, page);
+  const take = safePage * perPage;
+
+  return withFallback(async () => {
+    const writer = await prisma.writer.findUnique({
+      where: { slug: writerSlug },
+      select: { id: true },
+    });
+    if (!writer) return { items: [], total: 0 };
+
+    const articleWhere = { writerId: writer.id, display: true } as const;
+    const queryWhere = { writerId: writer.id, display: true } as const;
+    const [articles, queries, articleTotal, queryTotal] = await Promise.all([
+      prisma.article.findMany({
+        where: articleWhere,
+        orderBy: { dateAdded: "desc" },
+        take,
+        include: articleInclude,
+      }),
+      prisma.queryEntry.findMany({
+        where: queryWhere,
+        orderBy: { dateAdded: "desc" },
+        take,
+        include: queryInclude,
+      }),
+      prisma.article.count({ where: articleWhere }),
+      prisma.queryEntry.count({ where: queryWhere }),
+    ]);
+
+    const items = [
+      ...articles.map((article) => mapArticle(article as PrismaArticle)),
+      ...queries.map((query) => mapQuery(query as PrismaQuery)),
+    ]
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.title.localeCompare(b.title))
+      .slice((safePage - 1) * perPage, safePage * perPage);
+
+    return { items, total: articleTotal + queryTotal };
+  }, (() => {
+    const allItems = [
+      ...sample.recentArticles.filter((item) => item.writer.slug === writerSlug),
+      ...sample.latestQueries.filter((item) => item.writer.slug === writerSlug),
+    ].sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.title.localeCompare(b.title));
+    return {
+      items: allItems.slice((safePage - 1) * perPage, safePage * perPage),
+      total: allItems.length,
+    };
+  })());
+}
+
 export async function getAllWriterSlugs(): Promise<string[]> {
   return withFallback(async () => {
     const writers = await prisma.writer.findMany({ where: { displayOnSite: true }, select: { slug: true } });
@@ -605,7 +764,14 @@ export async function getAllTopics(): Promise<Topic[]> {
     const topics = await prisma.topic.findMany({
       where: { displayInList: true },
       orderBy: { ranking: "asc" },
-      include: { _count: { select: { articles: true, queries: true } } },
+      include: {
+        _count: {
+          select: {
+            articles: { where: { display: true } },
+            queries: { where: { display: true } },
+          },
+        },
+      },
     });
     return topics.map((t) => mapTopic(t));
   }, sample.allTopics);
@@ -615,7 +781,14 @@ export async function getTopicBySlug(slug: string): Promise<Topic | null> {
   return withFallback(async () => {
     const topic = await prisma.topic.findUnique({
       where: { slug },
-      include: { _count: { select: { articles: true, queries: true } } },
+      include: {
+        _count: {
+          select: {
+            articles: { where: { display: true } },
+            queries: { where: { display: true } },
+          },
+        },
+      },
     });
     return topic ? mapTopic(topic) : null;
   }, sample.getTopic(slug));
@@ -664,6 +837,60 @@ export async function getArticlesByTopicPaged(
   });
 }
 
+export async function getContentByTopicPaged(
+  topicSlug: string,
+  page: number,
+  perPage: number,
+): Promise<{ items: Article[]; total: number }> {
+  const safePage = Math.max(1, page);
+  const take = safePage * perPage;
+
+  return withFallback(async () => {
+    const topic = await prisma.topic.findUnique({
+      where: { slug: topicSlug },
+      select: { id: true },
+    });
+    if (!topic) return { items: [], total: 0 };
+
+    const articleWhere = { topicId: topic.id, display: true } as const;
+    const queryWhere = { topicId: topic.id, display: true } as const;
+    const [articles, queries, articleTotal, queryTotal] = await Promise.all([
+      prisma.article.findMany({
+        where: articleWhere,
+        orderBy: { dateAdded: "desc" },
+        take,
+        include: articleInclude,
+      }),
+      prisma.queryEntry.findMany({
+        where: queryWhere,
+        orderBy: { dateAdded: "desc" },
+        take,
+        include: queryInclude,
+      }),
+      prisma.article.count({ where: articleWhere }),
+      prisma.queryEntry.count({ where: queryWhere }),
+    ]);
+
+    const items = [
+      ...articles.map((article) => mapArticle(article as PrismaArticle)),
+      ...queries.map((query) => mapQuery(query as PrismaQuery)),
+    ]
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.title.localeCompare(b.title))
+      .slice((safePage - 1) * perPage, safePage * perPage);
+
+    return { items, total: articleTotal + queryTotal };
+  }, (() => {
+    const allItems = [
+      ...sample.recentArticles.filter((item) => item.topic.slug === topicSlug),
+      ...sample.latestQueries.filter((item) => item.topic.slug === topicSlug),
+    ].sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.title.localeCompare(b.title));
+    return {
+      items: allItems.slice((safePage - 1) * perPage, safePage * perPage),
+      total: allItems.length,
+    };
+  })());
+}
+
 export async function getAllTopicSlugs(): Promise<string[]> {
   return withFallback(async () => {
     const topics = await prisma.topic.findMany({ where: { displayInList: true }, select: { slug: true } });
@@ -678,12 +905,13 @@ export async function getQueryWriters(): Promise<Writer[]> {
     const writers = await prisma.writer.findMany({
       where: { displayOnSite: true, queries: { some: { display: true } } },
       orderBy: { name: "asc" },
-      include: { _count: { select: { queries: true } } },
+      include: {
+        _count: {
+          select: { queries: { where: { display: true } } },
+        },
+      },
     });
-    return writers.map((w) => ({
-      ...mapWriter(w),
-      articleCount: w._count?.queries ?? 0,
-    }));
+    return writers.map(mapWriter);
   }, sample.queryWriters);
 }
 
@@ -692,12 +920,13 @@ export async function getQueryTopics(): Promise<Topic[]> {
     const topics = await prisma.topic.findMany({
       where: { displayInList: true, queries: { some: { display: true } } },
       orderBy: { ranking: "asc" },
-      include: { _count: { select: { queries: true } } },
+      include: {
+        _count: {
+          select: { queries: { where: { display: true } } },
+        },
+      },
     });
-    return topics.map((t) => ({
-      ...mapTopic(t, "query"),
-      articleCount: t._count?.queries ?? 0,
-    }));
+    return topics.map((t) => mapTopic(t, "query"));
   }, sample.queryTopics);
 }
 
@@ -711,7 +940,39 @@ export async function getQueriesByWriter(writerSlug: string): Promise<Article[]>
       include: queryInclude,
     });
     return queries.map((query) => mapQuery(query as PrismaQuery));
-  }, sample.latestQueries);
+  }, sample.latestQueries.filter((query) => query.writer.slug === writerSlug));
+}
+
+export async function getQueriesByWriterPaged(
+  writerSlug: string,
+  page: number,
+  perPage: number,
+): Promise<{ queries: Article[]; total: number }> {
+  const safePage = Math.max(1, page);
+  return withFallback(async () => {
+    const writer = await prisma.writer.findUnique({ where: { slug: writerSlug }, select: { id: true } });
+    if (!writer) return { queries: [], total: 0 };
+    const where = { writerId: writer.id, display: true } as const;
+    const [queries, total] = await Promise.all([
+      prisma.queryEntry.findMany({
+        where,
+        orderBy: { dateAdded: "desc" },
+        skip: (safePage - 1) * perPage,
+        take: perPage,
+        include: queryInclude,
+      }),
+      prisma.queryEntry.count({ where }),
+    ]);
+    return {
+      queries: queries.map((query) => mapQuery(query as PrismaQuery)),
+      total,
+    };
+  }, {
+    queries: sample.latestQueries
+      .filter((query) => query.writer.slug === writerSlug)
+      .slice((safePage - 1) * perPage, safePage * perPage),
+    total: sample.latestQueries.filter((query) => query.writer.slug === writerSlug).length,
+  });
 }
 
 export async function getQueriesByTopic(topicSlug: string): Promise<Article[]> {
@@ -724,7 +985,39 @@ export async function getQueriesByTopic(topicSlug: string): Promise<Article[]> {
       include: queryInclude,
     });
     return queries.map((query) => mapQuery(query as PrismaQuery));
-  }, sample.latestQueries);
+  }, sample.latestQueries.filter((query) => query.topic.slug === topicSlug));
+}
+
+export async function getQueriesByTopicPaged(
+  topicSlug: string,
+  page: number,
+  perPage: number,
+): Promise<{ queries: Article[]; total: number }> {
+  const safePage = Math.max(1, page);
+  return withFallback(async () => {
+    const topic = await prisma.topic.findUnique({ where: { slug: topicSlug }, select: { id: true } });
+    if (!topic) return { queries: [], total: 0 };
+    const where = { topicId: topic.id, display: true } as const;
+    const [queries, total] = await Promise.all([
+      prisma.queryEntry.findMany({
+        where,
+        orderBy: { dateAdded: "desc" },
+        skip: (safePage - 1) * perPage,
+        take: perPage,
+        include: queryInclude,
+      }),
+      prisma.queryEntry.count({ where }),
+    ]);
+    return {
+      queries: queries.map((query) => mapQuery(query as PrismaQuery)),
+      total,
+    };
+  }, {
+    queries: sample.latestQueries
+      .filter((query) => query.topic.slug === topicSlug)
+      .slice((safePage - 1) * perPage, safePage * perPage),
+    total: sample.latestQueries.filter((query) => query.topic.slug === topicSlug).length,
+  });
 }
 
 // --- Search ---
@@ -756,7 +1049,6 @@ export async function searchAll(rawQuery: string, limit = 20): Promise<SearchRes
   return withFallback(
     async () => {
       // One DB round-trip: five independent findMany calls run in parallel.
-      // Each uses `select` to skip the LongText `bodyHtml`/`questionHtml` columns.
       const [articles, queries, writers, topics, issues] = await Promise.all([
         prisma.article.findMany({
           where: { display: true, title: { contains: query } },
@@ -769,7 +1061,14 @@ export async function searchAll(rawQuery: string, limit = 20): Promise<SearchRes
           },
         }),
         prisma.queryEntry.findMany({
-          where: { display: true, title: { contains: query } },
+          where: {
+            display: true,
+            OR: [
+              { title: { contains: query } },
+              { questionHtml: { contains: query } },
+              { answerHtml: { contains: query } },
+            ],
+          },
           orderBy: { dateAdded: "desc" },
           take: limit,
           select: {
@@ -782,7 +1081,16 @@ export async function searchAll(rawQuery: string, limit = 20): Promise<SearchRes
           where: { displayOnSite: true, name: { contains: query } },
           orderBy: { name: "asc" },
           take: limit,
-          select: { slug: true, name: true, _count: { select: { articles: true } } },
+          select: {
+            slug: true,
+            name: true,
+            _count: {
+              select: {
+                articles: { where: { display: true } },
+                queries: { where: { display: true } },
+              },
+            },
+          },
         }),
         prisma.topic.findMany({
           where: { displayInList: true, title: { contains: query } },
@@ -822,7 +1130,7 @@ export async function searchAll(rawQuery: string, limit = 20): Promise<SearchRes
         kind: "writer",
         title: w.name,
         href: `/articles/writers/${w.slug}`,
-        subtitle: `${w._count?.articles ?? 0} articles`,
+        subtitle: `${w._count?.articles ?? 0} articles · ${w._count?.queries ?? 0} queries`,
       }));
       const topicHits: SearchHit[] = topics.map((t) => ({
         kind: "topic",
@@ -869,7 +1177,10 @@ function searchSampleFallback(query: string, limit: number): SearchResults {
       subtitle: [a.writer.name, a.topic.name, a.createdAt].filter(Boolean).join(" · "),
     }));
   const queries = sample.latestQueries
-    .filter((a) => has(a.title))
+    .filter((a) =>
+      has(a.title) || has(a.questionHtml ?? "") ||
+      has(a.answerHtml ?? "") || has(a.bodyHtml),
+    )
     .slice(0, limit)
     .map<SearchHit>((a) => ({
       kind: "query",
@@ -884,7 +1195,7 @@ function searchSampleFallback(query: string, limit: number): SearchResults {
       kind: "writer",
       title: w.name,
       href: `/articles/writers/${w.slug}`,
-      subtitle: `${w.articleCount} articles`,
+      subtitle: `${w.articleCount} articles · ${w.queryCount ?? 0} queries`,
     }));
   const topics = sample.allTopics
     .filter((t) => has(t.name))

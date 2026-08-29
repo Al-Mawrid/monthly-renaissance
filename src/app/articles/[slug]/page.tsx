@@ -87,6 +87,10 @@ export default async function ArticlePage({
   const citationYear = issue ? issue.year : "";
   const citationVolume = issue ? issue.volume : "";
   const citationIssue = issue ? issue.issueNumber : "";
+  const contentLabel = article.type === "query" ? "QUERY" : "ARTICLE";
+  const contentNumericId = Number(article.id.replace(/^q/, ""));
+  const writerView = article.type === "query" ? "queries" : "articles";
+  const writerHref = `/articles/writers/${article.writer.slug}?view=${writerView}`;
 
   return (
     <div>
@@ -101,7 +105,7 @@ export default async function ArticlePage({
             <>
               <span>/</span>
               <Link
-                href={`/issues/${issue.id}`}
+                href={`/issues/${issue.id}?view=${writerView}#contents`}
                 className="text-foreground hover:text-[var(--mr-green-700)]"
               >
                 Vol. {issue.volume} · № {issue.issueNumber}
@@ -111,7 +115,7 @@ export default async function ArticlePage({
           <span>/</span>
           <span className="truncate max-w-[280px]">{article.title}</span>
           <div className="ml-auto mr-catalog">
-            ARTICLE ID {article.id}
+            {contentLabel} ID {article.id}
           </div>
         </div>
       </div>
@@ -168,7 +172,7 @@ export default async function ArticlePage({
 
             {issue && (
               <Link
-                href={`/issues/${issue.id}`}
+                href={`/issues/${issue.id}?view=${writerView}#contents`}
                 className="mr-catalog inline-flex items-center gap-2 mb-4 px-2 py-1 border transition-colors hover:text-[var(--mr-green-700)]"
                 style={{
                   borderColor: "var(--border)",
@@ -195,7 +199,7 @@ export default async function ArticlePage({
               </div>
               <div>
                 <Link
-                  href={`/articles/writers/${article.writer.slug}`}
+                  href={writerHref}
                   className="text-[14px] font-medium hover:text-[var(--mr-green-700)] transition-colors"
                 >
                   {article.writer.name}
@@ -220,10 +224,30 @@ export default async function ArticlePage({
 
             <hr className="mr-rule-double my-7" />
 
-            <div
-              className="article-content"
-              dangerouslySetInnerHTML={{ __html: article.bodyHtml }}
-            />
+            <div className={article.type === "query" ? "article-content query-content" : "article-content"}>
+              {article.type === "query" && article.questionHtml !== undefined ? (
+                <>
+                  <section className="query-section" aria-labelledby="query-question-label">
+                    <div id="query-question-label" className="query-section-label">
+                      Question
+                    </div>
+                    <div dangerouslySetInnerHTML={{ __html: article.questionHtml }} />
+                  </section>
+                  <section className="query-section query-answer" aria-labelledby="query-answer-label">
+                    <div id="query-answer-label" className="query-section-label">
+                      Answer
+                    </div>
+                    {article.answerHtml ? (
+                      <div dangerouslySetInnerHTML={{ __html: article.answerHtml }} />
+                    ) : (
+                      <p className="text-muted-foreground">No answer has been published yet.</p>
+                    )}
+                  </section>
+                </>
+              ) : (
+                <div dangerouslySetInnerHTML={{ __html: article.bodyHtml }} />
+              )}
+            </div>
             <FootnoteFocus />
 
             <hr className="my-10" style={{ borderColor: "var(--border)" }} />
@@ -241,18 +265,18 @@ export default async function ArticlePage({
               </div>
               <div>
                 <Link
-                  href={`/articles/writers/${article.writer.slug}`}
+                  href={writerHref}
                   className="font-serif font-semibold hover:text-[var(--mr-green-700)]"
                 >
                   {article.writer.name}
                 </Link>
                 <p className="text-[13px] text-muted-foreground mt-1 leading-relaxed">{article.writer.bio}</p>
                 <Link
-                  href={`/articles/writers/${article.writer.slug}`}
+                  href={`/articles/writers/${article.writer.slug}?view=all`}
                   className="text-[13px] mt-2 inline-block"
                   style={{ color: "var(--mr-green-700)" }}
                 >
-                  View all articles →
+                  View all contributions →
                 </Link>
               </div>
             </section>
@@ -301,7 +325,7 @@ export default async function ArticlePage({
                 variant="article"
                 context={{
                   kind: "article",
-                  articleId: Number(article.id),
+                  articleId: contentNumericId,
                   articleSlug: article.slug,
                   label: article.title,
                 }}
@@ -328,7 +352,7 @@ export default async function ArticlePage({
         citation={`${article.writer.name} (${citationYear}). ${article.title}. Monthly Renaissance, ${citationVolume}(${citationIssue}).`}
         feedbackContext={{
           kind: "article",
-          articleId: Number(article.id),
+          articleId: contentNumericId,
           articleSlug: article.slug,
           label: article.title,
         }}

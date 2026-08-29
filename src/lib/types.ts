@@ -4,6 +4,7 @@ export interface Writer {
   slug: string;
   bio: string;
   articleCount: number;
+  queryCount?: number;
   photoUrl?: string;
 }
 
@@ -13,6 +14,7 @@ export interface Topic {
   slug: string;
   description: string;
   articleCount: number;
+  queryCount?: number;
   type: "article" | "query";
 }
 
@@ -34,6 +36,8 @@ export interface Article {
   slug: string;
   excerpt: string;
   bodyHtml: string;
+  questionHtml?: string;
+  answerHtml?: string;
   writer: Writer;
   topic: Topic;
   issue: Issue | null;
