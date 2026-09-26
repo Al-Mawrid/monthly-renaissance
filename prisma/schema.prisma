@@ -40,6 +40,7 @@ model Topic {
 
   articles Article[]
   queries  QueryEntry[]
+  researchCollection ResearchCollection?
 
   @@map("topics")
 }
@@ -78,13 +79,51 @@ model Article {
   editorialIssueId Int?      @map("editorial_issue_id")
   isIssueIntro     Boolean   @default(false) @map("is_issue_intro")
   introIssueId     Int?      @map("intro_issue_id")
+  researchGroupId  Int?      @map("research_group_id")
+  installmentNumber Int?     @map("installment_number")
+  installmentLabel String?   @map("installment_label") @db.VarChar(120)
+  collectionSortOrder Int?   @map("collection_sort_order")
 
   topic      Topic  @relation(fields: [topicId], references: [id])
   writer     Writer @relation("ArticleWriter", fields: [writerId], references: [id])
   translator Writer? @relation("ArticleTranslator", fields: [translatorId], references: [id])
   issueLinks ArticleIssueLink[]
+  researchGroup ResearchGroup? @relation(fields: [researchGroupId], references: [id])
+
+  @@index([topicId, writerId, display])
+  @@index([researchGroupId, display])
 
   @@map("articles")
+}
+
+model ResearchCollection {
+  id      Int     @id @default(autoincrement())
+  slug    String  @unique @db.VarChar(120)
+  title   String  @db.VarChar(255)
+  topicId Int     @unique @map("topic_id")
+  display Boolean @default(false)
+  ranking Int     @default(0)
+
+  topic  Topic           @relation(fields: [topicId], references: [id])
+  groups ResearchGroup[]
+
+  @@index([display, ranking])
+  @@map("research_collections")
+}
+
+model ResearchGroup {
+  id           Int    @id @default(autoincrement())
+  collectionId Int    @map("collection_id")
+  slug         String @db.VarChar(120)
+  title        String @db.VarChar(255)
+  sortOrder    Int    @default(0) @map("sort_order")
+
+  collection ResearchCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  articles   Article[]
+
+  @@unique([collectionId, slug])
+  @@index([collectionId, sortOrder])
+  @@map("research_groups")
 }
 
 model QueryEntry {
