@@ -15,7 +15,9 @@ Website for **Monthly Renaissance**, the Islamic scholarship journal published b
 
 ## Getting started
 
-Prerequisites: Node 20+, a local MySQL server.
+Prerequisites: Node 20+. A local MySQL server is optional: for a quick local
+check, the development server can use the same MySQL database as the deployed
+site (see [Testing locally with the deployed database](#testing-locally-with-the-deployed-database)).
 
 1. Install dependencies:
 
@@ -48,6 +50,49 @@ Prerequisites: Node 20+, a local MySQL server.
    ```
 
 If the database is unreachable in dev, pages fall back to sample data from `src/lib/sample-data.ts` instead of erroring, so the front end is browsable without a database at all.
+
+### Testing locally with the deployed database
+
+To reproduce the deployed site locally, use the production database connection
+string from Hostinger rather than a localhost MySQL URL:
+
+1. In Hostinger hPanel, open the site's Node.js/environment-variable settings
+   and copy the exact value of `DATABASE_URL`. Do not commit it or paste it into
+   an issue or chat.
+2. Put that value in your local `.env` as `DATABASE_URL`. Keep
+   `DATABASE_CONNECTION_LIMIT="1"` so local development does not open an
+   unnecessarily large pool on shared hosting.
+3. Set `AUTH_URL="http://localhost:3000"`. If Google sign-in is needed, add
+   `http://localhost:3000/api/auth/callback/google` to the Google OAuth client's
+   authorized redirect URIs; otherwise use the deployed site for sign-in.
+4. Set `UPLOAD_DIR` to a local directory outside this repository. Do not point
+   local uploads at the production upload directory.
+5. Start the site:
+
+   ```bash
+   npm run dev
+   ```
+
+This makes local Prisma reads use the deployed database, but it does not copy
+the database locally. Treat the database as shared production data: avoid
+running seed scripts, destructive admin actions, or ad-hoc writes while testing.
+Never run `npx prisma db push` against this URL just to make local development
+work. This repository has no migration history, and `db push` can change or
+remove production columns. Back up the database and coordinate a deployment if
+the remote schema genuinely needs to change.
+
+#### If `research_group_id` does not exist
+
+That error means the checkout is newer than the schema currently used by the
+deployed site. The safe choices are:
+
+- Check out the same commit currently deployed on Hostinger and test that
+  version against the deployed database; or
+- Deploy the code and its Prisma schema change through the normal release
+  process, take a database backup first, then run the planned schema update on
+  Hostinger and restart Passenger.
+
+Do not solve this by pointing the local app at production and running `db push`.
 
 ## Scripts
 
