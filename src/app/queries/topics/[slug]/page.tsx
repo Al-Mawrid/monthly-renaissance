@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import {
   getCachedTopicBySlug,
   parseContentView,
+  parseTopicGroupBy,
   TopicProfile,
 } from "@/components/content/topic-profile";
 import { SITE_NAME, SITE_URL } from "@/lib/site-meta";
@@ -41,14 +42,13 @@ export default async function QueryTopicPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ page?: string; view?: string }>;
+  searchParams: Promise<{ view?: string; groupBy?: string }>;
 }) {
-  const [{ slug }, { page: pageParam, view: viewParam }] = await Promise.all([
+  const [{ slug }, { view: viewParam, groupBy: groupByParam }] = await Promise.all([
     params,
     searchParams,
   ]);
-  const page = Math.max(1, parseInt(pageParam || "1", 10) || 1);
   const view = parseContentView(viewParam, "queries");
 
-  return <TopicProfile slug={slug} page={page} view={view} />;
+  return <TopicProfile slug={slug} view={view} groupBy={parseTopicGroupBy(groupByParam)} />;
 }

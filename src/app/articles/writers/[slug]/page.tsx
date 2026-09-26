@@ -4,9 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { buttonVariants } from "@/lib/variants";
-import { PaginationNav } from "@/components/ui/pagination-nav";
-import { ContentResults } from "@/components/content/content-results";
 import { StickyViewNav } from "@/components/content/sticky-view-nav";
+import { ProgressiveContentResults } from "@/components/content/progressive-content-results";
 import { cn } from "@/lib/utils";
 import {
   getWriterBySlug,
@@ -60,11 +59,10 @@ export default async function WriterPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ page?: string; view?: string }>;
+  searchParams: Promise<{ view?: string }>;
 }) {
   const { slug } = await params;
-  const { page: pageParam, view: viewParam } = await searchParams;
-  const page = Math.max(1, parseInt(pageParam || "1", 10) || 1);
+  const { view: viewParam } = await searchParams;
   const view = parseView(viewParam);
 
   const writer = await getCachedWriterBySlug(slug);
@@ -72,13 +70,13 @@ export default async function WriterPage({
 
   const result =
     view === "queries"
-      ? await getQueriesByWriterPaged(slug, page, PER_PAGE).then(({ queries, total }) => ({
+      ? await getQueriesByWriterPaged(slug, 1, PER_PAGE).then(({ queries, total }) => ({
           items: queries,
           total,
         }))
       : view === "all"
-        ? await getContentByWriterPaged(slug, page, PER_PAGE)
-        : await getArticlesByWriterPaged(slug, page, PER_PAGE).then(({ articles, total }) => ({
+        ? await getContentByWriterPaged(slug, 1, PER_PAGE)
+        : await getArticlesByWriterPaged(slug, 1, PER_PAGE).then(({ articles, total }) => ({
             items: articles,
             total,
           }));
@@ -86,7 +84,6 @@ export default async function WriterPage({
   const articleTotal = writer.articleCount;
   const queryTotal = writer.queryCount ?? 0;
   const contentTotal = articleTotal + queryTotal;
-  const totalPages = Math.max(1, Math.ceil(result.total / PER_PAGE));
   const activeLabel =
     view === "queries" ? "Queries answered" : view === "all" ? "All contributions" : "Articles";
   const emptyMessage =
@@ -163,18 +160,15 @@ export default async function WriterPage({
           <span className="text-sm text-muted-foreground">{result.total}</span>
         </div>
 
-        <ContentResults items={result.items} emptyMessage={emptyMessage} />
-      </section>
-
-      {totalPages > 1 && (
-        <PaginationNav
-          page={page}
-          totalPages={totalPages}
-          prevHref={`/articles/writers/${slug}?view=${view}&page=${page - 1}`}
-          nextHref={`/articles/writers/${slug}?view=${view}&page=${page + 1}`}
-          className="mt-8 gap-4"
+        <ProgressiveContentResults
+          key={`${slug}:${view}`}
+          initialItems={result.items}
+          nextPage={result.total > PER_PAGE ? 2 : null}
+          endpoint={`/api/content-feed?scope=writer&slug=${encodeURIComponent(slug)}&view=${view}`}
+          emptyMessage={emptyMessage}
+          showType={view === "all"}
         />
-      )}
+      </section>
     </div>
   );
 }

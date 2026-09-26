@@ -2,19 +2,24 @@ import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { ContentResults } from "@/components/content/content-results";
 import { StickyViewNav } from "@/components/content/sticky-view-nav";
-import { PaginationNav } from "@/components/ui/pagination-nav";
+import { ResearchCollection } from "@/components/content/research-collection";
+import { ProgressiveContentResults } from "@/components/content/progressive-content-results";
+import { TopicSwitcher } from "@/components/content/topic-switcher";
 import { buttonVariants } from "@/lib/variants";
 import { cn } from "@/lib/utils";
 import {
   getArticlesByTopicPaged,
   getContentByTopicPaged,
   getQueriesByTopicPaged,
+  getResearchCollection,
+  getAllTopics,
+  getTopicWriters,
   getTopicBySlug,
 } from "@/lib/queries";
 
 export type ContentView = "articles" | "queries" | "all";
+export type TopicGroupBy = "none" | "writer";
 export const getCachedTopicBySlug = cache(getTopicBySlug);
 
 export function parseContentView(
@@ -24,29 +29,40 @@ export function parseContentView(
   return value === "articles" || value === "queries" || value === "all" ? value : fallback;
 }
 
+export function parseTopicGroupBy(value: string | undefined): TopicGroupBy {
+  return value === "writer" ? "writer" : "none";
+}
+
 const PER_PAGE = 20;
 
 export async function TopicProfile({
   slug,
-  page,
   view,
+  writer,
+  group,
+  groupBy,
 }: {
   slug: string;
-  page: number;
   view: ContentView;
+  writer?: string;
+  group?: string;
+  groupBy: TopicGroupBy;
 }) {
-  const topic = await getCachedTopicBySlug(slug);
+  const [topic, topics, topicWriters] = await Promise.all([getCachedTopicBySlug(slug), getAllTopics(), getTopicWriters(slug, view)]);
   if (!topic) notFound();
 
+  const researchCollection = view === "articles"
+    ? await getResearchCollection(slug, { writer, group })
+    : null;
   const result =
     view === "queries"
-      ? await getQueriesByTopicPaged(slug, page, PER_PAGE).then(({ queries, total }) => ({
+      ? await getQueriesByTopicPaged(slug, 1, PER_PAGE).then(({ queries, total }) => ({
           items: queries,
           total,
         }))
       : view === "all"
-        ? await getContentByTopicPaged(slug, page, PER_PAGE)
-        : await getArticlesByTopicPaged(slug, page, PER_PAGE).then(({ articles, total }) => ({
+        ? await getContentByTopicPaged(slug, 1, PER_PAGE)
+        : await getArticlesByTopicPaged(slug, 1, PER_PAGE).then(({ articles, total }) => ({
             items: articles,
             total,
           }));
@@ -54,7 +70,6 @@ export async function TopicProfile({
   const articleTotal = topic.articleCount;
   const queryTotal = topic.queryCount ?? 0;
   const contentTotal = articleTotal + queryTotal;
-  const totalPages = Math.max(1, Math.ceil(result.total / PER_PAGE));
   const activeLabel = view === "queries" ? "Queries" : view === "all" ? "All content" : "Articles";
   const emptyMessage =
     view === "queries"
@@ -99,35 +114,46 @@ export async function TopicProfile({
             active: view === "all",
           },
         ]}
+        groupControl={{
+          value: groupBy,
+          options: [
+            { value: "none", label: "Publication order" },
+            { value: "writer", label: "Writer" },
+          ],
+        }}
+        filterControl={{ writers: topicWriters }}
       />
 
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">{topic.name}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight">{topic.name}</h1>
+          <TopicSwitcher topics={topics.filter((item) => item.type === "article").map(({ name, slug: topicSlug }) => ({ name, slug: topicSlug }))} currentSlug={slug} view={view} />
+        </div>
         {topic.description && <p className="mt-1.5 text-muted-foreground">{topic.description}</p>}
         <span className="mt-2 block text-sm text-muted-foreground">
           {contentTotal} items · {articleTotal} articles · {queryTotal} queries
         </span>
       </div>
 
-      <section aria-labelledby="topic-content-heading">
+      {researchCollection ? (
+        <ResearchCollection key={`${slug}:${writer ?? "all"}:${group ?? "all"}`} initial={researchCollection} writer={writer} group={group} />
+      ) : <section aria-labelledby="topic-content-heading">
         <div className="mb-4 flex items-baseline justify-between gap-3 border-b border-border pb-3">
           <h2 id="topic-content-heading" className="text-lg font-semibold">
             {activeLabel}
           </h2>
           <span className="text-sm text-muted-foreground">{result.total}</span>
         </div>
-        <ContentResults items={result.items} emptyMessage={emptyMessage} showWriter />
-      </section>
-
-      {totalPages > 1 && (
-        <PaginationNav
-          page={page}
-          totalPages={totalPages}
-          prevHref={`${view === "queries" ? "/queries" : "/articles"}/topics/${slug}?view=${view}&page=${page - 1}`}
-          nextHref={`${view === "queries" ? "/queries" : "/articles"}/topics/${slug}?view=${view}&page=${page + 1}`}
-          className="mt-8 gap-4"
+        <ProgressiveContentResults
+          key={`${slug}:${view}`}
+          initialItems={result.items}
+          nextPage={result.total > PER_PAGE ? 2 : null}
+          endpoint={`/api/content-feed?scope=topic&slug=${encodeURIComponent(slug)}&view=${view}`}
+          emptyMessage={emptyMessage}
+          groupBy={groupBy}
+          showType={view === "all"}
         />
-      )}
+      </section>}
     </div>
   );
 }
