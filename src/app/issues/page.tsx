@@ -12,13 +12,28 @@ export const revalidate = 3600;
 export default async function IssuesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string; sort?: string }>;
+  searchParams: Promise<{ view?: string; sort?: string; groupBy?: string; find?: string | string[]; fromYear?: string; toYear?: string }>;
 }) {
-  const { view: viewParam, sort: sortParam } = await searchParams;
+  const { view: viewParam, sort: sortParam, groupBy: groupByParam, find: findParam, fromYear: fromYearParam, toYear: toYearParam } = await searchParams;
   const view = viewParam === "special" ? "special" : "all";
   const sort = sortParam === "oldest" ? "oldest" : "newest";
+  const groupBy = groupByParam === "none" ? "none" : "year";
   const issues = await getAllIssues();
-  const visibleIssues = view === "special" ? issues.filter((issue) => issue.isSpecial) : issues;
+  const findTerms = (Array.isArray(findParam) ? findParam : findParam ? [findParam] : [])
+    .map((term) => term.trim().toLocaleLowerCase())
+    .filter(Boolean);
+  const fromYear = Number(fromYearParam) || 0;
+  const toYear = Number(toYearParam) || 0;
+  const visibleIssues = issues.filter((issue) => {
+    const searchable = [issue.title, issue.description, getMonthName(issue.month), String(issue.year), String(issue.issueNumber), String(issue.volume)]
+      .filter(Boolean)
+      .join(" ")
+      .toLocaleLowerCase();
+    return (view !== "special" || issue.isSpecial)
+      && (findTerms.length === 0 || findTerms.every((term) => searchable.includes(term)))
+      && (!fromYear || issue.year >= fromYear)
+      && (!toYear || issue.year <= toYear);
+  });
   const grouped = groupIssuesByYear(visibleIssues);
   const years = Object.keys(grouped)
     .map(Number)
@@ -26,6 +41,19 @@ export default async function IssuesPage({
   const totalIssues = visibleIssues.length;
   const latestYear = years.length > 0 ? Math.max(...years) : 0;
   const earliestYear = years.length > 0 ? Math.min(...years) : 1991;
+  const orderedIssues = years.flatMap((year) =>
+    [...grouped[year]].sort((a, b) => (sort === "newest" ? b.month - a.month : a.month - b.month)),
+  );
+  const filterParams = new URLSearchParams();
+  filterParams.set("sort", sort);
+  filterParams.set("groupBy", groupBy);
+  findTerms.forEach((term) => filterParams.append("find", term));
+  if (fromYear) filterParams.set("fromYear", String(fromYear));
+  if (toYear) filterParams.set("toYear", String(toYear));
+  const allIssuesParams = new URLSearchParams(filterParams);
+  allIssuesParams.set("view", "all");
+  const specialIssuesParams = new URLSearchParams(filterParams);
+  specialIssuesParams.set("view", "special");
 
   return (
     <div>
@@ -68,12 +96,12 @@ export default async function IssuesPage({
         items={[
           {
             label: "All Issues",
-            href: `/issues?view=all&sort=${sort}`,
+            href: `/issues?${allIssuesParams.toString()}`,
             active: view === "all",
           },
           {
             label: "Special Issues",
-            href: `/issues?view=special&sort=${sort}`,
+            href: `/issues?${specialIssuesParams.toString()}`,
             active: view === "special",
           },
         ]}
@@ -84,6 +112,14 @@ export default async function IssuesPage({
             { value: "oldest", label: "Oldest first" },
           ],
         }}
+        groupControl={{
+          value: groupBy,
+          options: [
+            { value: "year", label: "Year" },
+            { value: "none", label: "No grouping" },
+          ],
+        }}
+        filterControl={{ issueYears: [...new Set(issues.map((issue) => issue.year))].sort((a, b) => b - a) }}
       />
 
       <div className="mx-auto max-w-7xl px-2 sm:px-3 lg:px-5 py-10">
@@ -91,6 +127,17 @@ export default async function IssuesPage({
           <p className="py-12 text-center text-sm italic text-muted-foreground">
             No {view === "special" ? "special issues" : "issues"} catalogued yet.
           </p>
+        ) : groupBy === "none" ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {orderedIssues.map((issue) => (
+              <Link key={issue.id} href={`/issues/${issue.id}`} className="group rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-sm">
+                <div className="mr-catalog">№ {issue.issueNumber}</div>
+                <h2 className="mt-1 font-serif text-xl font-semibold transition-colors group-hover:text-primary">{getMonthName(issue.month)} {issue.year}</h2>
+                {issue.isSpecial && issue.title && <p className="mt-1 text-sm italic text-[var(--mr-saffron-700)]">{issue.title}</p>}
+                <p className="mt-4 text-xs text-muted-foreground">{issue.articleCount} {issue.articleCount === 1 ? "article" : "articles"} · Volume {issue.volume ?? "—"}</p>
+              </Link>
+            ))}
+          </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-[140px_1fr] gap-8">
           {/* Year rail */}
