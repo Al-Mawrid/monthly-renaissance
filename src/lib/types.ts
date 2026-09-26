@@ -56,3 +56,33 @@ export interface EBook {
   coverUrl: string | null;
   fileUrl: string;
 }
+
+export interface ResearchInstallment {
+  article: Article;
+  installmentNumber: number | null;
+  installmentLabel: string | null;
+  collectionSortOrder: number | null;
+}
+
+export interface ResearchGroup {
+  id: string;
+  slug: string;
+  title: string;
+  sortOrder: number;
+  installments: ResearchInstallment[];
+}
+
+export interface ResearchWriterSection {
+  writer: Writer;
+  groups: ResearchGroup[];
+  ungrouped: ResearchInstallment[];
+}
+
+export interface ResearchCollection {
+  id: string;
+  slug: string;
+  title: string;
+  topic: Topic;
+  writers: ResearchWriterSection[];
+  nextCursor: string | null;
+}

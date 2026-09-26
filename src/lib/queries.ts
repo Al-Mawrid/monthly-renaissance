@@ -1,6 +1,9 @@
 import { ensurePrismaConnected, prisma } from "./db";
 import { HTMLElement, NodeType, parse } from "node-html-parser";
-import type { Writer, Topic, Issue, Article, EBook } from "./types";
+import type {
+  Writer, Topic, Issue, Article, EBook, ResearchCollection,
+  ResearchInstallment, ResearchWriterSection,
+} from "./types";
 import { sample } from "./sample-data";
 import { sanitizeArticleHtml } from "./html-sanitize";
 import { logError } from "./log";
@@ -104,7 +107,10 @@ async function withFallback<T>(query: () => Promise<T>, fallback: T): Promise<T>
 }
 
 // Re-export types for convenience
-export type { Writer, Topic, Issue, Article, EBook } from "./types";
+export type {
+  Writer, Topic, Issue, Article, EBook, ResearchCollection, ResearchGroup,
+  ResearchInstallment, ResearchWriterSection,
+} from "./types";
 
 // ─── Helpers ──────────────────────────────────────────────────
 
@@ -360,6 +366,132 @@ const queryInclude = {
   writer: true,
   issueLinks: { include: { issue: true }, take: 1 },
 } as const;
+
+type ResearchOptions = {
+  cursor?: string | null;
+  writer?: string | null;
+  group?: string | null;
+  limit?: number;
+};
+
+type PrismaResearchArticle = PrismaArticle & {
+  researchGroup: { id: number; slug: string; title: string; sortOrder: number } | null;
+  installmentNumber: number | null;
+  installmentLabel: string | null;
+  collectionSortOrder: number | null;
+};
+
+/**
+ * An opaque offset cursor keeps collection batches bounded while allowing the
+ * approved editorial sort order to remain the source of truth. It is not an
+ * article id because writer and group ordering precede article ids.
+ */
+function decodeResearchCursor(cursor?: string | null): number {
+  if (!cursor) return 0;
+  let decoded = "";
+  try {
+    decoded = Buffer.from(cursor, "base64url").toString("utf8");
+  } catch {
+    return 0;
+  }
+  const offset = Number.parseInt(decoded.replace(/^offset:/, ""), 10);
+  return Number.isSafeInteger(offset) && offset > 0 ? offset : 0;
+}
+
+function encodeResearchCursor(offset: number): string {
+  return Buffer.from(`offset:${offset}`).toString("base64url");
+}
+
+function researchInstallment(raw: PrismaResearchArticle): ResearchInstallment {
+  return {
+    article: mapArticle(raw),
+    installmentNumber: raw.installmentNumber,
+    installmentLabel: raw.installmentLabel,
+    collectionSortOrder: raw.collectionSortOrder,
+  };
+}
+
+function nestResearchCollection(
+  collection: { id: number; slug: string; title: string },
+  topic: Topic,
+  rows: PrismaResearchArticle[],
+  nextCursor: string | null,
+): ResearchCollection {
+  const writers = new Map<string, ResearchWriterSection>();
+  for (const row of rows) {
+    const writer = mapWriter(row.writer);
+    let section = writers.get(writer.slug);
+    if (!section) {
+      section = { writer, groups: [], ungrouped: [] };
+      writers.set(writer.slug, section);
+    }
+    const installment = researchInstallment(row);
+    if (!row.researchGroup) {
+      section.ungrouped.push(installment);
+      continue;
+    }
+    let group = section.groups.find((candidate) => candidate.id === String(row.researchGroup!.id));
+    if (!group) {
+      group = {
+        id: String(row.researchGroup.id), slug: row.researchGroup.slug,
+        title: row.researchGroup.title, sortOrder: row.researchGroup.sortOrder, installments: [],
+      };
+      section.groups.push(group);
+    }
+    group.installments.push(installment);
+  }
+  return {
+    id: String(collection.id), slug: collection.slug, title: collection.title,
+    topic, writers: [...writers.values()], nextCursor,
+  };
+}
+
+/** Returns null for ordinary topics; queries remain deliberately separate. */
+export async function getResearchCollection(
+  topicSlug: string,
+  options: ResearchOptions = {},
+): Promise<ResearchCollection | null> {
+  const limit = Math.min(Math.max(options.limit ?? 24, 1), 48);
+  const offset = decodeResearchCursor(options.cursor);
+  return withFallback(async () => {
+    const topic = await prisma.topic.findUnique({
+      where: { slug: topicSlug },
+      include: {
+        _count: { select: { articles: { where: { display: true } }, queries: { where: { display: true } } } },
+        researchCollection: { select: { id: true, slug: true, title: true, display: true } },
+      },
+    });
+    if (!topic?.researchCollection?.display) return null;
+
+    const where = {
+      topicId: topic.id,
+      display: true,
+      ...(options.writer ? { writer: { slug: options.writer } } : {}),
+      ...(options.group ? { researchGroup: { slug: options.group } } : {}),
+    };
+    const rows = await prisma.article.findMany({
+      where,
+      skip: offset,
+      take: limit + 1,
+      orderBy: [
+        { writer: { name: "asc" } },
+        { researchGroup: { sortOrder: "asc" } },
+        { collectionSortOrder: "asc" },
+        { installmentNumber: "asc" },
+        { id: "asc" },
+      ],
+      include: { ...articleInclude, researchGroup: true },
+    });
+    const hasMore = rows.length > limit;
+    const visibleRows = rows.slice(0, limit) as PrismaResearchArticle[];
+    return nestResearchCollection(
+      topic.researchCollection,
+      mapTopic(topic),
+      visibleRows,
+      hasMore ? encodeResearchCursor(offset + limit) : null,
+    );
+  }, sample.getResearchCollection(topicSlug));
+}
 
 // ─── Query Functions ─────────────────────────────────────────
 
@@ -792,6 +924,31 @@ export async function getTopicBySlug(slug: string): Promise<Topic | null> {
     });
     return topic ? mapTopic(topic) : null;
   }, sample.getTopic(slug));
+}
+
+/** The small, topic-scoped option list used by the public catalog filter. */
+export async function getTopicWriters(
+  topicSlug: string,
+  view: "articles" | "queries" | "all",
+): Promise<Array<Pick<Writer, "name" | "slug">>> {
+  return withFallback(async () => {
+    const articleMatch = { some: { topic: { slug: topicSlug }, display: true } };
+    const queryMatch = { some: { topic: { slug: topicSlug }, display: true } };
+    const writers = await prisma.writer.findMany({
+      where: {
+        displayOnSite: true,
+        ...(view === "articles" ? { articles: articleMatch } : view === "queries" ? { queries: queryMatch } : { OR: [{ articles: articleMatch }, { queries: queryMatch }] }),
+      },
+      select: { name: true, slug: true },
+      orderBy: { name: "asc" },
+    });
+    return writers;
+  }, (() => {
+    const content = view === "articles" ? sample.recentArticles : view === "queries" ? sample.latestQueries : [...sample.recentArticles, ...sample.latestQueries];
+    const writers = new Map<string, Pick<Writer, "name" | "slug">>();
+    for (const item of content) if (item.topic.slug === topicSlug) writers.set(item.writer.slug, item.writer);
+    return [...writers.values()].sort((a, b) => a.name.localeCompare(b.name));
+  })());
 }
 
 export async function getArticlesByTopic(topicSlug: string): Promise<Article[]> {

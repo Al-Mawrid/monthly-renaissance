@@ -1,4 +1,4 @@
-import type { Writer, Topic, Issue, Article, EBook } from "./types";
+import type { Writer, Topic, Issue, Article, EBook, ResearchCollection } from "./types";
 
 // ─── Sample data used when the database is unavailable ──────────
 
@@ -486,6 +486,35 @@ const sampleQueries: Article[] = [
   },
 ];
 
+// Deliberately small but representative fallback data for the collection UI:
+// two writers, a multipart group, an unclassified article, and a separate
+// query above. It is never used to seed production editorial metadata.
+const sampleResearchCollection: ResearchCollection = {
+  id: "sample-quranic-exegesis",
+  slug: "quranic-exegesis-research",
+  title: "Qur'anic Exegesis",
+  topic: sampleTopics[0],
+  nextCursor: null,
+  writers: [
+    {
+      writer: sampleWriters[1],
+      groups: [{
+        id: "sample-al-nahl", slug: "al-nahl", title: "Surah al-Nahl", sortOrder: 16,
+        installments: [
+          { article: sampleArticles[0], installmentNumber: 1, installmentLabel: null, collectionSortOrder: 1 },
+          { article: { ...sampleArticles[6], id: "research-installment-2", topic: sampleTopics[0], title: "The Prophet ﷺ as a Model of Moral Excellence — Part 2" }, installmentNumber: 2, installmentLabel: null, collectionSortOrder: 2 },
+        ],
+      }],
+      ungrouped: [],
+    },
+    {
+      writer: sampleWriters[0],
+      groups: [],
+      ungrouped: [{ article: { ...sampleArticles[4], id: "research-ungrouped", topic: sampleTopics[0] }, installmentNumber: null, installmentLabel: null, collectionSortOrder: null }],
+    },
+  ],
+};
+
 const sampleEbooks: EBook[] = [
   {
     id: "1",
@@ -539,6 +568,7 @@ export const sample = {
   allTopics: sampleTopics,
   allTopicSlugs: sampleTopics.map((t) => t.slug),
   allEbooks: sampleEbooks,
+  getResearchCollection: (slug: string) => slug === "quranic-exegesis" ? sampleResearchCollection : null,
   queryWriters: sampleWriters
     .filter((writer) => sampleQueries.some((query) => query.writer.slug === writer.slug))
     .map(withQueryCount),
