@@ -22,6 +22,11 @@ const nextConfig: NextConfig = {
   // mammoth (used by /api/import-docx for .docx -> HTML) does dynamic fs/jszip
   // requires; let it resolve from node_modules at runtime instead of bundling.
   serverExternalPackages: ["mammoth"],
+  experimental: {
+    // Hostinger reports all host CPUs to the build container, which makes Next
+    // attempt far more page-data workers than the container can spawn.
+    cpus: 1,
+  },
   async redirects() {
     return [
       {
