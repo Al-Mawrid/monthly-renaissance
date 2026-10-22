@@ -1,0 +1,8 @@
+1. When accessing the website from mobile devices users report that they were logged out every time they refresh the page or after a very short while they got automatically logged out, they must stay logged in as long as possible
+
+2. Update / Add our story page this info (from nooh's WhatsApp)
+
+3. When multiple articles are added site crashes with Error:403
+
+4. Images within old existing articles are not showing in articles, check old existing article(s) which has an image in it and make sure it shows correctly 
+
